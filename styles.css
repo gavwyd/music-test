@@ -31,45 +31,75 @@ body {
     font-size: 16px;
 }
 
-/* Buttons */
-.btn-1 {
-    background-color: #007bff;
+/* Buttons with Special Effects */
+.custom-button {
+    font-size: 17px;
+    padding: 1em 2.7em;
+    font-weight: 500;
+    background: #1f2937;
     color: white;
     border: none;
-    padding: 10px 15px;
-    border-radius: 5px;
+    position: relative;
+    overflow: hidden;
+    border-radius: 0.6em;
     cursor: pointer;
-    font-size: 16px;
     display: inline-block;
     margin-top: 10px;
 }
 
-.btn-1:hover {
-    background-color: #0056b3;
+.gradient {
+    position: absolute;
+    width: 100%;
+    height: 100%;
+    left: 0;
+    top: 0;
+    border-radius: 0.6em;
+    margin-top: -0.25em;
+    background-image: linear-gradient(
+        rgba(0, 0, 0, 0),
+        rgba(0, 0, 0, 0),
+        rgba(0, 0, 0, 0.3)
+    );
 }
 
-/* Upload Sections */
-.upload-section {
-    margin-top: 10px;
+.label {
+    position: relative;
+    top: -1px;
 }
 
-/* Preview Section */
-#previewSection {
+.transition {
+    transition-timing-function: cubic-bezier(0, 0, 0.2, 1);
+    transition-duration: 500ms;
+    background-color: rgba(16, 185, 129, 0.6);
+    border-radius: 9999px;
+    width: 0;
+    height: 0;
+    position: absolute;
+    left: 50%;
+    top: 50%;
+    transform: translate(-50%, -50%);
+}
+
+.custom-button:hover .transition {
+    width: 14em;
+    height: 14em;
+}
+
+.custom-button:active {
+    transform: scale(0.97);
+}
+
+/* Cover Preview Section */
+#previewCoverContainer {
     display: none;
     margin-top: 20px;
-    padding: 15px;
-    background: #ffffff;
-    border-radius: 10px;
-    box-shadow: 0px 0px 10px rgba(0,0,0,0.1);
 }
 
-/* Cover Art */
 #coverPreview {
     max-width: 100%;
     height: auto;
     border-radius: 10px;
     margin-top: 10px;
-    display: none;
 }
 
 /* Hide Default File Inputs */
