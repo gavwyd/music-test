@@ -18,33 +18,27 @@
         <h2>MP3 Metadata Editor</h2>
 
         <!-- File Upload -->
+        <input type="file" id="fileInput" accept="audio/mp3">
         <label for="fileInput" class="custom-button">
             <span class="label">Choose MP3 File</span>
-            <div class="gradient"></div>
-            <div class="transition"></div>
         </label>
-        <input type="file" id="fileInput" accept="audio/mp3">
 
         <!-- Metadata Inputs -->
         <div class="form-container">
-            <input type="text" id="title" class="c-form__input" placeholder="Title">
-            <input type="text" id="artist" class="c-form__input" placeholder="Artist">
-            <input type="text" id="album" class="c-form__input" placeholder="Album">
+            <input type="text" id="title" class="input-box" placeholder="Title">
+            <input type="text" id="artist" class="input-box" placeholder="Artist">
+            <input type="text" id="album" class="input-box" placeholder="Album">
         </div>
 
         <!-- Cover Image Upload -->
+        <input type="file" id="coverInput" accept="image/*">
         <label for="coverInput" class="custom-button">
             <span class="label">Choose Cover Image</span>
-            <div class="gradient"></div>
-            <div class="transition"></div>
         </label>
-        <input type="file" id="coverInput" accept="image/*">
 
         <!-- Update Metadata Button -->
         <button onclick="updateTags()" class="custom-button">
             <span class="label">Update Tags</span>
-            <div class="gradient"></div>
-            <div class="transition"></div>
         </button>
 
         <!-- Preview Section -->
@@ -62,8 +56,6 @@
         <!-- Download Button -->
         <button id="downloadButton" style="display:none;" class="custom-button">
             <span class="label">Download MP3</span>
-            <div class="gradient"></div>
-            <div class="transition"></div>
         </button>
     </div>
 
