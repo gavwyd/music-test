@@ -19,8 +19,11 @@
 
         <!-- File Upload -->
         <div class="upload-section">
-            <label class="btn-1">Select MP3 File
+            <label class="custom-button">
+                <span class="label">Select MP3 File</span>
                 <input type="file" id="fileInput" accept="audio/mp3" hidden>
+                <span class="gradient"></span>
+                <span class="transition"></span>
             </label>
         </div>
 
@@ -33,26 +36,42 @@
 
         <!-- Upload Cover Image -->
         <div class="upload-section">
-            <label class="btn-1">Upload Cover Art
+            <label class="custom-button">
+                <span class="label">Upload Cover Art</span>
                 <input type="file" id="coverInput" accept="image/*" hidden>
+                <span class="gradient"></span>
+                <span class="transition"></span>
             </label>
         </div>
 
+        <!-- Preview Cover Art -->
+        <div id="previewCoverContainer">
+            <h3>Cover Preview</h3>
+            <img id="coverPreview" src="" alt="Cover Preview">
+        </div>
+
         <!-- Update Button -->
-        <button class="btn-1" onclick="updateTags()">Update Tags</button>
+        <button class="custom-button" onclick="updateTags()">
+            <span class="label">Update Tags</span>
+            <span class="gradient"></span>
+            <span class="transition"></span>
+        </button>
 
         <!-- Preview Section -->
         <div id="previewSection">
             <h3>Preview</h3>
             <audio controls id="audioPlayer"></audio>
-            <img id="coverPreview" alt="Cover Preview">
             <p><strong>Title:</strong> <span id="previewTitle"></span></p>
             <p><strong>Artist:</strong> <span id="previewArtist"></span></p>
             <p><strong>Album:</strong> <span id="previewAlbum"></span></p>
         </div>
 
         <!-- Download Button -->
-        <button id="downloadButton" class="btn-1" style="display:none;">Download Updated MP3</button>
+        <button id="downloadButton" class="custom-button" style="display:none;">
+            <span class="label">Download Updated MP3</span>
+            <span class="gradient"></span>
+            <span class="transition"></span>
+        </button>
     </div>
 
     <!-- Link to External JavaScript -->
