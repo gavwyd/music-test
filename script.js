@@ -30,6 +30,11 @@ document.getElementById('fileInput').addEventListener('change', function(event) 
 
 // Update MP3 Tags
 function updateTags() {
+    if (!selectedFile) {
+        alert("Please select an MP3 file first.");
+        return;
+    }
+
     const writer = new ID3Writer(new Uint8Array(selectedFile));
     writer.setFrame('TIT2', document.getElementById('title').value)
           .setFrame('TPE1', [document.getElementById('artist').value])
@@ -51,5 +56,14 @@ function updateTags() {
 function finalizeUpdate(writer) {
     writer.addTag();
     updatedBlob = new Blob([writer.arrayBuffer], { type: 'audio/mp3' });
-    document.getElementById('downloadButton').style.display = 'block';
+
+    // Show download button
+    const downloadButton = document.getElementById('downloadButton');
+    downloadButton.style.display = 'block';
+    downloadButton.onclick = () => {
+        const link = document.createElement('a');
+        link.href = URL.createObjectURL(updatedBlob);
+        link.download = 'updated_song.mp3';
+        link.click();
+    };
 }
