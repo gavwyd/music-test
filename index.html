@@ -5,76 +5,69 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>MP3 Metadata Editor</title>
     
-    <!-- External Libraries for MP3 Metadata Editing -->
+    <!-- External Stylesheet -->
+    <link rel="stylesheet" href="styles.css">
+    
+    <!-- JS Libraries for MP3 Metadata Editing -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jsmediatags/3.9.5/jsmediatags.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/browser-id3-writer@4.0.0/dist/browser-id3-writer.min.js"></script>
-
-    <!-- Link to External CSS -->
-    <link rel="stylesheet" href="styles.css">
 </head>
 <body>
 
     <div class="container">
-        <h2>MP3 Metadata Editor 🎵</h2>
+        <h2>MP3 Metadata Editor</h2>
 
         <!-- File Upload -->
-        <div class="upload-section">
-            <label class="custom-button">
-                <span class="label">Select MP3 File</span>
-                <input type="file" id="fileInput" accept="audio/mp3" hidden>
-                <span class="gradient"></span>
-                <span class="transition"></span>
-            </label>
-        </div>
+        <label for="fileInput" class="custom-button">
+            <span class="label">Choose MP3 File</span>
+            <div class="gradient"></div>
+            <div class="transition"></div>
+        </label>
+        <input type="file" id="fileInput" accept="audio/mp3">
 
-        <!-- Metadata Form -->
+        <!-- Metadata Inputs -->
         <div class="form-container">
-            <input class="c-form__input" id="title" placeholder="Title" type="text">
-            <input class="c-form__input" id="artist" placeholder="Artist" type="text">
-            <input class="c-form__input" id="album" placeholder="Album" type="text">
+            <input type="text" id="title" class="c-form__input" placeholder="Title">
+            <input type="text" id="artist" class="c-form__input" placeholder="Artist">
+            <input type="text" id="album" class="c-form__input" placeholder="Album">
         </div>
 
-        <!-- Upload Cover Image -->
-        <div class="upload-section">
-            <label class="custom-button">
-                <span class="label">Upload Cover Art</span>
-                <input type="file" id="coverInput" accept="image/*" hidden>
-                <span class="gradient"></span>
-                <span class="transition"></span>
-            </label>
-        </div>
+        <!-- Cover Image Upload -->
+        <label for="coverInput" class="custom-button">
+            <span class="label">Choose Cover Image</span>
+            <div class="gradient"></div>
+            <div class="transition"></div>
+        </label>
+        <input type="file" id="coverInput" accept="image/*">
 
-        <!-- Preview Cover Art -->
-        <div id="previewCoverContainer">
-            <h3>Cover Preview</h3>
-            <img id="coverPreview" src="" alt="Cover Preview">
-        </div>
-
-        <!-- Update Button -->
-        <button class="custom-button" onclick="updateTags()">
+        <!-- Update Metadata Button -->
+        <button onclick="updateTags()" class="custom-button">
             <span class="label">Update Tags</span>
-            <span class="gradient"></span>
-            <span class="transition"></span>
+            <div class="gradient"></div>
+            <div class="transition"></div>
         </button>
 
         <!-- Preview Section -->
         <div id="previewSection">
             <h3>Preview</h3>
             <audio controls id="audioPlayer"></audio>
+            <div id="previewCoverContainer">
+                <img id="coverPreview" alt="Cover Preview">
+            </div>
             <p><strong>Title:</strong> <span id="previewTitle"></span></p>
             <p><strong>Artist:</strong> <span id="previewArtist"></span></p>
             <p><strong>Album:</strong> <span id="previewAlbum"></span></p>
         </div>
 
         <!-- Download Button -->
-        <button id="downloadButton" class="custom-button" style="display:none;">
-            <span class="label">Download Updated MP3</span>
-            <span class="gradient"></span>
-            <span class="transition"></span>
+        <button id="downloadButton" style="display:none;" class="custom-button">
+            <span class="label">Download MP3</span>
+            <div class="gradient"></div>
+            <div class="transition"></div>
         </button>
     </div>
 
-    <!-- Link to External JavaScript -->
+    <!-- External JavaScript -->
     <script src="script.js"></script>
 
 </body>
