@@ -1,4 +1,4 @@
-/* Dark Mode Styling */
+/* Dark Mode */
 body {
     background-color: #121212;
     color: white;
@@ -7,7 +7,7 @@ body {
     padding: 20px;
 }
 
-/* Container */
+/* Centered Container */
 .container {
     max-width: 500px;
     margin: auto;
@@ -17,7 +17,7 @@ body {
     box-shadow: 0px 0px 10px rgba(255, 255, 255, 0.1);
 }
 
-/* Inputs */
+/* Input Groups */
 .input-group {
     margin: 15px 0;
     display: flex;
@@ -30,6 +30,7 @@ label {
     margin-bottom: 5px;
 }
 
+/* Input Fields */
 input {
     background-color: #333;
     color: white;
@@ -58,6 +59,7 @@ button {
     border-radius: 0.6em;
     cursor: pointer;
     transition: background 0.3s;
+    margin: 10px;
 }
 
 button:hover {
@@ -76,7 +78,7 @@ button:active {
     display: none;
 }
 
-/* Hidden Elements */
+/* Hide Sections Initially */
 .hidden {
     display: none;
 }
