@@ -31,8 +31,8 @@ body {
     font-size: 16px;
 }
 
-/* Buttons with Special Effects */
-.custom-button {
+/* Animated Button Styles */
+button, .custom-button {
     font-size: 17px;
     padding: 1em 2.7em;
     font-weight: 500;
@@ -47,6 +47,7 @@ body {
     margin-top: 10px;
 }
 
+/* Button Effects */
 .gradient {
     position: absolute;
     width: 100%;
@@ -80,12 +81,14 @@ body {
     transform: translate(-50%, -50%);
 }
 
-.custom-button:hover .transition {
+/* Button Hover Effects */
+button:hover .transition, .custom-button:hover .transition {
     width: 14em;
     height: 14em;
 }
 
-.custom-button:active {
+/* Button Click Effect */
+button:active, .custom-button:active {
     transform: scale(0.97);
 }
 
