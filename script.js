@@ -1,7 +1,6 @@
 let selectedFile;
 let updatedBlob;
 
-// Load MP3 Metadata
 document.getElementById('fileInput').addEventListener('change', function(event) {
     selectedFile = event.target.files[0];
     if (!selectedFile) return;
@@ -14,56 +13,79 @@ document.getElementById('fileInput').addEventListener('change', function(event) 
             document.getElementById('title').value = tag.tags.title || '';
             document.getElementById('artist').value = tag.tags.artist || '';
             document.getElementById('album').value = tag.tags.album || '';
-
             document.getElementById('previewTitle').innerText = tag.tags.title || 'Unknown';
             document.getElementById('previewArtist').innerText = tag.tags.artist || 'Unknown';
             document.getElementById('previewAlbum').innerText = tag.tags.album || 'Unknown';
 
             if (tag.tags.picture) {
-                let base64String = `data:${tag.tags.picture.format};base64,` + btoa(String.fromCharCode(...new Uint8Array(tag.tags.picture.data)));
+                let base64String = "data:" + tag.tags.picture.format + ";base64," + btoa(
+                    new Uint8Array(tag.tags.picture.data).reduce((data, byte) => data + String.fromCharCode(byte), '')
+                );
                 document.getElementById('coverPreview').src = base64String;
-                document.getElementById('previewCoverContainer').style.display = 'block';
+                document.getElementById('coverPreview').style.display = 'block';
             }
+        },
+        onError: function(error) {
+            console.log(error);
         }
     });
 });
 
-// Update MP3 Tags
-function updateTags() {
-    if (!selectedFile) {
-        alert("Please select an MP3 file first.");
-        return;
-    }
-
-    const writer = new ID3Writer(new Uint8Array(selectedFile));
-    writer.setFrame('TIT2', document.getElementById('title').value)
-          .setFrame('TPE1', [document.getElementById('artist').value])
-          .setFrame('TALB', document.getElementById('album').value);
-
-    const coverFile = document.getElementById('coverInput').files[0];
-    if (coverFile) {
-        const reader = new FileReader();
-        reader.onload = function(event) {
-            writer.setFrame('APIC', { type: 3, data: new Uint8Array(event.target.result), description: 'Cover Art' });
-            finalizeUpdate(writer);
+document.getElementById('coverInput').addEventListener('change', function(event) {
+    let file = event.target.files[0];
+    if (file) {
+        let reader = new FileReader();
+        reader.onload = function(e) {
+            document.getElementById('coverPreview').src = e.target.result;
+            document.getElementById('coverPreview').style.display = 'block';
         };
-        reader.readAsArrayBuffer(coverFile);
-    } else {
-        finalizeUpdate(writer);
+        reader.readAsDataURL(file);
     }
-}
+});
+
+document.getElementById('updateButton').addEventListener('click', function() {
+    const title = document.getElementById('title').value;
+    const artist = document.getElementById('artist').value;
+    const album = document.getElementById('album').value;
+    const coverInput = document.getElementById('coverInput').files[0];
+
+    const reader = new FileReader();
+    reader.onload = function(event) {
+        const arrayBuffer = event.target.result;
+        const writer = new ID3Writer(new Uint8Array(arrayBuffer));
+
+        writer.setFrame('TIT2', title)
+              .setFrame('TPE1', [artist])
+              .setFrame('TALB', album);
+
+        if (coverInput) {
+            const imgReader = new FileReader();
+            imgReader.onload = function(e) {
+                const imageData = new Uint8Array(e.target.result);
+                writer.setFrame('APIC', {
+                    type: 3,
+                    data: imageData,
+                    description: 'Cover Art'
+                });
+                finalizeUpdate(writer);
+            };
+            imgReader.readAsArrayBuffer(coverInput);
+        } else {
+            finalizeUpdate(writer);
+        }
+    };
+    reader.readAsArrayBuffer(selectedFile);
+});
 
 function finalizeUpdate(writer) {
     writer.addTag();
     updatedBlob = new Blob([writer.arrayBuffer], { type: 'audio/mp3' });
-
-    // Show download button
-    const downloadButton = document.getElementById('downloadButton');
-    downloadButton.style.display = 'block';
-    downloadButton.onclick = () => {
-        const link = document.createElement('a');
-        link.href = URL.createObjectURL(updatedBlob);
-        link.download = 'updated_song.mp3';
-        link.click();
-    };
+    document.getElementById('downloadButton').style.display = 'block';
 }
+
+document.getElementById('downloadButton').addEventListener('click', function() {
+    const link = document.createElement('a');
+    link.href = URL.createObjectURL(updatedBlob);
+    link.download = 'updated.mp3';
+    link.click();
+});
