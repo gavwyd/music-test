@@ -4,63 +4,51 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>MP3 Metadata Editor</title>
-    
-    <!-- External Stylesheet -->
     <link rel="stylesheet" href="styles.css">
-    
-    <!-- JS Libraries for MP3 Metadata Editing -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jsmediatags/3.9.5/jsmediatags.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/browser-id3-writer@4.0.0/dist/browser-id3-writer.min.js"></script>
 </head>
 <body>
-
     <div class="container">
         <h2>MP3 Metadata Editor</h2>
 
-        <!-- File Upload -->
         <input type="file" id="fileInput" accept="audio/mp3">
-        <label for="fileInput" class="custom-button">
-            <span class="label">Choose MP3 File</span>
-        </label>
-
-        <!-- Metadata Inputs -->
-        <div class="form-container">
-            <input type="text" id="title" class="input-box" placeholder="Title">
-            <input type="text" id="artist" class="input-box" placeholder="Artist">
-            <input type="text" id="album" class="input-box" placeholder="Album">
+        
+        <div class="input-group">
+            <label>Title:</label>
+            <input type="text" id="title">
         </div>
 
-        <!-- Cover Image Upload -->
-        <input type="file" id="coverInput" accept="image/*">
-        <label for="coverInput" class="custom-button">
-            <span class="label">Choose Cover Image</span>
-        </label>
+        <div class="input-group">
+            <label>Artist:</label>
+            <input type="text" id="artist">
+        </div>
 
-        <!-- Update Metadata Button -->
-        <button onclick="updateTags()" class="custom-button">
-            <span class="label">Update Tags</span>
-        </button>
+        <div class="input-group">
+            <label>Album:</label>
+            <input type="text" id="album">
+        </div>
 
-        <!-- Preview Section -->
-        <div id="previewSection">
+        <div class="input-group">
+            <label>Cover Image:</label>
+            <input type="file" id="coverInput" accept="image/*">
+        </div>
+
+        <img id="coverPreview" style="display:none;" alt="Cover Preview">
+
+        <button id="updateButton">Update Tags</button>
+
+        <div id="previewSection" style="display: none;">
             <h3>Preview</h3>
             <audio controls id="audioPlayer"></audio>
-            <div id="previewCoverContainer">
-                <img id="coverPreview" alt="Cover Preview">
-            </div>
             <p><strong>Title:</strong> <span id="previewTitle"></span></p>
             <p><strong>Artist:</strong> <span id="previewArtist"></span></p>
             <p><strong>Album:</strong> <span id="previewAlbum"></span></p>
         </div>
 
-        <!-- Download Button -->
-        <button id="downloadButton" style="display:none;" class="custom-button">
-            <span class="label">Download MP3</span>
-        </button>
+        <button id="downloadButton" style="display:none;">Download Updated MP3</button>
     </div>
 
-    <!-- External JavaScript -->
     <script src="script.js"></script>
-
 </body>
 </html>
