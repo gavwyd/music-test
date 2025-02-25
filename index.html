@@ -13,7 +13,7 @@
         <h2>MP3 Metadata Editor</h2>
 
         <input type="file" id="fileInput" accept="audio/mp3">
-        
+
         <div class="input-group">
             <label>Title:</label>
             <input type="text" id="title">
@@ -34,11 +34,11 @@
             <input type="file" id="coverInput" accept="image/*">
         </div>
 
-        <img id="coverPreview" style="display:none;" alt="Cover Preview">
+        <img id="coverPreview" class="cover-preview" alt="Cover Preview">
 
         <button id="updateButton">Update Tags</button>
 
-        <div id="previewSection" style="display: none;">
+        <div id="previewSection" class="hidden">
             <h3>Preview</h3>
             <audio controls id="audioPlayer"></audio>
             <p><strong>Title:</strong> <span id="previewTitle"></span></p>
@@ -46,7 +46,7 @@
             <p><strong>Album:</strong> <span id="previewAlbum"></span></p>
         </div>
 
-        <button id="downloadButton" style="display:none;">Download Updated MP3</button>
+        <button id="downloadButton" class="hidden">Download Updated MP3</button>
     </div>
 
     <script src="script.js"></script>
