@@ -1,0 +1,78 @@
+/* General Page Styles */
+body {
+    font-family: Arial, sans-serif;
+    background-color: #f4f4f4;
+    text-align: center;
+    padding: 20px;
+}
+
+/* Container to Center Everything */
+.container {
+    max-width: 400px;
+    margin: auto;
+    background: white;
+    padding: 20px;
+    border-radius: 10px;
+    box-shadow: 0px 0px 10px rgba(0,0,0,0.1);
+}
+
+/* Input Fields */
+.form-container {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    margin-top: 15px;
+}
+
+.c-form__input {
+    padding: 10px;
+    border: 1px solid #ddd;
+    border-radius: 5px;
+    font-size: 16px;
+}
+
+/* Buttons */
+.btn-1 {
+    background-color: #007bff;
+    color: white;
+    border: none;
+    padding: 10px 15px;
+    border-radius: 5px;
+    cursor: pointer;
+    font-size: 16px;
+    display: inline-block;
+    margin-top: 10px;
+}
+
+.btn-1:hover {
+    background-color: #0056b3;
+}
+
+/* Upload Sections */
+.upload-section {
+    margin-top: 10px;
+}
+
+/* Preview Section */
+#previewSection {
+    display: none;
+    margin-top: 20px;
+    padding: 15px;
+    background: #ffffff;
+    border-radius: 10px;
+    box-shadow: 0px 0px 10px rgba(0,0,0,0.1);
+}
+
+/* Cover Art */
+#coverPreview {
+    max-width: 100%;
+    height: auto;
+    border-radius: 10px;
+    margin-top: 10px;
+    display: none;
+}
+
+/* Hide Default File Inputs */
+input[type="file"] {
+    display: none;
+}

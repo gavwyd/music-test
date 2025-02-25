@@ -1,0 +1,62 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>MP3 Metadata Editor</title>
+    
+    <!-- External Libraries for MP3 Metadata Editing -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jsmediatags/3.9.5/jsmediatags.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/browser-id3-writer@4.0.0/dist/browser-id3-writer.min.js"></script>
+
+    <!-- Link to External CSS -->
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+
+    <div class="container">
+        <h2>MP3 Metadata Editor 🎵</h2>
+
+        <!-- File Upload -->
+        <div class="upload-section">
+            <label class="btn-1">Select MP3 File
+                <input type="file" id="fileInput" accept="audio/mp3" hidden>
+            </label>
+        </div>
+
+        <!-- Metadata Form -->
+        <div class="form-container">
+            <input class="c-form__input" id="title" placeholder="Title" type="text">
+            <input class="c-form__input" id="artist" placeholder="Artist" type="text">
+            <input class="c-form__input" id="album" placeholder="Album" type="text">
+        </div>
+
+        <!-- Upload Cover Image -->
+        <div class="upload-section">
+            <label class="btn-1">Upload Cover Art
+                <input type="file" id="coverInput" accept="image/*" hidden>
+            </label>
+        </div>
+
+        <!-- Update Button -->
+        <button class="btn-1" onclick="updateTags()">Update Tags</button>
+
+        <!-- Preview Section -->
+        <div id="previewSection">
+            <h3>Preview</h3>
+            <audio controls id="audioPlayer"></audio>
+            <img id="coverPreview" alt="Cover Preview">
+            <p><strong>Title:</strong> <span id="previewTitle"></span></p>
+            <p><strong>Artist:</strong> <span id="previewArtist"></span></p>
+            <p><strong>Album:</strong> <span id="previewAlbum"></span></p>
+        </div>
+
+        <!-- Download Button -->
+        <button id="downloadButton" class="btn-1" style="display:none;">Download Updated MP3</button>
+    </div>
+
+    <!-- Link to External JavaScript -->
+    <script src="script.js"></script>
+
+</body>
+</html>
