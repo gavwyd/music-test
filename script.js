@@ -6,7 +6,7 @@ document.getElementById('fileInput').addEventListener('change', function(event) 
     if (!selectedFile) return;
 
     document.getElementById('audioPlayer').src = URL.createObjectURL(selectedFile);
-    document.getElementById('previewSection').style.display = 'block';
+    document.getElementById('previewSection').classList.remove('hidden');
 
     jsmediatags.read(selectedFile, {
         onSuccess: function(tag) {
@@ -26,7 +26,7 @@ document.getElementById('fileInput').addEventListener('change', function(event) 
             }
         },
         onError: function(error) {
-            console.log(error);
+            console.log("Error reading tags:", error);
         }
     });
 });
@@ -44,6 +44,11 @@ document.getElementById('coverInput').addEventListener('change', function(event)
 });
 
 document.getElementById('updateButton').addEventListener('click', function() {
+    if (!selectedFile) {
+        alert("Please select an MP3 file first.");
+        return;
+    }
+
     const title = document.getElementById('title').value;
     const artist = document.getElementById('artist').value;
     const album = document.getElementById('album').value;
@@ -80,7 +85,7 @@ document.getElementById('updateButton').addEventListener('click', function() {
 function finalizeUpdate(writer) {
     writer.addTag();
     updatedBlob = new Blob([writer.arrayBuffer], { type: 'audio/mp3' });
-    document.getElementById('downloadButton').style.display = 'block';
+    document.getElementById('downloadButton').classList.remove('hidden');
 }
 
 document.getElementById('downloadButton').addEventListener('click', function() {
