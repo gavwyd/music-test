@@ -15,52 +15,38 @@
   <div id="loginModal" class="modal show">
     <div class="modal-content">
       <div class="modal-header">
+        <div class="logo-small"></div>
         <h3>Welcome to ReviewHub</h3>
+        <div class="sub">Rate and review your favorite albums & singles</div>
       </div>
       <div class="modal-body">
-        
-        <!-- Email Login -->
         <div class="auth-section">
           <div class="form-group">
-            <label for="loginEmail">Email</label>
+            <label for="loginEmail">Email Address</label>
             <input id="loginEmail" type="email" placeholder="Enter your email" />
           </div>
           <div class="form-group">
             <label for="loginPassword">Password</label>
             <input id="loginPassword" type="password" placeholder="Enter your password" />
           </div>
-          <div class="form-group auth-buttons">
+          
+          <div class="auth-buttons">
             <button id="emailLoginBtn" class="btn primary">
               <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
                 <path d="M20 4H4C2.9 4 2.01 4.9 2.01 6L2 18C2 19.1 2.9 20 4 20H20C21.1 20 22 19.1 22 18V6C22 4.9 21.1 4 20 4ZM20 8L12 13L4 8V6L12 11L20 6V8Z"/>
               </svg>
-              Login with Email
+              Sign In
             </button>
+            
+            <div class="auth-divider">
+              <span>or</span>
+            </div>
+            
             <button id="emailRegisterBtn" class="btn ghost">
               <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
-                <path d="M20 4H4C2.9 4 2.01 4.9 2.01 6L2 18C2 19.1 2.9 20 4 20H20C21.1 20 22 19.1 22 18V6C22 4.9 21.1 4 20 4ZM20 8L12 13L4 8V6L12 11L20 6V8Z"/>
+                <path d="M19 13H13V19H11V13H5V11H11V5H13V11H19V13Z"/>
               </svg>
-              Sign Up with Email
-            </button>
-          </div>
-
-          <div class="divider">or</div>
-
-          <!-- Phone Auth -->
-          <div class="form-group">
-            <label for="loginPhone">Phone Number</label>
-            <input id="loginPhone" type="tel" placeholder="Enter your phone number (+1234567890)" />
-          </div>
-          <div class="form-group">
-            <label for="otpCode">Verification Code</label>
-            <input id="otpCode" type="text" placeholder="Enter 6-digit code" maxlength="6" style="display:none;" />
-          </div>
-          <div class="form-group auth-buttons">
-            <button id="phoneLoginBtn" class="btn secondary">
-              <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
-                <path d="M6.62 10.79C8.06 13.62 10.38 15.94 13.21 17.38L15.41 15.18C15.69 14.9 16.08 14.82 16.43 14.93C17.55 15.3 18.75 15.5 20 15.5C20.55 15.5 21 15.95 21 16.5V20C21 20.55 20.55 21 20 21C10.61 21 3 13.39 3 4C3 3.45 3.45 3 4 3H7.5C8.05 3 8.5 3.45 8.5 4C8.5 5.25 8.7 6.45 9.07 7.57C9.18 7.92 9.1 8.31 8.82 8.59L6.62 10.79Z"/>
-              </svg>
-              <span id="phoneButtonText">Login/Sign Up with Phone</span>
+              Create Account
             </button>
           </div>
         </div>
@@ -261,7 +247,6 @@
               <li><strong>Smart Filtering:</strong> Filter by genre, popularity, rating, and more</li>
               <li><strong>Cloud Sync:</strong> Your reviews are saved and accessible anywhere</li>
               <li><strong>Share Profile:</strong> Share your review collection with others</li>
-              <li><strong>Flexible Login:</strong> Use Email or Phone authentication</li>
             </ul>
             <p>Built with Supabase for real-time data and Spotify Web API for music discovery.</p>
           </div>
