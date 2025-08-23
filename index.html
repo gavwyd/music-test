@@ -3,8 +3,8 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>ReviewHub — Rate Spotify albums & anything (0.5—10)</title>
-  <meta name="description" content="Paste a Spotify album link (or anything else), rate it 0.5—10 with decimals, and write a review. Login to manage and share your reviews.">
+  <title>ReviewHub — Rate Spotify albums & singles (0.5—10)</title>
+  <meta name="description" content="Search or paste Spotify links for albums and singles, rate them 0.5—10, and share reviews with the community.">
   <link rel="stylesheet" href="styles.css">
 </head>
 <body>
@@ -16,39 +16,41 @@
         <button class="close-btn" id="closeLoginModal">&times;</button>
       </div>
       <div class="modal-body">
-        <div class="form-group">
-          <label for="loginUsername">Username</label>
-          <input id="loginUsername" type="text" placeholder="Enter your username" />
+        <div class="auth-tabs">
+          <button class="auth-tab active" data-auth-tab="email">Email</button>
+          <button class="auth-tab" data-auth-tab="spotify">Spotify</button>
         </div>
-        <div class="form-group">
-          <label for="loginPassword">Password</label>
-          <input id="loginPassword" type="password" placeholder="Enter your password" />
-        </div>
-        <div class="form-group">
-          <button id="loginBtn" class="btn primary">Login</button>
-          <button id="registerBtn" class="btn ghost">Register New Account</button>
-        </div>
-        <div id="loginError" class="error-msg" style="display:none"></div>
-      </div>
-    </div>
-  </div>
-
-  <!-- Share Modal -->
-  <div id="shareModal" class="modal">
-    <div class="modal-content">
-      <div class="modal-header">
-        <h3>Share Your Reviews</h3>
-        <button class="close-btn" id="closeShareModal">&times;</button>
-      </div>
-      <div class="modal-body">
-        <div class="form-group">
-          <label>Your Public Review Page</label>
-          <div class="share-link-container">
-            <input id="shareLink" type="text" readonly />
-            <button id="copyLinkBtn" class="btn">Copy Link</button>
+        
+        <!-- Email Login -->
+        <div id="emailAuth" class="auth-section">
+          <div class="form-group">
+            <label for="loginEmail">Email</label>
+            <input id="loginEmail" type="email" placeholder="Enter your email" />
           </div>
-          <div class="hint">Share this link with anyone to let them view your reviews. The link contains all your review data and works in any browser, including incognito mode.</div>
+          <div class="form-group">
+            <label for="loginPassword">Password</label>
+            <input id="loginPassword" type="password" placeholder="Enter your password" />
+          </div>
+          <div class="form-group">
+            <button id="emailLoginBtn" class="btn primary">Login</button>
+            <button id="emailRegisterBtn" class="btn ghost">Register</button>
+          </div>
         </div>
+
+        <!-- Spotify Login -->
+        <div id="spotifyAuth" class="auth-section" style="display:none;">
+          <div class="spotify-login-info">
+            <p>Connect with your Spotify account to get personalized music recommendations and sync your taste profile.</p>
+            <button id="spotifyLoginBtn" class="btn spotify">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor">
+                <path d="M12 0C5.4 0 0 5.4 0 12s5.4 12 12 12 12-5.4 12-12S18.66 0 12 0zm5.521 17.34c-.24.359-.66.48-1.021.24-2.82-1.74-6.36-2.101-10.561-1.141-.418.122-.84-.179-.959-.539-.12-.421.18-.78.54-.9 4.56-1.021 8.52-.6 11.64 1.32.42.18.479.659.361 1.02zm1.44-3.3c-.301.42-.841.6-1.262.3-3.239-1.98-8.159-2.58-11.939-1.38-.479.12-1.02-.12-1.14-.6-.12-.48.12-1.021.6-1.141C9.6 9.9 15 10.561 18.72 12.84c.361.181.54.78.241 1.2zm.12-3.36C15.24 8.4 8.82 8.16 5.16 9.301c-.6.179-1.2-.181-1.38-.721-.18-.601.18-1.2.72-1.381 4.26-1.26 11.28-1.02 15.721 1.621.539.3.719 1.02.42 1.56-.301.421-1.02.599-1.559.3z"/>
+              </svg>
+              Continue with Spotify
+            </button>
+          </div>
+        </div>
+
+        <div id="loginError" class="error-msg" style="display:none"></div>
       </div>
     </div>
   </div>
@@ -57,8 +59,8 @@
     <!-- User Bar -->
     <div id="userBar" class="user-bar" style="display:none">
       <div class="user-info">
+        <img id="userAvatar" class="user-avatar" src="" alt="">
         <span class="user-welcome">Welcome, <strong id="currentUser"></strong>!</span>
-        <button id="shareReviewsBtn" class="btn ghost small">🔗 Share Reviews</button>
       </div>
       <button id="logoutBtn" class="btn ghost small">Logout</button>
     </div>
@@ -68,10 +70,16 @@
       <div class="card">
         <div class="bd" style="text-align:center; padding:40px">
           <h2>Welcome to ReviewHub</h2>
-          <p>Login or create an account to start rating and reviewing albums</p>
-          <button id="showLoginBtn" class="btn primary">Login / Register</button>
+          <p>Join the community to start rating and reviewing music</p>
+          <button id="showLoginBtn" class="btn primary">Get Started</button>
         </div>
       </div>
+    </div>
+
+    <!-- Loading -->
+    <div id="loadingApp" class="loading" style="display:none; justify-content:center; padding:40px;">
+      <div class="spinner"></div>
+      <span>Loading...</span>
     </div>
 
     <!-- Main App Content -->
@@ -80,53 +88,47 @@
         <div class="logo" aria-hidden></div>
         <div>
           <h1>ReviewHub</h1>
-          <div class="sub">Paste a Spotify album link or review anything. Scores are 0.5—10 with decimals. Share your reviews with friends.</div>
+          <div class="sub">Search or paste Spotify links for albums and singles. Rate 0.5—10 and share with the community.</div>
         </div>
       </div>
 
       <div class="tabs">
         <button class="tab active" data-tab="add">➕ Add Review</button>
-        <button class="tab" data-tab="browse">🗂️ Browse Reviews</button>
+        <button class="tab" data-tab="my-reviews">📝 My Reviews</button>
+        <button class="tab" data-tab="global-feed">🌍 Global Feed</button>
         <button class="tab" data-tab="about">ℹ️ About</button>
         <span class="right pill" id="statsPill">0 reviews</span>
       </div>
 
+      <!-- Add Review Tab -->
       <section id="tab-add" class="grid">
         <div class="card">
           <div class="hd"><strong>Add a Review</strong></div>
           <div class="bd">
-            <div class="row">
+            <div class="row-1">
               <div>
-                <label for="type">Item type</label>
-                <select id="type">
-                  <option value="spotify">Spotify Album</option>
-                  <option value="other">Other</option>
-                </select>
-              </div>
-              <div id="otherTitleWrap" style="display:none">
-                <label for="otherTitle">Title (for Other)</label>
-                <input id="otherTitle" type="text" placeholder="e.g., My Favorite Pizza Place" />
+                <label for="musicSearch">Search for music or paste Spotify link</label>
+                <div class="search-container">
+                  <input id="musicSearch" type="text" placeholder="Search for albums or singles..." />
+                  <div id="searchSuggestions" class="search-suggestions" style="display:none"></div>
+                </div>
+                <div class="hint">Search by artist, album, or song name. Or paste any Spotify album/track URL.</div>
               </div>
             </div>
 
             <div class="spacer"></div>
 
-            <div id="spotifyInputWrap" class="row-1 row">
-              <div>
-                <label for="spotifyUrl">Spotify album link</label>
-                <input id="spotifyUrl" type="text" placeholder="https://open.spotify.com/album/..." />
-                <div class="hint">Paste any Spotify <strong>album</strong> URL. We'll pull its title/artist/cover using Spotify oEmbed.</div>
-              </div>
-            </div>
-
-            <div id="otherFields" class="row" style="display:none">
-              <div>
-                <label for="otherSubtitle">Subtitle / Creator (optional)</label>
-                <input id="otherSubtitle" type="text" placeholder="e.g., by Joe's Pizzeria" />
-              </div>
-              <div>
-                <label for="otherImage">Image URL (optional)</label>
-                <input id="otherImage" type="text" placeholder="https://example.com/cover.jpg" />
+            <div id="selectedMusic" style="display:none">
+              <div class="r-card" style="margin-bottom:16px;">
+                <img id="selectedCover" class="r-cover" alt="Cover" />
+                <div>
+                  <div id="selectedTitle" class="r-title"></div>
+                  <div id="selectedArtist" class="r-artist"></div>
+                  <div class="r-meta">
+                    <span id="selectedType" class="tag"></span>
+                    <div id="selectedGenres" class="genre-list"></div>
+                  </div>
+                </div>
               </div>
             </div>
 
@@ -146,19 +148,18 @@
 
             <div class="spacer"></div>
 
-            <div class="row-1 row">
+            <div class="row-1">
               <div>
                 <label for="review">Your review</label>
-                <textarea id="review" rows="5" placeholder="Say why you rated it like that…"></textarea>
+                <textarea id="review" rows="5" placeholder="What did you think about this music?"></textarea>
               </div>
             </div>
 
             <div class="spacer"></div>
 
             <div class="toolbar">
-              <button id="previewBtn" class="btn">🔍 Preview</button>
               <button id="saveBtn" class="btn primary">💾 Save Review</button>
-              <button id="clearFormBtn" class="btn ghost" title="Clear just the form fields">🧹 Clear Form</button>
+              <button id="clearFormBtn" class="btn ghost">🧹 Clear</button>
             </div>
           </div>
         </div>
@@ -166,115 +167,104 @@
         <div class="card">
           <div class="hd"><strong>Preview</strong></div>
           <div class="bd" id="previewPane">
-            <div class="empty">No preview yet. Fill the form and click <em>Preview</em>.</div>
+            <div class="empty">Select music to see preview</div>
           </div>
         </div>
       </section>
 
-      <section id="tab-browse" style="display:none">
+      <!-- My Reviews Tab -->
+      <section id="tab-my-reviews" style="display:none">
         <div class="card">
-          <div class="hd"><strong>Browse & Manage</strong></div>
-          <div class="bd">
-            <div class="toolbar" style="margin-bottom:12px">
-              <input id="q" type="text" placeholder="Search title/artist/text…" style="max-width:360px">
-              <select id="filterType">
-                <option value="all">All types</option>
-                <option value="spotify">Spotify albums</option>
-                <option value="other">Other</option>
-              </select>
-              <select id="sortBy">
-                <option value="date-desc">Newest</option>
-                <option value="date-asc">Oldest</option>
-                <option value="score-desc">Highest score</option>
-                <option value="score-asc">Lowest score</option>
-                <option value="title-asc">Title A→Z</option>
-                <option value="title-desc">Title Z→A</option>
-              </select>
-              <button id="exportBtn" class="btn">⬇️ Export JSON</button>
-              <label class="btn" for="importInput" style="cursor:pointer">⬆️ Import JSON</label>
-              <input id="importInput" type="file" accept="application/json" style="display:none" />
-              <button id="wipeBtn" class="btn danger right" title="Delete ALL saved reviews">🗑️ Wipe All</button>
+          <div class="hd">
+            <strong>My Reviews</strong>
+            <div class="toolbar">
+              <button id="exportBtn" class="btn small">⬇️ Export</button>
             </div>
-            <div id="list" class="review-list"></div>
-            <div id="emptyList" class="empty" style="display:none">No reviews yet. Add one on the <strong>Add Review</strong> tab.</div>
+          </div>
+          <div class="bd">
+            <div class="filters">
+              <div class="filter-group">
+                <input id="mySearch" type="text" placeholder="Search my reviews..." style="max-width:200px">
+              </div>
+              <div class="filter-group">
+                <select id="mySortBy">
+                  <option value="date-desc">Newest first</option>
+                  <option value="date-asc">Oldest first</option>
+                  <option value="score-desc">Highest rated</option>
+                  <option value="score-asc">Lowest rated</option>
+                  <option value="title-asc">Title A→Z</option>
+                </select>
+              </div>
+            </div>
+            <div id="myReviewsList" class="review-list"></div>
+            <div id="myReviewsEmpty" class="empty" style="display:none">No reviews yet. Add one on the Add Review tab.</div>
           </div>
         </div>
       </section>
 
+      <!-- Global Feed Tab -->
+      <section id="tab-global-feed" style="display:none">
+        <div class="card">
+          <div class="hd">
+            <strong>Global Feed</strong>
+            <span class="pill" id="globalCount">0 reviews</span>
+          </div>
+          <div class="bd">
+            <div class="filters">
+              <div class="filter-group">
+                <input id="globalSearch" type="text" placeholder="Search all reviews..." style="max-width:200px">
+              </div>
+              <div class="filter-group">
+                <select id="globalSortBy">
+                  <option value="likes-desc">Most liked</option>
+                  <option value="date-desc">Newest first</option>
+                  <option value="score-desc">Highest rated</option>
+                  <option value="score-asc">Lowest rated</option>
+                </select>
+              </div>
+              <div class="filter-group">
+                <select id="globalTypeFilter">
+                  <option value="all">All types</option>
+                  <option value="album">Albums only</option>
+                  <option value="track">Singles only</option>
+                </select>
+              </div>
+              <div class="filter-group">
+                <select id="globalGenreFilter">
+                  <option value="all">All genres</option>
+                </select>
+              </div>
+            </div>
+            <div id="globalReviewsList" class="review-list"></div>
+            <div id="globalReviewsEmpty" class="empty" style="display:none">No reviews found.</div>
+          </div>
+        </div>
+      </section>
+
+      <!-- About Tab -->
       <section id="tab-about" style="display:none">
         <div class="card">
-          <div class="hd"><strong>About</strong></div>
+          <div class="hd"><strong>About ReviewHub</strong></div>
           <div class="bd">
-            <p><strong>ReviewHub</strong> is a review tool for rating albums and anything else. Paste a Spotify album URL or enter anything, rate 0.5—10 with decimal precision, and write detailed reviews.</p>
+            <p><strong>ReviewHub</strong> is a community-driven platform for rating and reviewing music. Connect with Spotify or create an account to discover and share your thoughts on albums and singles.</p>
+            <h3>Features:</h3>
             <ul>
-              <li>Supports decimal ratings (e.g., 8.5, 9.2) for precise scoring</li>
-              <li>User accounts with login/registration system</li>
-              <li>Share your review collection with a public link</li>
-              <li>Spotify data uses the public <em>oEmbed</em> endpoint (no API keys)</li>
-              <li>Export/Import lets you back up or move your reviews</li>
+              <li><strong>Spotify Integration:</strong> Search for music or paste Spotify links</li>
+              <li><strong>Precise Ratings:</strong> Rate music from 0.5 to 10.0 with decimal precision</li>
+              <li><strong>Community Feed:</strong> Discover reviews from other music lovers</li>
+              <li><strong>Like System:</strong> Show appreciation for great reviews</li>
+              <li><strong>Smart Filtering:</strong> Filter by genre, popularity, rating, and more</li>
+              <li><strong>Cloud Sync:</strong> Your reviews are saved and accessible anywhere</li>
+              <li><strong>Flexible Login:</strong> Use Email or connect with Spotify</li>
             </ul>
+            <p>Built with Supabase for real-time data and Spotify Web API for music discovery.</p>
           </div>
         </div>
       </section>
-    </div>
-
-    <!-- Public View (for shared links) -->
-    <div id="publicView" style="display:none">
-      <div class="brand">
-        <div class="logo" aria-hidden></div>
-        <div>
-          <h1>ReviewHub</h1>
-          <div class="sub">Public Reviews by <strong id="publicUsername"></strong></div>
-        </div>
-      </div>
-      
-      <div class="card">
-        <div class="hd"><strong>Reviews</strong></div>
-        <div class="bd">
-          <div id="publicList" class="review-list"></div>
-          <div id="publicEmpty" class="empty">No reviews found for this user.</div>
-        </div>
-      </div>
     </div>
   </div>
 
-  <template id="reviewCardTpl">
-    <div class="r-card">
-      <img class="r-cover" alt="Cover" />
-      <div>
-        <div class="r-title"></div>
-        <div class="r-sub"></div>
-        <div class="r-meta" style="margin-top:8px">
-          <span class="score"></span>
-          <span class="tag"></span>
-          <span class="time"></span>
-        </div>
-        <div class="r-text"></div>
-        <div class="toolbar" style="margin-top:10px">
-          <button class="btn ghost" data-action="edit">✏️ Edit</button>
-          <button class="btn ghost" data-action="dup">📄 Duplicate</button>
-          <button class="btn danger" data-action="del">🗑️ Delete</button>
-        </div>
-      </div>
-    </div>
-  </template>
-
-  <template id="publicReviewCardTpl">
-    <div class="r-card">
-      <img class="r-cover" alt="Cover" />
-      <div>
-        <div class="r-title"></div>
-        <div class="r-sub"></div>
-        <div class="r-meta" style="margin-top:8px">
-          <span class="score"></span>
-          <span class="tag"></span>
-          <span class="time"></span>
-        </div>
-        <div class="r-text"></div>
-      </div>
-    </div>
-  </template>
-
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <script src="script.js"></script>
 </body>
 </html>
