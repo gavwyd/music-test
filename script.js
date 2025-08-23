@@ -8,7 +8,7 @@
   
   // Utility functions
   const $ = (sel, root=document) => root.querySelector(sel)
-  const $ = (sel, root=document) => Array.from(root.querySelectorAll(sel))
+  const $$ = (sel, root=document) => Array.from(root.querySelectorAll(sel))
 
   // Elements
   const els = {
@@ -20,7 +20,7 @@
     closeLoginModal: $('#closeLoginModal'),
     
     // Auth tabs
-    authTabs: $('.auth-tab'),
+    authTabs: $$('.auth-tab'),
     emailAuth: $('#emailAuth'),
     spotifyAuth: $('#spotifyAuth'),
     
@@ -42,7 +42,7 @@
     loginError: $('#loginError'),
 
     // Tabs
-    tabs: $('.tab'),
+    tabs: $$('.tab'),
     tabAdd: $('#tab-add'),
     tabMyReviews: $('#tab-my-reviews'),
     tabGlobalFeed: $('#tab-global-feed'),
@@ -95,13 +95,14 @@
     setupEventListeners()
     
     // Check for existing session
-    const { data: { session }, error } = await supabase.auth.getSession()
+    const { data: { session } } = await supabase.auth.getSession()
     if (session?.user) {
       await handleAuthSuccess(session.user)
     } else {
       showLoginPrompt()
     }
   }
+
 
   function setupEventListeners() {
     // Auth modals
@@ -1076,3 +1077,4 @@
   }
 
 })();
+
