@@ -8,7 +8,7 @@
   
   // Utility functions
   const $ = (sel, root=document) => root.querySelector(sel)
-  const $$ = (sel, root=document) => Array.from(root.querySelectorAll(sel))
+  const $ = (sel, root=document) => Array.from(root.querySelectorAll(sel))
 
   // Elements
   const els = {
@@ -20,7 +20,7 @@
     closeLoginModal: $('#closeLoginModal'),
     
     // Auth tabs
-    authTabs: $$('.auth-tab'),
+    authTabs: $('.auth-tab'),
     emailAuth: $('#emailAuth'),
     spotifyAuth: $('#spotifyAuth'),
     
@@ -42,7 +42,7 @@
     loginError: $('#loginError'),
 
     // Tabs
-    tabs: $$('.tab'),
+    tabs: $('.tab'),
     tabAdd: $('#tab-add'),
     tabMyReviews: $('#tab-my-reviews'),
     tabGlobalFeed: $('#tab-global-feed'),
@@ -102,7 +102,6 @@
       showLoginPrompt()
     }
   }
-
 
   function setupEventListeners() {
     // Auth modals
@@ -231,21 +230,20 @@
   }
 
   async function handleSpotifyLogin() {
-  try {
-    const { error } = await supabase.auth.signInWithOAuth({
-      provider: 'spotify',
-      options: {
-        scopes: 'user-read-email user-read-private',
-        redirectTo: 'https://cheery-dango-a6b92b.netlify.app/#' // updated redirect URI
-      }
-    })
-    if (error) throw error
-  } catch (error) {
-    console.error('Spotify login error:', error)
-    showError('Spotify login failed. Please try again.')
+    try {
+      const { error } = await supabase.auth.signInWithOAuth({
+        provider: 'spotify',
+        options: {
+          scopes: 'user-read-email user-read-private',
+          redirectTo: window.location.origin
+        }
+      })
+      if (error) throw error
+    } catch (error) {
+      console.error('Spotify login error:', error)
+      showError('Spotify login failed. Please try again.')
+    }
   }
-}
-
 
   async function handleAuthSuccess(user) {
     currentUser = user
@@ -515,8 +513,11 @@
     results.forEach(item => {
       const div = document.createElement('div')
       div.className = 'search-suggestion'
+      
+      const imgSrc = item.cover && item.cover !== '' ? item.cover : generatePlaceholderImage()
+      
       div.innerHTML = `
-        <img src="${item.cover || generatePlaceholderImage()}" alt="Cover">
+        <img src="${imgSrc}" alt="Cover" onerror="this.src='${generatePlaceholderImage()}'">
         <div class="suggestion-info">
           <div class="suggestion-title">${escapeHtml(item.title)}</div>
           <div class="suggestion-artist">${escapeHtml(item.artist)}</div>
@@ -538,7 +539,13 @@
   function selectMusic(musicData) {
     selectedMusicData = musicData
     
-    els.selectedCover.src = musicData.cover || generatePlaceholderImage()
+    // Handle cover image with fallback
+    const coverSrc = musicData.cover && musicData.cover !== '' ? musicData.cover : generatePlaceholderImage()
+    els.selectedCover.src = coverSrc
+    els.selectedCover.onerror = function() {
+      this.src = generatePlaceholderImage()
+    }
+    
     els.selectedTitle.textContent = musicData.title
     els.selectedArtist.textContent = musicData.artist
     els.selectedType.textContent = musicData.type === 'album' ? 'Album' : 'Single'
@@ -619,34 +626,47 @@
       return
     }
 
+    els.saveBtn.disabled = true
+    els.saveBtn.textContent = 'Saving...'
+
     try {
-      const { error } = await supabase
+      const { data, error } = await supabase
         .from('reviews')
         .insert({
           user_id: currentUser.id,
           title: selectedMusicData.title,
           artist: selectedMusicData.artist,
           album_title: selectedMusicData.album_title || null,
-          cover_url: selectedMusicData.cover,
+          cover_url: selectedMusicData.cover || null,
           spotify_id: selectedMusicData.id,
           spotify_url: selectedMusicData.spotify_url,
           type: selectedMusicData.type,
           score: Math.round(score * 10) / 10,
-          review_text: reviewText,
+          review_text: reviewText || null,
           genres: selectedMusicData.genres || [],
           release_date: selectedMusicData.release_date || null
         })
+        .select()
 
-      if (error) throw error
+      if (error) {
+        console.error('Supabase error:', error)
+        throw error
+      }
 
+      console.log('Review saved successfully:', data)
       alert('Review saved successfully!')
       clearForm()
+      
+      // Reload reviews to show the new one
       await loadMyReviews()
       await loadGlobalReviews()
       
     } catch (error) {
       console.error('Save error:', error)
-      alert('Failed to save review. Please try again.')
+      alert('Failed to save review: ' + error.message)
+    } finally {
+      els.saveBtn.disabled = false
+      els.saveBtn.textContent = '💾 Save Review'
     }
   }
 
@@ -708,7 +728,16 @@
 
       if (error) throw error
 
-      renderReviews(reviews, els.myReviewsList, els.myReviewsEmpty, true)
+      // Process reviews data
+      const processedReviews = reviews.map(review => ({
+        ...review,
+        user: review.profiles || {
+          full_name: currentUser.user_metadata?.full_name || currentUser.email.split('@')[0],
+          avatar_url: currentUser.user_metadata?.avatar_url || els.userAvatar.src
+        }
+      }))
+
+      renderReviews(processedReviews, els.myReviewsList, els.myReviewsEmpty, true)
       
       // Update stats
       els.statsPill.textContent = `${reviews.length} review${reviews.length === 1 ? '' : 's'}`
@@ -761,7 +790,10 @@
         ...review,
         like_count: review.review_likes?.length || 0,
         user_liked: review.review_likes?.some(like => like.user_id === currentUser?.id) || false,
-        user: review.profiles
+        user: review.profiles || {
+          full_name: 'Anonymous',
+          avatar_url: generatePlaceholderImage()
+        }
       }))
 
       // Apply sorting
@@ -795,7 +827,7 @@
   function updateGenreFilter(reviews) {
     const genres = new Set()
     reviews.forEach(review => {
-      if (review.genres) {
+      if (review.genres && Array.isArray(review.genres)) {
         review.genres.forEach(genre => genres.add(genre))
       }
     })
@@ -845,8 +877,12 @@
       </div>
     ` : '<div></div>'
     
+    // Handle cover image with proper fallback
+    const coverUrl = review.cover_url || review.cover
+    const coverSrc = coverUrl && coverUrl !== '' ? coverUrl : generatePlaceholderImage()
+    
     div.innerHTML = `
-      <img src="${review.cover_url || generatePlaceholderImage()}" alt="Cover" class="r-cover">
+      <img src="${coverSrc}" alt="Cover" class="r-cover" onerror="this.src='${generatePlaceholderImage()}'">
       <div>
         <div class="r-title">
           ${review.spotify_url ? `<a href="${review.spotify_url}" target="_blank" rel="noopener">${escapeHtml(review.title)}</a>` : escapeHtml(review.title)}
@@ -866,7 +902,7 @@
         ${review.review_text ? `<div class="r-text">${escapeHtml(review.review_text)}</div>` : ''}
         ${!isPreview && review.user ? `
           <div class="r-user">
-            <img src="${review.user.avatar_url || generatePlaceholderImage()}" alt="User">
+            <img src="${review.user.avatar_url || generatePlaceholderImage()}" alt="User" onerror="this.src='${generatePlaceholderImage()}'">
             <span>by ${escapeHtml(review.user.full_name || 'Anonymous')}</span>
           </div>
         ` : ''}
@@ -1064,19 +1100,21 @@
   function generatePlaceholderImage() {
     return 'data:image/svg+xml;utf8,' + encodeURIComponent(`
       <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 120 120">
-        <rect width="120" height="120" fill="#0a0f17"/>
-        <text x="50%" y="54%" dominant-baseline="middle" text-anchor="middle" 
-              font-family="sans-serif" font-size="12" fill="#7e94b1">no image</text>
+        <rect width="120" height="120" fill="#0f1520"/>
+        <rect x="10" y="10" width="100" height="100" fill="#0b1220" rx="6"/>
+        <text x="60" y="60" dominant-baseline="central" text-anchor="middle" 
+              font-family="Inter, sans-serif" font-size="10" fill="#7e94b1" font-weight="500">
+          No Image
+        </text>
       </svg>
     `)
   }
 
   function escapeHtml(text) {
+    if (typeof text !== 'string') return ''
     const div = document.createElement('div')
     div.textContent = text
     return div.innerHTML
   }
 
 })();
-
-
