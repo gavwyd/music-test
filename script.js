@@ -1,4 +1,212 @@
-(function(){
+function clearForm() {
+    els.musicSearch.value = ''
+    els.score.value = 7
+    els.scoreOut.textContent = '7.00'
+    els.manualScore.value = ''
+    els.review.value = ''
+    els.selectedMusic.style.display = 'none'
+    els.searchSuggestions.style.display = 'none'
+    selectedMusicData = null
+    updatePreview()
+  }
+
+  // Reviews Loading
+  async function loadMyReviews() {
+    if (!currentUser) return
+
+    try {
+      els.myReviewsEmpty.style.display = 'none'
+      els.myReviewsList.innerHTML = '<div class="loading"><div class="spinner"></div><span>Loading reviews...</span></div>'
+
+      const searchQuery = els.mySearch.value.trim().toLowerCase()
+      const sortBy = els.mySortBy.value
+
+      let query = supabase
+        .from('reviews')
+        .select(`
+          *,
+          profiles:user_id (
+            username,
+            full_name,
+            avatar_url
+          )
+        `)
+        .eq('user_id', currentUser.id)
+
+      if (searchQuery) {
+        query = query.or(`title.ilike.%${searchQuery}%,artist.ilike.%${searchQuery}%,review_text.ilike.%${searchQuery}%`)
+      }
+
+      switch (sortBy) {
+        case 'date-asc':
+          query = query.order('created_at', { ascending: true })
+          break
+        case 'score-desc':
+          query = query.order('score', { ascending: false })
+          break
+        case 'score-asc':
+          query = query.order('score', { ascending: true })
+          break
+        case 'title-asc':
+          query = query.order('title', { ascending: true })
+          break
+        default:
+          query = query.order('created_at', { ascending: false })
+      }
+
+      const { data: reviews, error } = await query
+
+      if (error) throw error
+
+      const processedReviews = reviews.map(review => ({
+        ...review,
+        user: review.profiles || currentUserProfile || {
+          username: currentUser.email?.split('@')[0] || 'User',
+          full_name: currentUser.email?.split('@')[0] || 'User',
+          avatar_url: generatePlaceholderImage()
+        }
+      }))
+
+      renderReviews(processedReviews, els.myReviewsList, els.myReviewsEmpty, true)
+      
+      els.statsPill.textContent = `${reviews.length} review${reviews.length === 1 ? '' : 's'}`
+
+    } catch (error) {
+      console.error('Error loading my reviews:', error)
+      els.myReviewsList.innerHTML = ''
+      els.myReviewsEmpty.style.display = ''
+      els.myReviewsEmpty.textContent = 'Error loading reviews: ' + error.message
+    }
+  }
+
+  async function loadGlobalReviews() {
+    try {
+      els.globalReviewsEmpty.style.display = 'none'
+      els.globalReviewsList.innerHTML = '<div class="loading"><div class="spinner"></div><span>Loading reviews...</span></div>'
+
+      const searchQuery = els.globalSearch.value.trim().toLowerCase()
+      const sortBy = els.globalSortBy.value
+      const typeFilter = els.globalTypeFilter.value
+      const genreFilter = els.globalGenreFilter.value
+
+      let query = supabase
+        .from('reviews')
+        .select(`
+          *,
+          profiles:user_id (
+            username,
+            full_name,
+            avatar_url
+          ),
+          review_likes (
+            id,
+            user_id
+          )
+        `)
+
+      if (searchQuery) {
+        query = query.or(`title.ilike.%${searchQuery}%,artist.ilike.%${searchQuery}%,review_text.ilike.%${searchQuery}%`)
+      }
+
+      if (typeFilter !== 'all') {
+        query = query.eq('type', typeFilter)
+      }
+
+      if (genreFilter !== 'all') {
+        query = query.contains('genres', [genreFilter])
+      }
+
+      const { data: reviews, error } = await query
+
+      if (error) throw error
+
+      const processedReviews = reviews.map(review => ({
+        ...review,
+        like_count: review.review_likes?.length || 0,
+        user_liked: review.review_likes?.some(like => like.user_id === currentUser?.id) || false,
+        user: review.profiles || {
+          username: 'Anonymous',
+          full_name: 'Anonymous',
+          avatar_url: generatePlaceholderImage()
+        }
+      }))
+
+      // Apply sorting
+      switch (sortBy) {
+        case 'likes-desc':
+          processedReviews.sort((a, b) => b.like_count - a.like_count)
+          break
+        case 'score-desc':
+          processedReviews.sort((a, b) => b.score - a.score)
+          break
+        case 'score-asc':
+          processedReviews.sort((a, b) => a.score - b.score)
+          break
+        default:
+          processedReviews.sort((a, b) => new Date(b.created_at) - new Date(a.created_at))
+      }
+
+      renderReviews(processedReviews, els.globalReviewsList, els.globalReviewsEmpty, false)
+      
+      els.globalCount.textContent = `${processedReviews.length} review${processedReviews.length === 1 ? '' : 's'}`
+
+      updateGenreFilter(processedReviews)
+
+    } catch (error) {
+      console.error('Error loading global reviews:', error)
+      els.globalReviewsList.innerHTML = ''
+      els.globalReviewsEmpty.style.display = ''
+      els.globalReviewsEmpty.textContent = 'Error loading reviews: ' + error.message
+    }
+  }
+
+  function updateGenreFilter(reviews) {
+    const genres = new Set()
+    reviews.forEach(review => {
+      if (review.genres && Array.isArray(review.genres)) {
+        review.genres.forEach(genre => genres.add(genre))
+      }
+    })
+
+    const currentValue = els.globalGenreFilter.value
+    els.globalGenreFilter.innerHTML = '<option value="all">All genres</option>'
+    
+    Array.from(genres).sort().forEach(genre => {
+      const option = document.createElement('option')
+      option.value = genre
+      option.textContent = genre
+      els.globalGenreFilter.appendChild(option)
+    })
+
+    els.globalGenreFilter.value = currentValue
+  }
+
+  // Review Rendering
+  function renderReviews(reviews, listEl, emptyEl, showActions) {
+    listEl.innerHTML = ''
+    
+    if (reviews.length === 0) {
+      emptyEl.style.display = ''
+      return
+    }
+    
+    emptyEl.style.display = 'none'
+    
+    const fragment = document.createDocumentFragment()
+    reviews.forEach(review => {
+      fragment.appendChild(createReviewCard(review, showActions))
+    })
+    
+    listEl.appendChild(fragment)
+  }
+
+  function createReviewCard(review, showActions = false, isPreview = false) {
+    const div = document.createElement('div')
+    div.className = 'r-card'
+    
+    const likeSection = !isPreview ? `
+      <div class="like-section">
+        <button class="like-btn ${review.user_liked ? 'like(function(){
   // Configuration
   const SUPABASE_URL = 'https://qfvhzaxuocbtpinrjyqp.supabase.co'
   const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InFmdmh6YXh1b2NidHBpbnJqeXFwIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTU5NzEzMjAsImV4cCI6MjA3MTU0NzMyMH0.Xn9_ZY6OM59xgUnb_Rc29go5sO1OdK4DIiFvpqQatDE'
@@ -20,6 +228,8 @@
     // Email auth
     loginEmail: $('#loginEmail'),
     loginPassword: $('#loginPassword'),
+    loginUsername: $('#loginUsername'),
+    usernameGroup: $('#usernameGroup'),
     emailLoginBtn: $('#emailLoginBtn'),
     emailRegisterBtn: $('#emailRegisterBtn'),
     
@@ -36,6 +246,8 @@
     tabAdd: $('#tab-add'),
     tabMyReviews: $('#tab-my-reviews'),
     tabGlobalFeed: $('#tab-global-feed'),
+    tabProfile: $('#tab-profile'),
+    tabUserProfile: $('#tab-user-profile'),
     tabAbout: $('#tab-about'),
 
     // Add Review
@@ -73,18 +285,44 @@
     globalReviewsEmpty: $('#globalReviewsEmpty'),
     globalCount: $('#globalCount'),
 
+    // Profile
+    profileAvatar: $('#profileAvatar'),
+    avatarUpload: $('#avatarUpload'),
+    changeAvatarBtn: $('#changeAvatarBtn'),
+    profileUsername: $('#profileUsername'),
+    saveUsernameBtn: $('#saveUsernameBtn'),
+    usernameHint: $('#usernameHint'),
+    profileBio: $('#profileBio'),
+    saveBioBtn: $('#saveBioBtn'),
+
+    // User Profile View
+    userProfileName: $('#userProfileName'),
+    backToFeed: $('#backToFeed'),
+    userProfileContent: $('#userProfileContent'),
+
     // Share Modal
     shareModal: $('#shareModal'),
     closeShareModal: $('#closeShareModal'),
     shareLink: $('#shareLink'),
     copyLinkBtn: $('#copyLinkBtn'),
-    copySuccess: $('#copySuccess')
+    copySuccess: $('#copySuccess'),
+
+    // Comments Modal
+    commentsModal: $('#commentsModal'),
+    closeCommentsModal: $('#closeCommentsModal'),
+    reviewDetails: $('#reviewDetails'),
+    newComment: $('#newComment'),
+    submitComment: $('#submitComment'),
+    commentsList: $('#commentsList')
   }
 
   let currentUser = null
+  let currentUserProfile = null
   let selectedMusicData = null
   let spotifyToken = null
   let searchTimeout = null
+  let currentReviewForComments = null
+  let isRegisterMode = false
 
   // Initialize
   init()
@@ -135,12 +373,33 @@
     els.globalTypeFilter.addEventListener('change', loadGlobalReviews)
     els.globalGenreFilter.addEventListener('change', loadGlobalReviews)
 
+    // Profile
+    els.changeAvatarBtn.addEventListener('click', () => els.avatarUpload.click())
+    els.avatarUpload.addEventListener('change', handleAvatarUpload)
+    els.profileUsername.addEventListener('input', handleUsernameChange)
+    els.saveUsernameBtn.addEventListener('click', saveUsername)
+    els.saveBioBtn.addEventListener('click', saveBio)
+
+    // User Profile View
+    els.backToFeed.addEventListener('click', () => switchTab('global-feed'))
+
+    // User avatar/name clicks
+    els.userAvatar.addEventListener('click', () => switchTab('profile'))
+    els.currentUser.addEventListener('click', () => switchTab('profile'))
+
     // Share Modal
     els.closeShareModal.addEventListener('click', hideShareModal)
     els.shareModal.addEventListener('click', (e) => {
       if (e.target === els.shareModal) hideShareModal()
     })
     els.copyLinkBtn.addEventListener('click', copyShareLink)
+
+    // Comments Modal
+    els.closeCommentsModal.addEventListener('click', hideCommentsModal)
+    els.commentsModal.addEventListener('click', (e) => {
+      if (e.target === els.commentsModal) hideCommentsModal()
+    })
+    els.submitComment.addEventListener('click', submitComment)
 
     // Auth state changes
     supabase.auth.onAuthStateChange((event, session) => {
@@ -153,6 +412,34 @@
 
     // Check for shared profile URL
     checkForSharedProfile()
+
+    // Register mode toggle
+    els.emailRegisterBtn.addEventListener('click', (e) => {
+      e.preventDefault()
+      if (!isRegisterMode) {
+        toggleRegisterMode(true)
+      } else {
+        handleEmailRegister()
+      }
+    })
+  }
+
+  function toggleRegisterMode(enabled) {
+    isRegisterMode = enabled
+    if (enabled) {
+      els.usernameGroup.style.display = 'block'
+      els.emailRegisterBtn.textContent = 'Create Account'
+      els.emailLoginBtn.style.display = 'none'
+    } else {
+      els.usernameGroup.style.display = 'none'
+      els.emailRegisterBtn.innerHTML = `
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
+          <path d="M19 13H13V19H11V13H5V11H11V5H13V11H19V13Z"/>
+        </svg>
+        Create Account
+      `
+      els.emailLoginBtn.style.display = 'block'
+    }
   }
 
   // Authentication
@@ -188,9 +475,15 @@
   async function handleEmailRegister() {
     const email = els.loginEmail.value.trim()
     const password = els.loginPassword.value.trim()
+    const username = els.loginUsername.value.trim()
 
     if (!email || !password) {
       showError('Please enter both email and password')
+      return
+    }
+
+    if (!username) {
+      showError('Please enter a username')
       return
     }
 
@@ -199,16 +492,38 @@
       return
     }
 
+    // Validate username
+    if (username.length < 3 || username.length > 20) {
+      showError('Username must be between 3 and 20 characters')
+      return
+    }
+
+    if (!/^[a-zA-Z0-9_]+$/.test(username)) {
+      showError('Username can only contain letters, numbers, and underscores')
+      return
+    }
+
     try {
       els.emailRegisterBtn.disabled = true
       els.emailRegisterBtn.textContent = 'Creating account...'
       
+      // Check if username is available
+      const { data: existingUser, error: checkError } = await supabase
+        .from('profiles')
+        .select('username')
+        .eq('username', username)
+        .single()
+
+      if (existingUser) {
+        throw new Error('Username is already taken')
+      }
+
       const { error } = await supabase.auth.signUp({ 
         email, 
         password,
         options: {
           data: {
-            full_name: email.split('@')[0]
+            username: username
           }
         }
       })
@@ -218,26 +533,24 @@
       showError(error.message)
     } finally {
       els.emailRegisterBtn.disabled = false
-      els.emailRegisterBtn.innerHTML = `
-        <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
-          <path d="M19 13H13V19H11V13H5V11H11V5H13V11H19V13Z"/>
-        </svg>
-        Create Account
-      `
+      els.emailRegisterBtn.textContent = 'Create Account'
     }
   }
 
   async function handleAuthSuccess(user) {
     currentUser = user
     
-    // Create or update profile with proper user_id
-    const { error: profileError } = await supabase
+    // Create or update profile
+    const username = user.user_metadata?.username || user.email?.split('@')[0] || 'User'
+    const { data: profile, error: profileError } = await supabase
       .from('profiles')
       .upsert({
-        id: user.id,  // This is crucial - user.id becomes the primary key
-        username: user.user_metadata?.full_name || user.email?.split('@')[0] || 'User',
-        full_name: user.user_metadata?.full_name || user.email?.split('@')[0] || 'User',
-        avatar_url: user.user_metadata?.avatar_url || `https://ui-avatars.com/api/?name=${encodeURIComponent(user.email || 'User')}&background=4da3ff&color=fff`
+        id: user.id,
+        username: username,
+        full_name: username,
+        avatar_url: user.user_metadata?.avatar_url || `https://ui-avatars.com/api/?name=${encodeURIComponent(username)}&background=4da3ff&color=fff`,
+        bio: '',
+        last_username_change: null
       }, {
         onConflict: 'id'
       })
@@ -246,19 +559,44 @@
       console.error('Profile creation error:', profileError)
     } else {
       console.log('Profile created/updated successfully for user:', user.id)
+      currentUserProfile = profile?.[0] || {
+        id: user.id,
+        username: username,
+        full_name: username,
+        avatar_url: user.user_metadata?.avatar_url || `https://ui-avatars.com/api/?name=${encodeURIComponent(username)}&background=4da3ff&color=fff`,
+        bio: '',
+        last_username_change: null
+      }
+    }
+
+    // Load current profile data
+    try {
+      const { data: currentProfile } = await supabase
+        .from('profiles')
+        .select('*')
+        .eq('id', user.id)
+        .single()
+      
+      if (currentProfile) {
+        currentUserProfile = currentProfile
+      }
+    } catch (error) {
+      console.error('Error loading profile:', error)
     }
 
     // Update UI
-    const displayName = user.user_metadata?.full_name || user.email?.split('@')[0] || 'User'
-    const avatarUrl = user.user_metadata?.avatar_url || `https://ui-avatars.com/api/?name=${encodeURIComponent(user.email || 'User')}&background=4da3ff&color=fff`
+    const displayName = currentUserProfile?.username || username
+    const avatarUrl = currentUserProfile?.avatar_url || `https://ui-avatars.com/api/?name=${encodeURIComponent(displayName)}&background=4da3ff&color=fff`
     
     els.currentUser.textContent = displayName
     els.userAvatar.src = avatarUrl
     
     showMainApp()
     await getSpotifyToken()
-    await loadMyReviews()
+    switchTab('global-feed') // Start on global feed instead of add review
     await loadGlobalReviews()
+    await loadMyReviews()
+    updateProfileForm()
   }
 
   async function handleLogout() {
@@ -286,8 +624,10 @@
     els.userBar.style.display = 'none'
     els.loadingApp.style.display = 'none'
     currentUser = null
+    currentUserProfile = null
     selectedMusicData = null
     spotifyToken = null
+    toggleRegisterMode(false)
   }
 
   function showMainApp() {
@@ -299,11 +639,14 @@
 
   function switchTab(tab) {
     els.tabs.forEach(t => t.classList.remove('active'))
-    els.tabs.find(t => t.dataset.tab === tab).classList.add('active')
+    const activeTab = els.tabs.find(t => t.dataset.tab === tab)
+    if (activeTab) activeTab.classList.add('active')
     
     els.tabAdd.style.display = 'none'
     els.tabMyReviews.style.display = 'none'
     els.tabGlobalFeed.style.display = 'none'
+    els.tabProfile.style.display = 'none'
+    els.tabUserProfile.style.display = 'none'
     els.tabAbout.style.display = 'none'
     
     switch(tab) {
@@ -318,9 +661,184 @@
         els.tabGlobalFeed.style.display = ''
         loadGlobalReviews()
         break
+      case 'profile':
+        els.tabProfile.style.display = ''
+        updateProfileForm()
+        break
+      case 'user-profile':
+        els.tabUserProfile.style.display = ''
+        break
       case 'about':
         els.tabAbout.style.display = ''
         break
+    }
+  }
+
+  // Profile Management
+  function updateProfileForm() {
+    if (!currentUserProfile) return
+
+    els.profileAvatar.src = currentUserProfile.avatar_url || generatePlaceholderImage()
+    els.profileUsername.value = currentUserProfile.username || ''
+    els.profileBio.value = currentUserProfile.bio || ''
+
+    // Check if username can be changed
+    const lastChange = currentUserProfile.last_username_change
+    const canChangeUsername = !lastChange || (Date.now() - new Date(lastChange).getTime()) > (3 * 24 * 60 * 60 * 1000)
+    
+    els.saveUsernameBtn.disabled = !canChangeUsername
+    els.usernameHint.textContent = canChangeUsername ? 
+      'You can change your username every 3 days' : 
+      'You can change your username again in a few days'
+  }
+
+  function handleUsernameChange() {
+    const newUsername = els.profileUsername.value.trim()
+    const isValid = newUsername.length >= 3 && newUsername.length <= 20 && /^[a-zA-Z0-9_]+$/.test(newUsername)
+    const isDifferent = newUsername !== currentUserProfile?.username
+    
+    els.saveUsernameBtn.disabled = !isValid || !isDifferent || 
+      (currentUserProfile?.last_username_change && 
+       (Date.now() - new Date(currentUserProfile.last_username_change).getTime()) < (3 * 24 * 60 * 60 * 1000))
+  }
+
+  async function saveUsername() {
+    const newUsername = els.profileUsername.value.trim()
+    
+    if (newUsername.length < 3 || newUsername.length > 20) {
+      alert('Username must be between 3 and 20 characters')
+      return
+    }
+
+    if (!/^[a-zA-Z0-9_]+$/.test(newUsername)) {
+      alert('Username can only contain letters, numbers, and underscores')
+      return
+    }
+
+    try {
+      els.saveUsernameBtn.disabled = true
+      els.saveUsernameBtn.textContent = 'Saving...'
+
+      // Check if username is available
+      const { data: existingUser } = await supabase
+        .from('profiles')
+        .select('username')
+        .eq('username', newUsername)
+        .neq('id', currentUser.id)
+        .single()
+
+      if (existingUser) {
+        alert('Username is already taken')
+        return
+      }
+
+      const { error } = await supabase
+        .from('profiles')
+        .update({
+          username: newUsername,
+          full_name: newUsername,
+          last_username_change: new Date().toISOString()
+        })
+        .eq('id', currentUser.id)
+
+      if (error) throw error
+
+      currentUserProfile.username = newUsername
+      currentUserProfile.full_name = newUsername
+      currentUserProfile.last_username_change = new Date().toISOString()
+
+      els.currentUser.textContent = newUsername
+      alert('Username updated successfully!')
+      updateProfileForm()
+
+    } catch (error) {
+      console.error('Error updating username:', error)
+      alert('Failed to update username: ' + error.message)
+    } finally {
+      els.saveUsernameBtn.disabled = false
+      els.saveUsernameBtn.textContent = 'Save'
+    }
+  }
+
+  async function saveBio() {
+    const newBio = els.profileBio.value.trim()
+
+    try {
+      els.saveBioBtn.disabled = true
+      els.saveBioBtn.textContent = 'Saving...'
+
+      const { error } = await supabase
+        .from('profiles')
+        .update({ bio: newBio })
+        .eq('id', currentUser.id)
+
+      if (error) throw error
+
+      currentUserProfile.bio = newBio
+      alert('Bio updated successfully!')
+
+    } catch (error) {
+      console.error('Error updating bio:', error)
+      alert('Failed to update bio: ' + error.message)
+    } finally {
+      els.saveBioBtn.disabled = false
+      els.saveBioBtn.textContent = 'Save Bio'
+    }
+  }
+
+  async function handleAvatarUpload(e) {
+    const file = e.target.files[0]
+    if (!file) return
+
+    if (file.size > 5 * 1024 * 1024) { // 5MB limit
+      alert('File size must be less than 5MB')
+      return
+    }
+
+    if (!file.type.startsWith('image/')) {
+      alert('Please select an image file')
+      return
+    }
+
+    try {
+      els.changeAvatarBtn.disabled = true
+      els.changeAvatarBtn.textContent = 'Uploading...'
+
+      // Upload to Supabase Storage
+      const fileExt = file.name.split('.').pop()
+      const fileName = `${currentUser.id}-${Date.now()}.${fileExt}`
+      
+      const { data, error: uploadError } = await supabase.storage
+        .from('avatars')
+        .upload(fileName, file)
+
+      if (uploadError) throw uploadError
+
+      // Get public URL
+      const { data: { publicUrl } } = supabase.storage
+        .from('avatars')
+        .getPublicUrl(fileName)
+
+      // Update profile
+      const { error: updateError } = await supabase
+        .from('profiles')
+        .update({ avatar_url: publicUrl })
+        .eq('id', currentUser.id)
+
+      if (updateError) throw updateError
+
+      currentUserProfile.avatar_url = publicUrl
+      els.profileAvatar.src = publicUrl
+      els.userAvatar.src = publicUrl
+      
+      alert('Profile picture updated successfully!')
+
+    } catch (error) {
+      console.error('Error uploading avatar:', error)
+      alert('Failed to update profile picture: ' + error.message)
+    } finally {
+      els.changeAvatarBtn.disabled = false
+      els.changeAvatarBtn.textContent = 'Change Photo'
     }
   }
 
@@ -557,16 +1075,16 @@
   // Form Handling
   function updateScoreDisplay() {
     const value = parseFloat(els.score.value)
-    els.scoreOut.textContent = value.toFixed(1)
+    els.scoreOut.textContent = value.toFixed(2)
     els.manualScore.value = ''
     updatePreview()
   }
 
   function handleManualScoreInput() {
     const value = parseFloat(els.manualScore.value)
-    if (!isNaN(value) && value >= 0.5 && value <= 10) {
+    if (!isNaN(value) && value >= 0 && value <= 10) {
       els.score.value = value
-      els.scoreOut.textContent = value.toFixed(1)
+      els.scoreOut.textContent = value.toFixed(2)
       updatePreview()
     }
   }
@@ -585,12 +1103,12 @@
 
     const previewData = {
       ...selectedMusicData,
-      score: Math.round(score * 10) / 10,
+      score: Math.round(score * 100) / 100,
       review_text: reviewText,
       created_at: new Date().toISOString(),
       user: { 
-        full_name: currentUser?.user_metadata?.full_name || currentUser?.email?.split('@')[0] || 'User',
-        avatar_url: currentUser?.user_metadata?.avatar_url || els.userAvatar?.src
+        full_name: currentUserProfile?.username || currentUser?.email?.split('@')[0] || 'User',
+        avatar_url: currentUserProfile?.avatar_url || els.userAvatar?.src
       }
     }
 
@@ -615,8 +1133,8 @@
     
     const reviewText = els.review.value.trim()
 
-    if (score < 0.5 || score > 10) {
-      alert('Score must be between 0.5 and 10.0')
+    if (score < 0 || score > 10) {
+      alert('Score must be between 0 and 10.00')
       return
     }
 
@@ -624,9 +1142,8 @@
     els.saveBtn.textContent = 'Saving...'
 
     try {
-      // Ensure user_id is explicitly set
       const reviewData = {
-        user_id: currentUser.id, // This is critical for the foreign key relationship
+        user_id: currentUser.id,
         title: selectedMusicData.title,
         artist: selectedMusicData.artist,
         album_title: selectedMusicData.album_title || null,
@@ -634,7 +1151,7 @@
         spotify_id: selectedMusicData.id,
         spotify_url: selectedMusicData.spotify_url,
         type: selectedMusicData.type,
-        score: Math.round(score * 10) / 10,
+        score: Math.round(score * 100) / 100,
         review_text: reviewText || null,
         genres: selectedMusicData.genres || [],
         release_date: selectedMusicData.release_date || null
@@ -674,7 +1191,7 @@
   function clearForm() {
     els.musicSearch.value = ''
     els.score.value = 7
-    els.scoreOut.textContent = '7.0'
+    els.scoreOut.textContent = '7.00'
     els.manualScore.value = ''
     els.review.value = ''
     els.selectedMusic.style.display = 'none'
@@ -682,583 +1199,3 @@
     selectedMusicData = null
     updatePreview()
   }
-
-  // Reviews Loading - Fixed Supabase queries
-  async function loadMyReviews() {
-    if (!currentUser) return
-
-    try {
-      els.myReviewsEmpty.style.display = 'none'
-      els.myReviewsList.innerHTML = '<div class="loading"><div class="spinner"></div><span>Loading reviews...</span></div>'
-
-      const searchQuery = els.mySearch.value.trim().toLowerCase()
-      const sortBy = els.mySortBy.value
-
-      // Use explicit join with profiles table
-      let query = supabase
-        .from('reviews')
-        .select(`
-          *,
-          profiles:user_id (
-            full_name,
-            avatar_url
-          )
-        `)
-        .eq('user_id', currentUser.id)
-
-      // Apply search filter
-      if (searchQuery) {
-        query = query.or(`title.ilike.%${searchQuery}%,artist.ilike.%${searchQuery}%,review_text.ilike.%${searchQuery}%`)
-      }
-
-      // Apply sorting
-      switch (sortBy) {
-        case 'date-asc':
-          query = query.order('created_at', { ascending: true })
-          break
-        case 'score-desc':
-          query = query.order('score', { ascending: false })
-          break
-        case 'score-asc':
-          query = query.order('score', { ascending: true })
-          break
-        case 'title-asc':
-          query = query.order('title', { ascending: true })
-          break
-        default:
-          query = query.order('created_at', { ascending: false })
-      }
-
-      const { data: reviews, error } = await query
-
-      if (error) {
-        console.error('My reviews error:', error)
-        throw error
-      }
-
-      console.log('My reviews loaded:', reviews?.length || 0)
-
-      // Process reviews data
-      const processedReviews = reviews.map(review => ({
-        ...review,
-        user: review.profiles || {
-          full_name: currentUser.user_metadata?.full_name || currentUser.email?.split('@')[0] || 'User',
-          avatar_url: currentUser.user_metadata?.avatar_url || `https://ui-avatars.com/api/?name=${encodeURIComponent(currentUser.email || 'User')}&background=4da3ff&color=fff`
-        }
-      }))
-
-      renderReviews(processedReviews, els.myReviewsList, els.myReviewsEmpty, true)
-      
-      // Update stats
-      els.statsPill.textContent = `${reviews.length} review${reviews.length === 1 ? '' : 's'}`
-
-    } catch (error) {
-      console.error('Error loading my reviews:', error)
-      els.myReviewsList.innerHTML = ''
-      els.myReviewsEmpty.style.display = ''
-      els.myReviewsEmpty.textContent = 'Error loading reviews: ' + error.message
-    }
-  }
-
-  async function loadGlobalReviews() {
-    try {
-      els.globalReviewsEmpty.style.display = 'none'
-      els.globalReviewsList.innerHTML = '<div class="loading"><div class="spinner"></div><span>Loading reviews...</span></div>'
-
-      const searchQuery = els.globalSearch.value.trim().toLowerCase()
-      const sortBy = els.globalSortBy.value
-      const typeFilter = els.globalTypeFilter.value
-      const genreFilter = els.globalGenreFilter.value
-
-      // Use explicit join syntax
-      let query = supabase
-        .from('reviews')
-        .select(`
-          *,
-          profiles:user_id (
-            full_name,
-            avatar_url
-          ),
-          review_likes (
-            id,
-            user_id
-          )
-        `)
-
-      // Apply filters
-      if (searchQuery) {
-        query = query.or(`title.ilike.%${searchQuery}%,artist.ilike.%${searchQuery}%,review_text.ilike.%${searchQuery}%`)
-      }
-
-      if (typeFilter !== 'all') {
-        query = query.eq('type', typeFilter)
-      }
-
-      if (genreFilter !== 'all') {
-        query = query.contains('genres', [genreFilter])
-      }
-
-      const { data: reviews, error } = await query
-
-      if (error) {
-        console.error('Global reviews error:', error)
-        throw error
-      }
-
-      console.log('Global reviews loaded:', reviews?.length || 0)
-
-      // Process likes and sorting
-      const processedReviews = reviews.map(review => ({
-        ...review,
-        like_count: review.review_likes?.length || 0,
-        user_liked: review.review_likes?.some(like => like.user_id === currentUser?.id) || false,
-        user: review.profiles || {
-          full_name: 'Anonymous',
-          avatar_url: generatePlaceholderImage()
-        }
-      }))
-
-      // Apply sorting
-      switch (sortBy) {
-        case 'likes-desc':
-          processedReviews.sort((a, b) => b.like_count - a.like_count)
-          break
-        case 'score-desc':
-          processedReviews.sort((a, b) => b.score - a.score)
-          break
-        case 'score-asc':
-          processedReviews.sort((a, b) => a.score - b.score)
-          break
-        default:
-          processedReviews.sort((a, b) => new Date(b.created_at) - new Date(a.created_at))
-      }
-
-      renderReviews(processedReviews, els.globalReviewsList, els.globalReviewsEmpty, false)
-      
-      // Update count
-      els.globalCount.textContent = `${processedReviews.length} review${processedReviews.length === 1 ? '' : 's'}`
-
-      // Update genre filter options
-      updateGenreFilter(processedReviews)
-
-    } catch (error) {
-      console.error('Error loading global reviews:', error)
-      els.globalReviewsList.innerHTML = ''
-      els.globalReviewsEmpty.style.display = ''
-      els.globalReviewsEmpty.textContent = 'Error loading reviews: ' + error.message
-    }
-  }
-
-  function updateGenreFilter(reviews) {
-    const genres = new Set()
-    reviews.forEach(review => {
-      if (review.genres && Array.isArray(review.genres)) {
-        review.genres.forEach(genre => genres.add(genre))
-      }
-    })
-
-    const currentValue = els.globalGenreFilter.value
-    els.globalGenreFilter.innerHTML = '<option value="all">All genres</option>'
-    
-    Array.from(genres).sort().forEach(genre => {
-      const option = document.createElement('option')
-      option.value = genre
-      option.textContent = genre
-      els.globalGenreFilter.appendChild(option)
-    })
-
-    els.globalGenreFilter.value = currentValue
-  }
-
-  // Review Rendering
-  function renderReviews(reviews, listEl, emptyEl, showActions) {
-    listEl.innerHTML = ''
-    
-    if (reviews.length === 0) {
-      emptyEl.style.display = ''
-      return
-    }
-    
-    emptyEl.style.display = 'none'
-    
-    const fragment = document.createDocumentFragment()
-    reviews.forEach(review => {
-      fragment.appendChild(createReviewCard(review, showActions))
-    })
-    
-    listEl.appendChild(fragment)
-  }
-
-  function createReviewCard(review, showActions = false, isPreview = false) {
-    const div = document.createElement('div')
-    div.className = 'r-card'
-    
-    const likeSection = !isPreview ? `
-      <div class="like-section">
-        <button class="like-btn ${review.user_liked ? 'liked' : ''}" data-review-id="${review.id}" ${!currentUser ? 'disabled' : ''}>
-          ${review.user_liked ? '❤️' : '🤍'}
-        </button>
-        <div class="like-count">${review.like_count || 0}</div>
-      </div>
-    ` : '<div></div>'
-    
-    // Handle cover image with proper fallback
-    const coverUrl = review.cover_url || review.cover
-    const coverSrc = coverUrl && coverUrl !== '' ? coverUrl : generatePlaceholderImage()
-    
-    div.innerHTML = `
-      <img src="${coverSrc}" alt="Cover" class="r-cover" onerror="this.src='${generatePlaceholderImage()}'">
-      <div>
-        <div class="r-title">
-          ${review.spotify_url ? `<a href="${review.spotify_url}" target="_blank" rel="noopener">${escapeHtml(review.title)}</a>` : escapeHtml(review.title)}
-        </div>
-        <div class="r-artist">${escapeHtml(review.artist)}</div>
-        ${review.album_title && review.type === 'track' ? `<div class="r-artist">from ${escapeHtml(review.album_title)}</div>` : ''}
-        <div class="r-meta">
-          <span class="score">${review.score}/10</span>
-          <span class="tag">${review.type === 'album' ? 'Album' : 'Single'}</span>
-          <span class="time">${new Date(review.created_at).toLocaleDateString()}</span>
-        </div>
-        ${review.genres && review.genres.length > 0 ? `
-          <div class="genre-list">
-            ${review.genres.map(genre => `<span class="genre-tag">${escapeHtml(genre)}</span>`).join('')}
-          </div>
-        ` : ''}
-        ${review.review_text ? `<div class="r-text">${escapeHtml(review.review_text)}</div>` : ''}
-        ${!isPreview && review.user ? `
-          <div class="r-user">
-            <img src="${review.user.avatar_url || generatePlaceholderImage()}" alt="User" onerror="this.src='${generatePlaceholderImage()}'">
-            <span>by ${escapeHtml(review.user.full_name || 'Anonymous')}</span>
-          </div>
-        ` : ''}
-        ${showActions ? `
-          <div class="toolbar">
-            <button class="btn ghost small edit-btn" data-review-id="${review.id}">✏️ Edit</button>
-            <button class="btn danger small delete-btn" data-review-id="${review.id}">🗑️ Delete</button>
-          </div>
-        ` : ''}
-      </div>
-      ${likeSection}
-    `
-
-    // Add event listeners
-    if (!isPreview) {
-      const likeBtn = div.querySelector('.like-btn')
-      if (likeBtn && currentUser) {
-        likeBtn.addEventListener('click', () => toggleLike(review.id, likeBtn))
-      }
-    }
-
-    if (showActions) {
-      const editBtn = div.querySelector('.edit-btn')
-      const deleteBtn = div.querySelector('.delete-btn')
-      
-      if (editBtn) {
-        editBtn.addEventListener('click', () => editReview(review.id))
-      }
-      
-      if (deleteBtn) {
-        deleteBtn.addEventListener('click', () => deleteReview(review.id))
-      }
-    }
-
-    return div
-  }
-
-  // Like System
-  async function toggleLike(reviewId, likeBtn) {
-    if (!currentUser) return
-
-    try {
-      const isLiked = likeBtn.classList.contains('liked')
-      
-      if (isLiked) {
-        // Unlike
-        const { error } = await supabase
-          .from('review_likes')
-          .delete()
-          .eq('review_id', reviewId)
-          .eq('user_id', currentUser.id)
-        
-        if (error) throw error
-        
-        likeBtn.classList.remove('liked')
-        likeBtn.textContent = '🤍'
-        
-        const countEl = likeBtn.parentNode.querySelector('.like-count')
-        const currentCount = parseInt(countEl.textContent)
-        countEl.textContent = Math.max(0, currentCount - 1)
-        
-      } else {
-        // Like
-        const { error } = await supabase
-          .from('review_likes')
-          .insert({
-            review_id: reviewId,
-            user_id: currentUser.id
-          })
-        
-        if (error) throw error
-        
-        likeBtn.classList.add('liked')
-        likeBtn.textContent = '❤️'
-        
-        const countEl = likeBtn.parentNode.querySelector('.like-count')
-        const currentCount = parseInt(countEl.textContent)
-        countEl.textContent = currentCount + 1
-      }
-      
-    } catch (error) {
-      console.error('Error toggling like:', error)
-    }
-  }
-
-  // Review Actions
-  async function editReview(reviewId) {
-    try {
-      const { data: review, error } = await supabase
-        .from('reviews')
-        .select('*')
-        .eq('id', reviewId)
-        .single()
-
-      if (error) throw error
-
-      // Switch to add tab
-      switchTab('add')
-
-      // Populate form with review data
-      const musicData = {
-        id: review.spotify_id,
-        type: review.type,
-        title: review.title,
-        artist: review.artist,
-        album_title: review.album_title,
-        cover: review.cover_url,
-        spotify_url: review.spotify_url,
-        genres: review.genres || []
-      }
-
-      selectMusic(musicData)
-      els.score.value = review.score
-      els.scoreOut.textContent = review.score.toFixed(1)
-      els.review.value = review.review_text || ''
-      updatePreview()
-
-      // Delete the original review
-      await supabase
-        .from('reviews')
-        .delete()
-        .eq('id', reviewId)
-
-      await loadMyReviews()
-      await loadGlobalReviews()
-
-    } catch (error) {
-      console.error('Error editing review:', error)
-      alert('Failed to edit review. Please try again.')
-    }
-  }
-
-  async function deleteReview(reviewId) {
-    if (!confirm('Are you sure you want to delete this review?')) return
-
-    try {
-      const { error } = await supabase
-        .from('reviews')
-        .delete()
-        .eq('id', reviewId)
-
-      if (error) throw error
-
-      await loadMyReviews()
-      await loadGlobalReviews()
-      
-    } catch (error) {
-      console.error('Error deleting review:', error)
-      alert('Failed to delete review. Please try again.')
-    }
-  }
-
-  // Share Profile
-  function showShareModal() {
-    if (!currentUser) return
-    
-    const profileUrl = `${window.location.origin}${window.location.pathname}?user=${currentUser.id}`
-    els.shareLink.value = profileUrl
-    els.shareModal.classList.add('show')
-    els.copySuccess.style.display = 'none'
-  }
-
-  function hideShareModal() {
-    els.shareModal.classList.remove('show')
-  }
-
-  async function copyShareLink() {
-    try {
-      await navigator.clipboard.writeText(els.shareLink.value)
-      els.copySuccess.style.display = 'block'
-      setTimeout(() => {
-        els.copySuccess.style.display = 'none'
-      }, 3000)
-    } catch (error) {
-      console.error('Failed to copy link:', error)
-      // Fallback for older browsers
-      els.shareLink.select()
-      document.execCommand('copy')
-      els.copySuccess.style.display = 'block'
-      setTimeout(() => {
-        els.copySuccess.style.display = 'none'
-      }, 3000)
-    }
-  }
-
-  // Check for shared profile URL
-  function checkForSharedProfile() {
-    const urlParams = new URLSearchParams(window.location.search)
-    const userId = urlParams.get('user')
-    
-    if (userId) {
-      // Load shared user's reviews
-      loadSharedUserReviews(userId)
-    }
-  }
-
-  async function loadSharedUserReviews(userId) {
-    try {
-      // Get user profile
-      const { data: profile, error: profileError } = await supabase
-        .from('profiles')
-        .select('full_name, avatar_url')
-        .eq('id', userId)
-        .single()
-
-      if (profileError) throw profileError
-
-      // Get user's reviews with proper joins
-      const { data: reviews, error: reviewsError } = await supabase
-        .from('reviews')
-        .select(`
-          *,
-          profiles:user_id (
-            full_name,
-            avatar_url
-          ),
-          review_likes (
-            id,
-            user_id
-          )
-        `)
-        .eq('user_id', userId)
-        .order('created_at', { ascending: false })
-
-      if (reviewsError) throw reviewsError
-
-      // Process reviews
-      const processedReviews = reviews.map(review => ({
-        ...review,
-        like_count: review.review_likes?.length || 0,
-        user_liked: review.review_likes?.some(like => like.user_id === currentUser?.id) || false,
-        user: review.profiles || profile
-      }))
-
-      // Switch to global feed and show shared reviews
-      switchTab('global-feed')
-      
-      // Add header showing whose profile we're viewing
-      const headerDiv = document.createElement('div')
-      headerDiv.className = 'card'
-      headerDiv.style.marginBottom = '20px'
-      headerDiv.innerHTML = `
-        <div class="hd">
-          <strong>Reviews by ${escapeHtml(profile.full_name || 'User')}</strong>
-          <span class="pill">${reviews.length} review${reviews.length === 1 ? '' : 's'}</span>
-        </div>
-      `
-      
-      els.globalReviewsList.innerHTML = ''
-      els.globalReviewsList.appendChild(headerDiv)
-      
-      const reviewsContainer = document.createElement('div')
-      reviewsContainer.className = 'review-list'
-      
-      if (processedReviews.length > 0) {
-        processedReviews.forEach(review => {
-          reviewsContainer.appendChild(createReviewCard(review, false))
-        })
-      } else {
-        reviewsContainer.innerHTML = '<div class="empty">This user hasn\'t posted any reviews yet.</div>'
-      }
-      
-      els.globalReviewsList.appendChild(reviewsContainer)
-      els.globalReviewsEmpty.style.display = 'none'
-
-    } catch (error) {
-      console.error('Error loading shared profile:', error)
-      alert('Error loading shared profile. The user might not exist or their profile might be private.')
-    }
-  }
-
-  // Export
-  async function exportReviews() {
-    if (!currentUser) return
-
-    try {
-      const { data: reviews, error } = await supabase
-        .from('reviews')
-        .select('*')
-        .eq('user_id', currentUser.id)
-        .order('created_at', { ascending: false })
-
-      if (error) throw error
-
-      const dataStr = JSON.stringify(reviews, null, 2)
-      const dataBlob = new Blob([dataStr], { type: 'application/json' })
-      
-      const link = document.createElement('a')
-      link.href = URL.createObjectURL(dataBlob)
-      link.download = `reviewhub-export-${new Date().toISOString().split('T')[0]}.json`
-      link.click()
-      
-      URL.revokeObjectURL(link.href)
-      
-    } catch (error) {
-      console.error('Export error:', error)
-      alert('Failed to export reviews. Please try again.')
-    }
-  }
-
-  // Utility Functions
-  function debounce(func, wait) {
-    let timeout
-    return function executedFunction(...args) {
-      const later = () => {
-        clearTimeout(timeout)
-        func(...args)
-      }
-      clearTimeout(timeout)
-      timeout = setTimeout(later, wait)
-    }
-  }
-
-  function generatePlaceholderImage() {
-    return 'data:image/svg+xml;utf8,' + encodeURIComponent(`
-      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 120 120">
-        <rect width="120" height="120" fill="#0f1520"/>
-        <rect x="10" y="10" width="100" height="100" fill="#0b1220" rx="6"/>
-        <text x="60" y="60" dominant-baseline="central" text-anchor="middle" 
-              font-family="Inter, sans-serif" font-size="10" fill="#7e94b1" font-weight="500">
-          No Image
-        </text>
-      </svg>
-    `)
-  }
-
-  function escapeHtml(text) {
-    if (typeof text !== 'string') return ''
-    const div = document.createElement('div')
-    div.textContent = text
-    return div.innerHTML
-  }
-
-})();
