@@ -6,6 +6,7 @@
   const USERS_KEY = 'reviewhub.users';
   const CURRENT_USER_KEY = 'reviewhub.currentUser';
   const REVIEWS_KEY = 'reviewhub.reviews';
+  const PUBLIC_REVIEWS_KEY = 'reviewhub.public.reviews'; // Shared public reviews
 
   // Elements
   const els = {
@@ -84,9 +85,20 @@
     setupEventListeners();
     loadCurrentUser();
     
-    // Check if we're viewing a public profile
+    // Check if we're viewing a shared review collection
     const urlParams = new URLSearchParams(window.location.search);
+    const shareData = urlParams.get('share');
     const publicUser = urlParams.get('user');
+    
+    if (shareData) {
+      try {
+        const decodedData = JSON.parse(atob(decodeURIComponent(shareData)));
+        showSharedView(decodedData);
+        return;
+      } catch(_e) {
+        console.error('Invalid share data');
+      }
+    }
     
     if (publicUser) {
       showPublicView(publicUser);
@@ -161,7 +173,7 @@
   function loadUsers() {
     try {
       return JSON.parse(localStorage.getItem(USERS_KEY)) || {};
-    } catch(e) {
+    } catch(_e) {
       return {};
     }
   }
@@ -210,6 +222,34 @@
     updateStats();
   }
 
+  function showSharedView(shareData) {
+    els.loginPrompt.style.display = 'none';
+    els.mainContent.style.display = 'none';
+    els.userBar.style.display = 'none';
+    els.publicView.style.display = '';
+    els.publicUsername.textContent = shareData.username;
+    
+    // Render the shared reviews
+    const reviews = shareData.reviews || [];
+    
+    if (reviews.length === 0) {
+      els.publicEmpty.style.display = '';
+      els.publicList.innerHTML = '';
+      return;
+    }
+    
+    els.publicEmpty.style.display = 'none';
+    els.publicList.innerHTML = '';
+    
+    const sortedReviews = [...reviews].sort((a, b) => 
+      new Date(b.createdAt) - new Date(a.createdAt)
+    );
+    
+    const frag = document.createDocumentFragment();
+    sortedReviews.forEach(r => frag.appendChild(reviewCard(r, true)));
+    els.publicList.appendChild(frag);
+  }
+
   function showPublicView(username) {
     els.loginPrompt.style.display = 'none';
     els.mainContent.style.display = 'none';
@@ -232,7 +272,19 @@
 
   function showShareModal() {
     els.shareModal.classList.add('show');
-    const shareUrl = `${window.location.origin}${window.location.pathname}?user=${encodeURIComponent(currentUser)}`;
+    
+    // Create a shareable data URL that includes the user's reviews
+    const reviews = loadReviews();
+    const shareData = {
+      username: currentUser,
+      reviews: reviews,
+      timestamp: new Date().toISOString()
+    };
+    
+    // Encode the data in the URL
+    const encodedData = encodeURIComponent(btoa(JSON.stringify(shareData)));
+    const shareUrl = `${window.location.origin}${window.location.pathname}?share=${encodedData}`;
+    
     els.shareLink.value = shareUrl;
   }
 
@@ -322,7 +374,7 @@
     try {
       const allReviews = JSON.parse(localStorage.getItem(REVIEWS_KEY)) || {};
       return allReviews[currentUser] || [];
-    } catch(e) {
+    } catch(_e) {
       return [];
     }
   }
@@ -330,20 +382,34 @@
   function saveReviews(reviews) {
     if (!currentUser) return;
     try {
+      // Save to user's private reviews
       const allReviews = JSON.parse(localStorage.getItem(REVIEWS_KEY)) || {};
       allReviews[currentUser] = reviews;
       localStorage.setItem(REVIEWS_KEY, JSON.stringify(allReviews));
+      
+      // Also save to public reviews for sharing
+      const publicReviews = JSON.parse(localStorage.getItem(PUBLIC_REVIEWS_KEY)) || {};
+      publicReviews[currentUser] = reviews;
+      localStorage.setItem(PUBLIC_REVIEWS_KEY, JSON.stringify(publicReviews));
+      
       updateStats();
-    } catch(e) {
-      console.error('Failed to save reviews:', e);
+    } catch(_e) {
+      console.error('Failed to save reviews:', _e);
     }
   }
 
   function loadPublicReviews(username) {
     try {
+      // Try to load from public reviews first (for sharing across browsers/incognito)
+      const publicReviews = JSON.parse(localStorage.getItem(PUBLIC_REVIEWS_KEY)) || {};
+      if (publicReviews[username] && publicReviews[username].length > 0) {
+        return publicReviews[username];
+      }
+      
+      // Fallback to regular reviews (for same browser)
       const allReviews = JSON.parse(localStorage.getItem(REVIEWS_KEY)) || {};
       return allReviews[username] || [];
-    } catch(e) {
+    } catch(_e) {
       return [];
     }
   }
@@ -482,7 +548,7 @@
   function normalizeUrl(u) {
     try {
       return new URL(u).toString();
-    } catch(e) {
+    } catch(_e) {
       return '';
     }
   }
@@ -492,7 +558,7 @@
     try {
       const url = new URL(u);
       return url.hostname.includes('open.spotify.com') && url.pathname.startsWith('/album/');
-    } catch(e) {
+    } catch(_e) {
       return false;
     }
   }
@@ -583,7 +649,7 @@
     const t = els.filterType.value;
     const sort = els.sortBy.value;
 
-    let list = reviews.filter(r => {
+    const list = reviews.filter(r => {
       const okType = t === 'all' || r.type === t;
       const blob = [r.title, r.subtitle, r.text].join(' ').toLowerCase();
       const okQ = !q || blob.includes(q);
@@ -673,7 +739,7 @@
     els.tabAbout.style.display = 'none';
     
     renderPreview(item);
-    window.scrollTo({ top: 0, behavior: 'smooth' });
+    globalThis.scrollTo({ top: 0, behavior: 'smooth' });
   }
 
   function duplicateEntry(id) {
@@ -751,7 +817,18 @@
   function wipeData() {
     if (!confirm('Delete ALL your reviews? This cannot be undone.')) return;
     
+    // Clear both private and public reviews for the user
     saveReviews([]);
+    
+    // Also remove from public storage
+    try {
+      const publicReviews = JSON.parse(localStorage.getItem(PUBLIC_REVIEWS_KEY)) || {};
+      delete publicReviews[currentUser];
+      localStorage.setItem(PUBLIC_REVIEWS_KEY, JSON.stringify(publicReviews));
+    } catch(_e) {
+      // Ignore errors
+    }
+    
     renderList();
     alert('All reviews deleted.');
   }
