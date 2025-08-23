@@ -3,47 +3,234 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Review Hub</title>
-  <link rel="stylesheet" href="style.css">
+  <title>Album Review Site</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      background-color: #f4f4f4;
+      margin: 0;
+      padding: 0;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+    }
+    header {
+      background: #333;
+      color: #fff;
+      padding: 20px;
+      width: 100%;
+      text-align: center;
+    }
+    .container {
+      margin-top: 20px;
+      width: 90%;
+      max-width: 800px;
+      background: #fff;
+      padding: 20px;
+      border-radius: 10px;
+      box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+    }
+    form {
+      display: flex;
+      flex-direction: column;
+      margin-bottom: 20px;
+    }
+    form input, form textarea, form button {
+      margin: 10px 0;
+      padding: 10px;
+      font-size: 16px;
+    }
+    .review {
+      border-bottom: 1px solid #ddd;
+      padding: 10px 0;
+    }
+    .review:last-child {
+      border-bottom: none;
+    }
+    .album-art {
+      max-width: 100px;
+      border-radius: 5px;
+      margin-right: 15px;
+    }
+    .review-header {
+      display: flex;
+      align-items: center;
+    }
+    .review-info {
+      flex: 1;
+    }
+    .login-container {
+      margin-top: 50px;
+      background: #fff;
+      padding: 20px;
+      border-radius: 10px;
+      box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+    }
+    .login-container input, .login-container button {
+      width: 90%;
+      margin: 10px 0;
+      padding: 10px;
+      font-size: 16px;
+    }
+    .login-container button {
+      background-color: #4db8ff;
+      color: #fff;
+      font-weight: bold;
+      border: none;
+      cursor: pointer;
+      border-radius: 5px;
+    }
+    .review button {
+      background-color: #ff4d4d;
+      color: #fff;
+      border: none;
+      padding: 5px 10px;
+      border-radius: 5px;
+      cursor: pointer;
+      margin-top: 5px;
+    }
+  </style>
 </head>
 <body>
+  <header>
+    <h1>Album Review Site</h1>
+  </header>
 
   <div id="loginPage" class="login-container">
-    <h2>Login to Review Hub</h2>
+    <h2>Login</h2>
     <input type="text" id="username" placeholder="Username">
     <input type="password" id="password" placeholder="Password">
-    <button id="loginBtn">Login</button>
+    <button onclick="login()">Login</button>
   </div>
 
-  <div id="app" class="container" style="display:none;">
-    <header>
-      <h1>Review Hub</h1>
-    </header>
+  <div id="app" class="container" style="display: none;">
+    <h2>Add a Review</h2>
+    <form id="reviewForm">
+      <input type="text" id="spotifyLink" placeholder="Spotify Album Link (optional)">
+      <input type="text" id="customTitle" placeholder="Custom Title (if no link)">
+      <textarea id="reviewText" placeholder="Write your review..."></textarea>
+      <input type="number" id="score" step="0.1" min="0" max="10" placeholder="Score (e.g. 7.5)">
+      <button type="submit">Add Review</button>
+    </form>
 
-    <section class="review-input">
-      <h2>Add a Review</h2>
-      <form id="reviewForm">
-        <input type="text" id="spotifyLink" placeholder="Spotify Album Link (optional)">
-        <input type="text" id="customTitle" placeholder="Custom Title (if no link)">
-        <textarea id="reviewText" placeholder="Write your review..."></textarea>
-        <input type="number" id="score" step="0.1" min="0" max="10" placeholder="Score (e.g. 7.5)">
-        <button type="submit">Add Review</button>
-      </form>
-    </section>
-
-    <section class="review-list">
-      <h2>Your Reviews</h2>
-      <input type="text" id="search" placeholder="Search reviews...">
-      <select id="sort">
-        <option value="newest">Newest</option>
-        <option value="oldest">Oldest</option>
-        <option value="highest">Highest Score</option>
-        <option value="lowest">Lowest Score</option>
-      </select>
-      <div id="reviews"></div>
-    </section>
+    <h2>Your Reviews</h2>
+    <input type="text" id="search" placeholder="Search reviews...">
+    <select id="sort">
+      <option value="newest">Newest</option>
+      <option value="oldest">Oldest</option>
+      <option value="highest">Highest Score</option>
+      <option value="lowest">Lowest Score</option>
+    </select>
+    <div id="reviews"></div>
   </div>
 
-  <script src="script.js"></script>
+  <script>
+    let storedUser = JSON.parse(localStorage.getItem('user')) || null;
+
+    function login() {
+      const username = document.getElementById('username').value;
+      const password = document.getElementById('password').value;
+
+      if (!storedUser) {
+        storedUser = { username, password, reviews: [] };
+        localStorage.setItem('user', JSON.stringify(storedUser));
+        alert('Account created and logged in!');
+      } else if (storedUser.username === username && storedUser.password === password) {
+        alert('Login successful!');
+      } else {
+        alert('Invalid login');
+        return;
+      }
+
+      document.getElementById('loginPage').style.display = 'none';
+      document.getElementById('app').style.display = 'block';
+      renderReviews();
+    }
+
+    document.getElementById('reviewForm').addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const link = document.getElementById('spotifyLink').value.trim();
+      const customTitle = document.getElementById('customTitle').value.trim();
+      const text = document.getElementById('reviewText').value;
+      const score = parseFloat(document.getElementById('score').value);
+
+      let title = customTitle;
+      let artist = '';
+      let albumArt = '';
+
+      if (link.includes('open.spotify.com/album')) {
+        try {
+          const albumId = link.split('/album/')[1].split('?')[0];
+          const res = await fetch(`https://api.allorigins.win/get?url=${encodeURIComponent('https://open.spotify.com/oembed?url=spotify:album:' + albumId)}`);
+          const data = await res.json();
+          const parsed = JSON.parse(data.contents);
+          title = parsed.title;
+          albumArt = parsed.thumbnail_url;
+          if (parsed.author_name) artist = parsed.author_name;
+        } catch (err) {
+          console.error('Spotify fetch failed', err);
+        }
+      }
+
+      storedUser.reviews.push({ title, artist, text, score, albumArt, date: new Date().getTime() });
+      localStorage.setItem('user', JSON.stringify(storedUser));
+      renderReviews();
+      document.getElementById('reviewForm').reset();
+    });
+
+    function renderReviews() {
+      const container = document.getElementById('reviews');
+      container.innerHTML = '';
+      if (!storedUser || !storedUser.reviews) return;
+
+      let reviews = [...storedUser.reviews];
+
+      const searchTerm = document.getElementById('search').value.toLowerCase();
+      if (searchTerm) {
+        reviews = reviews.filter(r => r.title.toLowerCase().includes(searchTerm) || r.artist.toLowerCase().includes(searchTerm) || r.text.toLowerCase().includes(searchTerm));
+      }
+
+      const sortType = document.getElementById('sort').value;
+      if (sortType === 'newest') reviews.sort((a,b)=> b.date - a.date);
+      if (sortType === 'oldest') reviews.sort((a,b)=> a.date - b.date);
+      if (sortType === 'highest') reviews.sort((a,b)=> b.score - a.score);
+      if (sortType === 'lowest') reviews.sort((a,b)=> a.score - b.score);
+
+      reviews.forEach((r,i) => {
+        const div = document.createElement('div');
+        div.className = 'review';
+        div.innerHTML = `
+          <div class="review-header">
+            ${r.albumArt ? `<img src="${r.albumArt}" class="album-art">` : ''}
+            <div class="review-info">
+              <h3>${r.title} ${r.artist ? '- ' + r.artist : ''}</h3>
+              <p><strong>Score:</strong> ${r.score}/10</p>
+            </div>
+          </div>
+          <p>${r.text}</p>
+          <button onclick="deleteReview(${i})">Delete</button>
+        `;
+        container.appendChild(div);
+      });
+    }
+
+    function deleteReview(index) {
+      storedUser.reviews.splice(index,1);
+      localStorage.setItem('user', JSON.stringify(storedUser));
+      renderReviews();
+    }
+
+    document.getElementById('search').addEventListener('input', renderReviews);
+    document.getElementById('sort').addEventListener('change', renderReviews);
+
+    if (storedUser) {
+      document.getElementById('loginPage').style.display = 'none';
+      document.getElementById('app').style.display = 'block';
+      renderReviews();
+    }
+  </script>
 </body>
 </html>
