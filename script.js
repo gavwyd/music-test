@@ -3,6 +3,7 @@
   const SUPABASE_URL = 'https://qfvhzaxuocbtpinrjyqp.supabase.co'
   const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InFmdmh6YXh1b2NidHBpbnJqeXFwIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTU5NzEzMjAsImV4cCI6MjA3MTU0NzMyMH0.Xn9_ZY6OM59xgUnb_Rc29go5sO1OdK4DIiFvpqQatDE'
   const SPOTIFY_CLIENT_ID = 'cf9a6e9189294eb4bfaa374f5481326d'
+  const SPOTIFY_CLIENT_SECRET = '8c58098d229c4a4dafacbadcabe687f8'
   
   const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY)
   
@@ -13,16 +14,8 @@
   // Elements
   const els = {
     // Auth
-    loginPrompt: $('#loginPrompt'),
     loginModal: $('#loginModal'),
     loadingApp: $('#loadingApp'),
-    showLoginBtn: $('#showLoginBtn'),
-    closeLoginModal: $('#closeLoginModal'),
-    
-    // Auth tabs
-    authTabs: $$('.auth-tab'),
-    emailAuth: $('#emailAuth'),
-    spotifyAuth: $('#spotifyAuth'),
     
     // Email auth
     loginEmail: $('#loginEmail'),
@@ -30,8 +23,11 @@
     emailLoginBtn: $('#emailLoginBtn'),
     emailRegisterBtn: $('#emailRegisterBtn'),
     
-    // Spotify auth
-    spotifyLoginBtn: $('#spotifyLoginBtn'),
+    // Phone auth
+    loginPhone: $('#loginPhone'),
+    otpCode: $('#otpCode'),
+    phoneLoginBtn: $('#phoneLoginBtn'),
+    phoneButtonText: $('#phoneButtonText'),
     
     // User interface
     userBar: $('#userBar'),
@@ -72,6 +68,7 @@
     myReviewsList: $('#myReviewsList'),
     myReviewsEmpty: $('#myReviewsEmpty'),
     exportBtn: $('#exportBtn'),
+    shareProfileBtn: $('#shareProfileBtn'),
 
     // Global Feed
     globalSearch: $('#globalSearch'),
@@ -80,13 +77,22 @@
     globalGenreFilter: $('#globalGenreFilter'),
     globalReviewsList: $('#globalReviewsList'),
     globalReviewsEmpty: $('#globalReviewsEmpty'),
-    globalCount: $('#globalCount')
+    globalCount: $('#globalCount'),
+
+    // Share Modal
+    shareModal: $('#shareModal'),
+    closeShareModal: $('#closeShareModal'),
+    shareLink: $('#shareLink'),
+    copyLinkBtn: $('#copyLinkBtn'),
+    copySuccess: $('#copySuccess')
   }
 
   let currentUser = null
   let selectedMusicData = null
   let spotifyToken = null
   let searchTimeout = null
+  let otpTimer = null
+  let awaitingOtp = false
 
   // Initialize
   init()
@@ -98,30 +104,14 @@
     const { data: { session } } = await supabase.auth.getSession()
     if (session?.user) {
       await handleAuthSuccess(session.user)
-    } else {
-      showLoginPrompt()
     }
   }
 
   function setupEventListeners() {
-    // Auth modals
-    els.showLoginBtn.addEventListener('click', showLoginModal)
-    els.closeLoginModal.addEventListener('click', hideLoginModal)
-    els.loginModal.addEventListener('click', (e) => {
-      if (e.target === els.loginModal) hideLoginModal()
-    })
-
-    // Auth tabs
-    els.authTabs.forEach(tab => {
-      tab.addEventListener('click', () => switchAuthTab(tab.dataset.authTab))
-    })
-
-    // Email auth
+    // Auth
     els.emailLoginBtn.addEventListener('click', handleEmailLogin)
     els.emailRegisterBtn.addEventListener('click', handleEmailRegister)
-    
-    // Spotify auth
-    els.spotifyLoginBtn.addEventListener('click', handleSpotifyLogin)
+    els.phoneLoginBtn.addEventListener('click', handlePhoneAuth)
     els.logoutBtn.addEventListener('click', handleLogout)
 
     // Main tabs
@@ -146,6 +136,7 @@
     els.mySearch.addEventListener('input', debounce(loadMyReviews, 300))
     els.mySortBy.addEventListener('change', loadMyReviews)
     els.exportBtn.addEventListener('click', exportReviews)
+    els.shareProfileBtn.addEventListener('click', showShareModal)
 
     // Global Feed
     els.globalSearch.addEventListener('input', debounce(loadGlobalReviews, 300))
@@ -153,34 +144,27 @@
     els.globalTypeFilter.addEventListener('change', loadGlobalReviews)
     els.globalGenreFilter.addEventListener('change', loadGlobalReviews)
 
+    // Share Modal
+    els.closeShareModal.addEventListener('click', hideShareModal)
+    els.shareModal.addEventListener('click', (e) => {
+      if (e.target === els.shareModal) hideShareModal()
+    })
+    els.copyLinkBtn.addEventListener('click', copyShareLink)
+
     // Auth state changes
     supabase.auth.onAuthStateChange((event, session) => {
       if (event === 'SIGNED_IN' && session?.user) {
         handleAuthSuccess(session.user)
       } else if (event === 'SIGNED_OUT') {
-        showLoginPrompt()
+        showLoginModal()
       }
     })
+
+    // Check for shared profile URL
+    checkForSharedProfile()
   }
 
   // Authentication
-  function showLoginModal() {
-    els.loginModal.classList.add('show')
-    els.loginError.style.display = 'none'
-  }
-
-  function hideLoginModal() {
-    els.loginModal.classList.remove('show')
-  }
-
-  function switchAuthTab(tab) {
-    els.authTabs.forEach(t => t.classList.remove('active'))
-    els.authTabs.find(t => t.dataset.authTab === tab).classList.add('active')
-    
-    els.emailAuth.style.display = tab === 'email' ? '' : 'none'
-    els.spotifyAuth.style.display = tab === 'spotify' ? '' : 'none'
-  }
-
   async function handleEmailLogin() {
     const email = els.loginEmail.value.trim()
     const password = els.loginPassword.value.trim()
@@ -191,11 +175,22 @@
     }
 
     try {
+      els.emailLoginBtn.disabled = true
+      els.emailLoginBtn.textContent = 'Logging in...'
+      
       const { error } = await supabase.auth.signInWithPassword({ email, password })
       if (error) throw error
-      hideLoginModal()
+      
     } catch (error) {
       showError(error.message)
+    } finally {
+      els.emailLoginBtn.disabled = false
+      els.emailLoginBtn.innerHTML = `
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
+          <path d="M20 4H4C2.9 4 2.01 4.9 2.01 6L2 18C2 19.1 2.9 20 4 20H20C21.1 20 22 19.1 22 18V6C22 4.9 21.1 4 20 4ZM20 8L12 13L4 8V6L12 11L20 6V8Z"/>
+        </svg>
+        Login with Email
+      `
     }
   }
 
@@ -214,6 +209,9 @@
     }
 
     try {
+      els.emailRegisterBtn.disabled = true
+      els.emailRegisterBtn.textContent = 'Creating account...'
+      
       const { error } = await supabase.auth.signUp({ 
         email, 
         password,
@@ -227,25 +225,93 @@
       showError('Check your email to confirm your account!', 'success')
     } catch (error) {
       showError(error.message)
+    } finally {
+      els.emailRegisterBtn.disabled = false
+      els.emailRegisterBtn.innerHTML = `
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
+          <path d="M20 4H4C2.9 4 2.01 4.9 2.01 6L2 18C2 19.1 2.9 20 4 20H20C21.1 20 22 19.1 22 18V6C22 4.9 21.1 4 20 4ZM20 8L12 13L4 8V6L12 11L20 6V8Z"/>
+        </svg>
+        Sign Up with Email
+      `
     }
   }
 
-  async function handleSpotifyLogin() {
-    try {
-      const { error } = await supabase.auth.signInWithOAuth({
-        provider: 'spotify',
-        options: {
-          scopes: 'user-read-email user-read-private',
-          redirectTo: `${window.location.origin}/`
-        }
-      })
-      if (error) throw error
-    } catch (error) {
-      console.error('Spotify login error:', error)
-      showError('Spotify login failed. Please try again.')
+  async function handlePhoneAuth() {
+    if (!awaitingOtp) {
+      // Step 1: Send OTP
+      const phone = els.loginPhone.value.trim()
+      
+      if (!phone) {
+        showError('Please enter your phone number')
+        return
+      }
+
+      if (!phone.startsWith('+')) {
+        showError('Please include country code (e.g., +1234567890)')
+        return
+      }
+
+      try {
+        els.phoneLoginBtn.disabled = true
+        els.phoneButtonText.textContent = 'Sending code...'
+        
+        const { error } = await supabase.auth.signInWithOtp({
+          phone: phone
+        })
+        
+        if (error) throw error
+        
+        // Show OTP input
+        els.otpCode.style.display = 'block'
+        els.otpCode.focus()
+        awaitingOtp = true
+        els.phoneButtonText.textContent = 'Verify Code'
+        showError('Check your phone for verification code', 'success')
+        
+      } catch (error) {
+        showError(error.message)
+      } finally {
+        els.phoneLoginBtn.disabled = false
+      }
+    } else {
+      // Step 2: Verify OTP
+      const phone = els.loginPhone.value.trim()
+      const token = els.otpCode.value.trim()
+      
+      if (!token || token.length !== 6) {
+        showError('Please enter the 6-digit verification code')
+        return
+      }
+
+      try {
+        els.phoneLoginBtn.disabled = true
+        els.phoneButtonText.textContent = 'Verifying...'
+        
+        const { error } = await supabase.auth.verifyOtp({
+          phone: phone,
+          token: token,
+          type: 'sms'
+        })
+        
+        if (error) throw error
+        
+      } catch (error) {
+        showError(error.message)
+        // Reset on error
+        resetPhoneAuth()
+      } finally {
+        els.phoneLoginBtn.disabled = false
+      }
     }
   }
-  
+
+  function resetPhoneAuth() {
+    awaitingOtp = false
+    els.otpCode.style.display = 'none'
+    els.otpCode.value = ''
+    els.phoneButtonText.textContent = 'Login/Sign Up with Phone'
+  }
+
   async function handleAuthSuccess(user) {
     currentUser = user
     
@@ -254,9 +320,9 @@
       .from('profiles')
       .upsert({
         id: user.id,
-        username: user.user_metadata?.full_name || user.email?.split('@')[0] || 'User',
-        full_name: user.user_metadata?.full_name || user.email?.split('@')[0] || 'User',
-        avatar_url: user.user_metadata?.avatar_url || `https://ui-avatars.com/api/?name=${encodeURIComponent(user.email || 'User')}&background=4da3ff&color=fff`
+        username: user.user_metadata?.full_name || user.email?.split('@')[0] || user.phone || 'User',
+        full_name: user.user_metadata?.full_name || user.email?.split('@')[0] || user.phone || 'User',
+        avatar_url: user.user_metadata?.avatar_url || `https://ui-avatars.com/api/?name=${encodeURIComponent(user.email || user.phone || 'User')}&background=4da3ff&color=fff`
       }, {
         onConflict: 'id'
       })
@@ -264,8 +330,8 @@
     if (profileError) console.error('Profile error:', profileError)
 
     // Update UI
-    const displayName = user.user_metadata?.full_name || user.email?.split('@')[0] || 'User'
-    const avatarUrl = user.user_metadata?.avatar_url || `https://ui-avatars.com/api/?name=${encodeURIComponent(user.email || 'User')}&background=4da3ff&color=fff`
+    const displayName = user.user_metadata?.full_name || user.email?.split('@')[0] || user.phone || 'User'
+    const avatarUrl = user.user_metadata?.avatar_url || `https://ui-avatars.com/api/?name=${encodeURIComponent(user.email || user.phone || 'User')}&background=4da3ff&color=fff`
     
     els.currentUser.textContent = displayName
     els.userAvatar.src = avatarUrl
@@ -285,7 +351,7 @@
   function showError(message, type = 'error') {
     els.loginError.textContent = message
     els.loginError.style.display = 'block'
-    els.loginError.style.color = type === 'success' ? 'var(--ok)' : 'var(--danger)'
+    els.loginError.className = type === 'success' ? 'success-msg' : 'error-msg'
     
     if (type === 'success') {
       setTimeout(() => {
@@ -295,22 +361,22 @@
   }
 
   // UI State Management
-  function showLoginPrompt() {
-    els.loginPrompt.style.display = ''
+  function showLoginModal() {
+    els.loginModal.classList.add('show')
     els.mainContent.style.display = 'none'
     els.userBar.style.display = 'none'
     els.loadingApp.style.display = 'none'
     currentUser = null
     selectedMusicData = null
     spotifyToken = null
+    resetPhoneAuth()
   }
 
   function showMainApp() {
-    els.loginPrompt.style.display = 'none'
+    els.loginModal.classList.remove('show')
     els.mainContent.style.display = ''
     els.userBar.style.display = ''
     els.loadingApp.style.display = 'none'
-    hideLoginModal()
   }
 
   function switchTab(tab) {
@@ -348,7 +414,7 @@
         headers: {
           'Content-Type': 'application/x-www-form-urlencoded',
         },
-        body: `grant_type=client_credentials&client_id=${SPOTIFY_CLIENT_ID}&client_secret=8c58098d229c4a4dafacbadcabe687f8`
+        body: `grant_type=client_credentials&client_id=${SPOTIFY_CLIENT_ID}&client_secret=${SPOTIFY_CLIENT_SECRET}`
       })
       
       const data = await response.json()
@@ -604,7 +670,7 @@
       review_text: reviewText,
       created_at: new Date().toISOString(),
       user: { 
-        full_name: currentUser?.user_metadata?.full_name || currentUser?.email?.split('@')[0] || 'User',
+        full_name: currentUser?.user_metadata?.full_name || currentUser?.email?.split('@')[0] || currentUser?.phone || 'User',
         avatar_url: currentUser?.user_metadata?.avatar_url || els.userAvatar?.src
       }
     }
@@ -665,11 +731,11 @@
       alert('Review saved successfully!')
       clearForm()
       
-      // Force reload reviews to show the new one
-      await Promise.all([
-        loadMyReviews(),
-        loadGlobalReviews()
-      ])
+      // Reload reviews immediately
+      setTimeout(async () => {
+        await loadMyReviews()
+        await loadGlobalReviews()
+      }, 500)
       
     } catch (error) {
       console.error('Save error:', error)
@@ -697,6 +763,9 @@
     if (!currentUser) return
 
     try {
+      els.myReviewsEmpty.style.display = 'none'
+      els.myReviewsList.innerHTML = '<div class="loading"><div class="spinner"></div><span>Loading reviews...</span></div>'
+
       const searchQuery = els.mySearch.value.trim().toLowerCase()
       const sortBy = els.mySortBy.value
 
@@ -736,14 +805,19 @@
 
       const { data: reviews, error } = await query
 
-      if (error) throw error
+      if (error) {
+        console.error('My reviews error:', error)
+        throw error
+      }
+
+      console.log('My reviews loaded:', reviews)
 
       // Process reviews data
       const processedReviews = reviews.map(review => ({
         ...review,
         user: review.profiles || {
-          full_name: currentUser.user_metadata?.full_name || currentUser.email?.split('@')[0] || 'User',
-          avatar_url: currentUser.user_metadata?.avatar_url || `https://ui-avatars.com/api/?name=${encodeURIComponent(currentUser.email || 'User')}&background=4da3ff&color=fff`
+          full_name: currentUser.user_metadata?.full_name || currentUser.email?.split('@')[0] || currentUser.phone || 'User',
+          avatar_url: currentUser.user_metadata?.avatar_url || `https://ui-avatars.com/api/?name=${encodeURIComponent(currentUser.email || currentUser.phone || 'User')}&background=4da3ff&color=fff`
         }
       }))
 
@@ -754,13 +828,17 @@
 
     } catch (error) {
       console.error('Error loading my reviews:', error)
+      els.myReviewsList.innerHTML = ''
       els.myReviewsEmpty.style.display = ''
-      els.myReviewsEmpty.textContent = 'Error loading reviews. Please try again.'
+      els.myReviewsEmpty.textContent = 'Error loading reviews: ' + error.message
     }
   }
 
   async function loadGlobalReviews() {
     try {
+      els.globalReviewsEmpty.style.display = 'none'
+      els.globalReviewsList.innerHTML = '<div class="loading"><div class="spinner"></div><span>Loading reviews...</span></div>'
+
       const searchQuery = els.globalSearch.value.trim().toLowerCase()
       const sortBy = els.globalSortBy.value
       const typeFilter = els.globalTypeFilter.value
@@ -795,7 +873,12 @@
 
       const { data: reviews, error } = await query
 
-      if (error) throw error
+      if (error) {
+        console.error('Global reviews error:', error)
+        throw error
+      }
+
+      console.log('Global reviews loaded:', reviews)
 
       // Process likes and sorting
       const processedReviews = reviews.map(review => ({
@@ -833,8 +916,9 @@
 
     } catch (error) {
       console.error('Error loading global reviews:', error)
+      els.globalReviewsList.innerHTML = ''
       els.globalReviewsEmpty.style.display = ''
-      els.globalReviewsEmpty.textContent = 'Error loading reviews. Please try again.'
+      els.globalReviewsEmpty.textContent = 'Error loading reviews: ' + error.message
     }
   }
 
@@ -1066,6 +1150,125 @@
     } catch (error) {
       console.error('Error deleting review:', error)
       alert('Failed to delete review. Please try again.')
+    }
+  }
+
+  // Share Profile
+  function showShareModal() {
+    if (!currentUser) return
+    
+    const profileUrl = `${window.location.origin}${window.location.pathname}?user=${currentUser.id}`
+    els.shareLink.value = profileUrl
+    els.shareModal.classList.add('show')
+    els.copySuccess.style.display = 'none'
+  }
+
+  function hideShareModal() {
+    els.shareModal.classList.remove('show')
+  }
+
+  async function copyShareLink() {
+    try {
+      await navigator.clipboard.writeText(els.shareLink.value)
+      els.copySuccess.style.display = 'block'
+      setTimeout(() => {
+        els.copySuccess.style.display = 'none'
+      }, 3000)
+    } catch (error) {
+      console.error('Failed to copy link:', error)
+      // Fallback for older browsers
+      els.shareLink.select()
+      document.execCommand('copy')
+      els.copySuccess.style.display = 'block'
+      setTimeout(() => {
+        els.copySuccess.style.display = 'none'
+      }, 3000)
+    }
+  }
+
+  // Check for shared profile URL
+  function checkForSharedProfile() {
+    const urlParams = new URLSearchParams(window.location.search)
+    const userId = urlParams.get('user')
+    
+    if (userId) {
+      // Load shared user's reviews
+      loadSharedUserReviews(userId)
+    }
+  }
+
+  async function loadSharedUserReviews(userId) {
+    try {
+      // Get user profile
+      const { data: profile, error: profileError } = await supabase
+        .from('profiles')
+        .select('full_name, avatar_url')
+        .eq('id', userId)
+        .single()
+
+      if (profileError) throw profileError
+
+      // Get user's reviews
+      const { data: reviews, error: reviewsError } = await supabase
+        .from('reviews')
+        .select(`
+          *,
+          profiles!reviews_user_id_fkey (
+            full_name,
+            avatar_url
+          ),
+          review_likes!review_likes_review_id_fkey (
+            id,
+            user_id
+          )
+        `)
+        .eq('user_id', userId)
+        .order('created_at', { ascending: false })
+
+      if (reviewsError) throw reviewsError
+
+      // Process reviews
+      const processedReviews = reviews.map(review => ({
+        ...review,
+        like_count: review.review_likes?.length || 0,
+        user_liked: review.review_likes?.some(like => like.user_id === currentUser?.id) || false,
+        user: review.profiles || profile
+      }))
+
+      // Switch to global feed and show shared reviews
+      switchTab('global-feed')
+      
+      // Add header showing whose profile we're viewing
+      const headerDiv = document.createElement('div')
+      headerDiv.className = 'card'
+      headerDiv.style.marginBottom = '20px'
+      headerDiv.innerHTML = `
+        <div class="hd">
+          <strong>Reviews by ${escapeHtml(profile.full_name || 'User')}</strong>
+          <span class="pill">${reviews.length} review${reviews.length === 1 ? '' : 's'}</span>
+        </div>
+      `
+      
+      els.globalReviewsList.innerHTML = ''
+      els.globalReviewsList.appendChild(headerDiv)
+      
+      const reviewsContainer = document.createElement('div')
+      reviewsContainer.className = 'review-list'
+      
+      if (processedReviews.length > 0) {
+        processedReviews.forEach(review => {
+          reviewsContainer.appendChild(createReviewCard(review, false))
+        })
+      } else {
+        reviewsContainer.innerHTML = '<div class="empty">This user hasn\'t posted any reviews yet.</div>'
+      }
+      
+      els.globalReviewsList.appendChild(reviewsContainer)
+      els.globalReviewsEmpty.style.display = 'none'
+
+    } catch (error) {
+      console.error('Error loading shared profile:', error)
+      alert('Error loading shared profile. The user might not exist or their profile might be private.')
     }
   }
 
