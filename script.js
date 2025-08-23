@@ -91,7 +91,7 @@
   let selectedMusicData = null
   let spotifyToken = null
   let searchTimeout = null
-  let otpTimer = null
+  const _otpTimer = null
   let awaitingOtp = false
 
   // Initialize
@@ -1335,3 +1335,4 @@
   }
 
 })();
+
