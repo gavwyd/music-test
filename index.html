@@ -12,20 +12,15 @@
 </head>
 <body>
   <!-- Login Modal -->
-  <div id="loginModal" class="modal">
+  <div id="loginModal" class="modal show">
     <div class="modal-content">
       <div class="modal-header">
-        <h3>Login to ReviewHub</h3>
-        <button class="close-btn" id="closeLoginModal">&times;</button>
+        <h3>Welcome to ReviewHub</h3>
       </div>
       <div class="modal-body">
-        <div class="auth-tabs">
-          <button class="auth-tab active" data-auth-tab="email">Email</button>
-          <button class="auth-tab" data-auth-tab="spotify">Spotify</button>
-        </div>
         
         <!-- Email Login -->
-        <div id="emailAuth" class="auth-section">
+        <div class="auth-section">
           <div class="form-group">
             <label for="loginEmail">Email</label>
             <input id="loginEmail" type="email" placeholder="Enter your email" />
@@ -34,21 +29,38 @@
             <label for="loginPassword">Password</label>
             <input id="loginPassword" type="password" placeholder="Enter your password" />
           </div>
-          <div class="form-group">
-            <button id="emailLoginBtn" class="btn primary">Login</button>
-            <button id="emailRegisterBtn" class="btn ghost">Register</button>
-          </div>
-        </div>
-
-        <!-- Spotify Login -->
-        <div id="spotifyAuth" class="auth-section" style="display:none;">
-          <div class="spotify-login-info">
-            <p>Connect with your Spotify account to get personalized music recommendations and sync your taste profile.</p>
-            <button id="spotifyLoginBtn" class="btn spotify">
-              <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor">
-                <path d="M12 0C5.4 0 0 5.4 0 12s5.4 12 12 12 12-5.4 12-12S18.66 0 12 0zm5.521 17.34c-.24.359-.66.48-1.021.24-2.82-1.74-6.36-2.101-10.561-1.141-.418.122-.84-.179-.959-.539-.12-.421.18-.78.54-.9 4.56-1.021 8.52-.6 11.64 1.32.42.18.479.659.361 1.02zm1.44-3.3c-.301.42-.841.6-1.262.3-3.239-1.98-8.159-2.58-11.939-1.38-.479.12-1.02-.12-1.14-.6-.12-.48.12-1.021.6-1.141C9.6 9.9 15 10.561 18.72 12.84c.361.181.54.78.241 1.2zm.12-3.36C15.24 8.4 8.82 8.16 5.16 9.301c-.6.179-1.2-.181-1.38-.721-.18-.601.18-1.2.72-1.381 4.26-1.26 11.28-1.02 15.721 1.621.539.3.719 1.02.42 1.56-.301.421-1.02.599-1.559.3z"/>
+          <div class="form-group auth-buttons">
+            <button id="emailLoginBtn" class="btn primary">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
+                <path d="M20 4H4C2.9 4 2.01 4.9 2.01 6L2 18C2 19.1 2.9 20 4 20H20C21.1 20 22 19.1 22 18V6C22 4.9 21.1 4 20 4ZM20 8L12 13L4 8V6L12 11L20 6V8Z"/>
               </svg>
-              Continue with Spotify
+              Login with Email
+            </button>
+            <button id="emailRegisterBtn" class="btn ghost">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
+                <path d="M20 4H4C2.9 4 2.01 4.9 2.01 6L2 18C2 19.1 2.9 20 4 20H20C21.1 20 22 19.1 22 18V6C22 4.9 21.1 4 20 4ZM20 8L12 13L4 8V6L12 11L20 6V8Z"/>
+              </svg>
+              Sign Up with Email
+            </button>
+          </div>
+
+          <div class="divider">or</div>
+
+          <!-- Phone Auth -->
+          <div class="form-group">
+            <label for="loginPhone">Phone Number</label>
+            <input id="loginPhone" type="tel" placeholder="Enter your phone number (+1234567890)" />
+          </div>
+          <div class="form-group">
+            <label for="otpCode">Verification Code</label>
+            <input id="otpCode" type="text" placeholder="Enter 6-digit code" maxlength="6" style="display:none;" />
+          </div>
+          <div class="form-group auth-buttons">
+            <button id="phoneLoginBtn" class="btn secondary">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
+                <path d="M6.62 10.79C8.06 13.62 10.38 15.94 13.21 17.38L15.41 15.18C15.69 14.9 16.08 14.82 16.43 14.93C17.55 15.3 18.75 15.5 20 15.5C20.55 15.5 21 15.95 21 16.5V20C21 20.55 20.55 21 20 21C10.61 21 3 13.39 3 4C3 3.45 3.45 3 4 3H7.5C8.05 3 8.5 3.45 8.5 4C8.5 5.25 8.7 6.45 9.07 7.57C9.18 7.92 9.1 8.31 8.82 8.59L6.62 10.79Z"/>
+              </svg>
+              <span id="phoneButtonText">Login/Sign Up with Phone</span>
             </button>
           </div>
         </div>
@@ -66,17 +78,6 @@
         <span class="user-welcome">Welcome, <strong id="currentUser"></strong>!</span>
       </div>
       <button id="logoutBtn" class="btn ghost small">Logout</button>
-    </div>
-
-    <!-- Login Prompt -->
-    <div id="loginPrompt" class="login-prompt">
-      <div class="card">
-        <div class="bd" style="text-align:center; padding:40px">
-          <h2>Welcome to ReviewHub</h2>
-          <p>Join the community to start rating and reviewing music</p>
-          <button id="showLoginBtn" class="btn primary">Get Started</button>
-        </div>
-      </div>
     </div>
 
     <!-- Loading -->
@@ -181,6 +182,7 @@
           <div class="hd">
             <strong>My Reviews</strong>
             <div class="toolbar">
+              <button id="shareProfileBtn" class="btn small">🔗 Share Profile</button>
               <button id="exportBtn" class="btn small">⬇️ Export</button>
             </div>
           </div>
@@ -249,7 +251,7 @@
         <div class="card">
           <div class="hd"><strong>About ReviewHub</strong></div>
           <div class="bd">
-            <p><strong>ReviewHub</strong> is a community-driven platform for rating and reviewing music. Connect with Spotify or create an account to discover and share your thoughts on albums and singles.</p>
+            <p><strong>ReviewHub</strong> is a community-driven platform for rating and reviewing music. Create an account to discover and share your thoughts on albums and singles.</p>
             <h3>Features:</h3>
             <ul>
               <li><strong>Spotify Integration:</strong> Search for music or paste Spotify links</li>
@@ -258,12 +260,31 @@
               <li><strong>Like System:</strong> Show appreciation for great reviews</li>
               <li><strong>Smart Filtering:</strong> Filter by genre, popularity, rating, and more</li>
               <li><strong>Cloud Sync:</strong> Your reviews are saved and accessible anywhere</li>
-              <li><strong>Flexible Login:</strong> Use Email or connect with Spotify</li>
+              <li><strong>Share Profile:</strong> Share your review collection with others</li>
+              <li><strong>Flexible Login:</strong> Use Email or Phone authentication</li>
             </ul>
             <p>Built with Supabase for real-time data and Spotify Web API for music discovery.</p>
           </div>
         </div>
       </section>
+    </div>
+  </div>
+
+  <!-- Share Profile Modal -->
+  <div id="shareModal" class="modal">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h3>Share Your Profile</h3>
+        <button class="close-btn" id="closeShareModal">&times;</button>
+      </div>
+      <div class="modal-body">
+        <p>Share this link to let others see your reviews:</p>
+        <div class="share-link-container">
+          <input id="shareLink" type="text" readonly />
+          <button id="copyLinkBtn" class="btn small">📋 Copy</button>
+        </div>
+        <div id="copySuccess" class="success-msg" style="display:none">Link copied to clipboard!</div>
+      </div>
     </div>
   </div>
 
