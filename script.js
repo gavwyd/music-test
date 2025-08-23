@@ -231,20 +231,21 @@
   }
 
   async function handleSpotifyLogin() {
-    try {
-      const { error } = await supabase.auth.signInWithOAuth({
-        provider: 'spotify',
-        options: {
-          scopes: 'user-read-email user-read-private',
-          redirectTo: window.location.origin
-        }
-      })
-      if (error) throw error
-    } catch (error) {
-      console.error('Spotify login error:', error)
-      showError('Spotify login failed. Please try again.')
-    }
+  try {
+    const { error } = await supabase.auth.signInWithOAuth({
+      provider: 'spotify',
+      options: {
+        scopes: 'user-read-email user-read-private',
+        redirectTo: 'https://cheery-dango-a6b92b.netlify.app/#' // updated redirect URI
+      }
+    })
+    if (error) throw error
+  } catch (error) {
+    console.error('Spotify login error:', error)
+    showError('Spotify login failed. Please try again.')
   }
+}
+
 
   async function handleAuthSuccess(user) {
     currentUser = user
@@ -1077,4 +1078,5 @@
   }
 
 })();
+
 
