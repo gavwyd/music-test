@@ -1,107 +1,208 @@
-// script.js
+(function(){
+  const $ = (sel, root=document) => root.querySelector(sel);
+  const $$ = (sel, root=document) => Array.from(root.querySelectorAll(sel));
 
-let storedUser = JSON.parse(localStorage.getItem('user')) || null;
-const loginPage = document.getElementById('loginPage');
-const app = document.getElementById('app');
-const loginBtn = document.getElementById('loginBtn');
-const reviewForm = document.getElementById('reviewForm');
-const reviewsContainer = document.getElementById('reviews');
-const searchInput = document.getElementById('search');
-const sortSelect = document.getElementById('sort');
+  // Storage keys
+  const USERS_KEY = 'reviewhub.users';
+  const CURRENT_USER_KEY = 'reviewhub.currentUser';
+  const REVIEWS_KEY = 'reviewhub.reviews';
 
-function showApp() {
-  loginPage.style.display = 'none';
-  app.style.display = 'block';
-  renderReviews();
-}
+  // Elements
+  const els = {
+    // Modals
+    loginModal: $('#loginModal'),
+    shareModal: $('#shareModal'),
+    closeLoginModal: $('#closeLoginModal'),
+    closeShareModal: $('#closeShareModal'),
+    
+    // Login form
+    loginUsername: $('#loginUsername'),
+    loginPassword: $('#loginPassword'),
+    loginBtn: $('#loginBtn'),
+    registerBtn: $('#registerBtn'),
+    loginError: $('#loginError'),
+    showLoginBtn: $('#showLoginBtn'),
+    
+    // User interface
+    userBar: $('#userBar'),
+    currentUser: $('#currentUser'),
+    logoutBtn: $('#logoutBtn'),
+    loginPrompt: $('#loginPrompt'),
+    mainContent: $('#mainContent'),
+    shareReviewsBtn: $('#shareReviewsBtn'),
+    shareLink: $('#shareLink'),
+    copyLinkBtn: $('#copyLinkBtn'),
+    
+    // Public view
+    publicView: $('#publicView'),
+    publicUsername: $('#publicUsername'),
+    publicList: $('#publicList'),
+    publicEmpty: $('#publicEmpty'),
 
-loginBtn.addEventListener('click', () => {
-  const username = document.getElementById('username').value;
-  const password = document.getElementById('password').value;
+    // Tabs
+    tabs: $$('.tab'),
+    tabAdd: $('#tab-add'),
+    tabBrowse: $('#tab-browse'),
+    tabAbout: $('#tab-about'),
 
-  if (!storedUser) {
-    storedUser = { username, password, reviews: [] };
-    localStorage.setItem('user', JSON.stringify(storedUser));
-    alert('Account created and logged in!');
-  } else if (storedUser.username === username && storedUser.password === password) {
-    alert('Login successful!');
-  } else {
-    alert('Invalid login');
-    return;
-  }
+    // Form elements
+    type: $('#type'),
+    otherTitleWrap: $('#otherTitleWrap'),
+    otherTitle: $('#otherTitle'),
+    spotifyInputWrap: $('#spotifyInputWrap'),
+    spotifyUrl: $('#spotifyUrl'),
+    otherFields: $('#otherFields'),
+    otherSubtitle: $('#otherSubtitle'),
+    otherImage: $('#otherImage'),
+    score: $('#score'),
+    scoreOut: $('#scoreOut'),
+    manualScore: $('#manualScore'),
+    review: $('#review'),
+    previewBtn: $('#previewBtn'),
+    previewPane: $('#previewPane'),
+    saveBtn: $('#saveBtn'),
+    clearFormBtn: $('#clearFormBtn'),
+    statsPill: $('#statsPill'),
 
-  showApp();
-});
+    // Browse elements
+    q: $('#q'),
+    filterType: $('#filterType'),
+    sortBy: $('#sortBy'),
+    list: $('#list'),
+    emptyList: $('#emptyList'),
+    exportBtn: $('#exportBtn'),
+    importInput: $('#importInput'),
+    wipeBtn: $('#wipeBtn')
+  };
 
-reviewForm.addEventListener('submit', async (e) => {
-  e.preventDefault();
-  let title = document.getElementById('customTitle').value.trim();
-  let text = document.getElementById('reviewText').value.trim();
-  let score = parseFloat(document.getElementById('score').value);
-  let link = document.getElementById('spotifyLink').value.trim();
-  let artist = '';
-  let albumArt = '';
+  let currentUser = null;
 
-  if (link.includes('open.spotify.com/album')) {
-    try {
-      const albumId = link.split('/album/')[1].split('?')[0];
-      const res = await fetch(`https://api.allorigins.win/get?url=${encodeURIComponent('https://open.spotify.com/oembed?url=spotify:album:' + albumId)}`);
-      const data = await res.json();
-      const parsed = JSON.parse(data.contents);
-      title = parsed.title;
-      albumArt = parsed.thumbnail_url;
-      artist = parsed.author_name || '';
-    } catch (err) {
-      console.error('Spotify fetch failed', err);
+  // Initialize
+  init();
+
+  function init() {
+    setupEventListeners();
+    loadCurrentUser();
+    
+    // Check if we're viewing a public profile
+    const urlParams = new URLSearchParams(window.location.search);
+    const publicUser = urlParams.get('user');
+    
+    if (publicUser) {
+      showPublicView(publicUser);
+    } else if (currentUser) {
+      showMainApp();
+    } else {
+      showLoginPrompt();
     }
   }
 
-  storedUser.reviews.push({ title, artist, text, score, albumArt, date: new Date().getTime() });
-  localStorage.setItem('user', JSON.stringify(storedUser));
-  renderReviews();
-  reviewForm.reset();
-});
+  function setupEventListeners() {
+    // Login/Register
+    els.showLoginBtn.addEventListener('click', showLoginModal);
+    els.closeLoginModal.addEventListener('click', hideLoginModal);
+    els.closeShareModal.addEventListener('click', hideShareModal);
+    els.loginBtn.addEventListener('click', handleLogin);
+    els.registerBtn.addEventListener('click', handleRegister);
+    els.logoutBtn.addEventListener('click', handleLogout);
+    
+    // Share
+    els.shareReviewsBtn.addEventListener('click', showShareModal);
+    els.copyLinkBtn.addEventListener('click', copyShareLink);
 
-function renderReviews() {
-  let reviews = [...storedUser.reviews];
-  const searchTerm = searchInput.value.toLowerCase();
+    // Close modals on outside click
+    els.loginModal.addEventListener('click', (e) => {
+      if (e.target === els.loginModal) hideLoginModal();
+    });
+    els.shareModal.addEventListener('click', (e) => {
+      if (e.target === els.shareModal) hideShareModal();
+    });
 
-  if (searchTerm) {
-    reviews = reviews.filter(r => r.title.toLowerCase().includes(searchTerm) || r.artist.toLowerCase().includes(searchTerm) || r.text.toLowerCase().includes(searchTerm));
+    // Tabs
+    els.tabs.forEach(t => t.addEventListener('click', () => {
+      els.tabs.forEach(x => x.classList.remove('active'));
+      t.classList.add('active');
+      
+      els.tabAdd.style.display = 'none';
+      els.tabBrowse.style.display = 'none';
+      els.tabAbout.style.display = 'none';
+      
+      const id = t.dataset.tab;
+      if (id === 'add') els.tabAdd.style.display = '';
+      else if (id === 'browse') {
+        els.tabBrowse.style.display = '';
+        renderList();
+      }
+      else if (id === 'about') els.tabAbout.style.display = '';
+    }));
+
+    // Form
+    els.type.addEventListener('change', handleTypeChange);
+    els.score.addEventListener('input', updateScoreDisplay);
+    els.manualScore.addEventListener('input', handleManualScoreInput);
+    els.previewBtn.addEventListener('click', handlePreview);
+    els.saveBtn.addEventListener('click', handleSave);
+    els.clearFormBtn.addEventListener('click', clearForm);
+
+    // Search/filter
+    ['input', 'change'].forEach(evt => {
+      els.q.addEventListener(evt, renderList);
+      els.filterType.addEventListener(evt, renderList);
+      els.sortBy.addEventListener(evt, renderList);
+    });
+
+    // Import/Export/Wipe
+    els.exportBtn.addEventListener('click', exportData);
+    els.importInput.addEventListener('change', importData);
+    els.wipeBtn.addEventListener('click', wipeData);
   }
 
-  const sortType = sortSelect.value;
-  if (sortType === 'newest') reviews.sort((a,b)=> b.date - a.date);
-  if (sortType === 'oldest') reviews.sort((a,b)=> a.date - b.date);
-  if (sortType === 'highest') reviews.sort((a,b)=> b.score - a.score);
-  if (sortType === 'lowest') reviews.sort((a,b)=> a.score - b.score);
+  // User Management
+  function loadUsers() {
+    try {
+      return JSON.parse(localStorage.getItem(USERS_KEY)) || {};
+    } catch(e) {
+      return {};
+    }
+  }
 
-  reviewsContainer.innerHTML = '';
-  reviews.forEach((r, i) => {
-    const div = document.createElement('div');
-    div.className = 'review';
-    div.innerHTML = `
-      <div class="review-header">
-        ${r.albumArt ? `<img src="${r.albumArt}" class="album-art">` : ''}
-        <div class="review-info">
-          <h3>${r.title} ${r.artist ? '- ' + r.artist : ''}</h3>
-          <p><strong>Score:</strong> ${r.score}/10</p>
-        </div>
-      </div>
-      <p>${r.text}</p>
-      <button onclick="deleteReview(${i})">Delete</button>
-    `;
-    reviewsContainer.appendChild(div);
-  });
-}
+  function saveUsers(users) {
+    localStorage.setItem(USERS_KEY, JSON.stringify(users));
+  }
 
-function deleteReview(index) {
-  storedUser.reviews.splice(index,1);
-  localStorage.setItem('user', JSON.stringify(storedUser));
-  renderReviews();
-}
+  function loadCurrentUser() {
+    const username = localStorage.getItem(CURRENT_USER_KEY);
+    if (username) {
+      const users = loadUsers();
+      if (users[username]) {
+        currentUser = username;
+        els.currentUser.textContent = username;
+        return true;
+      }
+    }
+    return false;
+  }
 
-searchInput.addEventListener('input', renderReviews);
-sortSelect.addEventListener('change', renderReviews);
+  function setCurrentUser(username) {
+    currentUser = username;
+    localStorage.setItem(CURRENT_USER_KEY, username);
+    els.currentUser.textContent = username;
+  }
 
-if(storedUser) showApp();
+  function clearCurrentUser() {
+    currentUser = null;
+    localStorage.removeItem(CURRENT_USER_KEY);
+  }
+
+  // UI State Management
+  function showLoginPrompt() {
+    els.loginPrompt.style.display = '';
+    els.mainContent.style.display = 'none';
+    els.userBar.style.display = 'none';
+    els.publicView.style.display = 'none';
+  }
+
+  function showMainApp() {
+    els.loginPrompt.style.display = 'none';
+    els.mainContent.style.display = '';
+    els.userBar.style
