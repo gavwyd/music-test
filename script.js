@@ -1,114 +1,107 @@
-/* style.css */
+// script.js
 
-body {
-  font-family: Arial, sans-serif;
-  background-color: #f4f4f4;
-  margin: 0;
-  padding: 0;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
+let storedUser = JSON.parse(localStorage.getItem('user')) || null;
+const loginPage = document.getElementById('loginPage');
+const app = document.getElementById('app');
+const loginBtn = document.getElementById('loginBtn');
+const reviewForm = document.getElementById('reviewForm');
+const reviewsContainer = document.getElementById('reviews');
+const searchInput = document.getElementById('search');
+const sortSelect = document.getElementById('sort');
+
+function showApp() {
+  loginPage.style.display = 'none';
+  app.style.display = 'block';
+  renderReviews();
 }
 
-header {
-  background-color: #333;
-  color: #fff;
-  width: 100%;
-  padding: 20px 0;
-  text-align: center;
-  box-shadow: 0 2px 5px rgba(0,0,0,0.3);
+loginBtn.addEventListener('click', () => {
+  const username = document.getElementById('username').value;
+  const password = document.getElementById('password').value;
+
+  if (!storedUser) {
+    storedUser = { username, password, reviews: [] };
+    localStorage.setItem('user', JSON.stringify(storedUser));
+    alert('Account created and logged in!');
+  } else if (storedUser.username === username && storedUser.password === password) {
+    alert('Login successful!');
+  } else {
+    alert('Invalid login');
+    return;
+  }
+
+  showApp();
+});
+
+reviewForm.addEventListener('submit', async (e) => {
+  e.preventDefault();
+  let title = document.getElementById('customTitle').value.trim();
+  let text = document.getElementById('reviewText').value.trim();
+  let score = parseFloat(document.getElementById('score').value);
+  let link = document.getElementById('spotifyLink').value.trim();
+  let artist = '';
+  let albumArt = '';
+
+  if (link.includes('open.spotify.com/album')) {
+    try {
+      const albumId = link.split('/album/')[1].split('?')[0];
+      const res = await fetch(`https://api.allorigins.win/get?url=${encodeURIComponent('https://open.spotify.com/oembed?url=spotify:album:' + albumId)}`);
+      const data = await res.json();
+      const parsed = JSON.parse(data.contents);
+      title = parsed.title;
+      albumArt = parsed.thumbnail_url;
+      artist = parsed.author_name || '';
+    } catch (err) {
+      console.error('Spotify fetch failed', err);
+    }
+  }
+
+  storedUser.reviews.push({ title, artist, text, score, albumArt, date: new Date().getTime() });
+  localStorage.setItem('user', JSON.stringify(storedUser));
+  renderReviews();
+  reviewForm.reset();
+});
+
+function renderReviews() {
+  let reviews = [...storedUser.reviews];
+  const searchTerm = searchInput.value.toLowerCase();
+
+  if (searchTerm) {
+    reviews = reviews.filter(r => r.title.toLowerCase().includes(searchTerm) || r.artist.toLowerCase().includes(searchTerm) || r.text.toLowerCase().includes(searchTerm));
+  }
+
+  const sortType = sortSelect.value;
+  if (sortType === 'newest') reviews.sort((a,b)=> b.date - a.date);
+  if (sortType === 'oldest') reviews.sort((a,b)=> a.date - b.date);
+  if (sortType === 'highest') reviews.sort((a,b)=> b.score - a.score);
+  if (sortType === 'lowest') reviews.sort((a,b)=> a.score - b.score);
+
+  reviewsContainer.innerHTML = '';
+  reviews.forEach((r, i) => {
+    const div = document.createElement('div');
+    div.className = 'review';
+    div.innerHTML = `
+      <div class="review-header">
+        ${r.albumArt ? `<img src="${r.albumArt}" class="album-art">` : ''}
+        <div class="review-info">
+          <h3>${r.title} ${r.artist ? '- ' + r.artist : ''}</h3>
+          <p><strong>Score:</strong> ${r.score}/10</p>
+        </div>
+      </div>
+      <p>${r.text}</p>
+      <button onclick="deleteReview(${i})">Delete</button>
+    `;
+    reviewsContainer.appendChild(div);
+  });
 }
 
-.container {
-  width: 90%;
-  max-width: 800px;
-  background-color: #fff;
-  margin: 20px 0;
-  padding: 20px;
-  border-radius: 10px;
-  box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+function deleteReview(index) {
+  storedUser.reviews.splice(index,1);
+  localStorage.setItem('user', JSON.stringify(storedUser));
+  renderReviews();
 }
 
-.login-container {
-  width: 300px;
-  margin-top: 100px;
-  background-color: #fff;
-  padding: 30px;
-  border-radius: 10px;
-  box-shadow: 0 4px 8px rgba(0,0,0,0.1);
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-}
+searchInput.addEventListener('input', renderReviews);
+sortSelect.addEventListener('change', renderReviews);
 
-.login-container input, .login-container button {
-  width: 90%;
-  margin: 10px 0;
-  padding: 10px;
-  font-size: 16px;
-}
-
-.review-input form, .review-list {
-  display: flex;
-  flex-direction: column;
-}
-
-.review-input form input, .review-input form textarea, .review-input form button,
-#search, #sort {
-  margin: 10px 0;
-  padding: 10px;
-  font-size: 16px;
-  border-radius: 5px;
-  border: 1px solid #ccc;
-}
-
-.review-input form button {
-  background-color: #4db8ff;
-  color: #fff;
-  font-weight: bold;
-  cursor: pointer;
-  border: none;
-}
-
-.review {
-  border-bottom: 1px solid #ddd;
-  padding: 10px 0;
-}
-
-.review:last-child {
-  border-bottom: none;
-}
-
-.review-header {
-  display: flex;
-  align-items: center;
-}
-
-.album-art {
-  max-width: 100px;
-  border-radius: 5px;
-  margin-right: 15px;
-}
-
-.review-info h3 {
-  margin: 0;
-  font-size: 18px;
-}
-
-.review-info p {
-  margin: 5px 0 0 0;
-}
-
-#search, #sort {
-  width: 100%;
-}
-
-#reviews button {
-  background-color: #ff4d4d;
-  color: #fff;
-  border: none;
-  padding: 5px 10px;
-  border-radius: 5px;
-  cursor: pointer;
-  margin-top: 5px;
-}
+if(storedUser) showApp();
