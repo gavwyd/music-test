@@ -1,236 +1,280 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Album Review Site</title>
-  <style>
-    body {
-      font-family: Arial, sans-serif;
-      background-color: #f4f4f4;
-      margin: 0;
-      padding: 0;
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-    }
-    header {
-      background: #333;
-      color: #fff;
-      padding: 20px;
-      width: 100%;
-      text-align: center;
-    }
-    .container {
-      margin-top: 20px;
-      width: 90%;
-      max-width: 800px;
-      background: #fff;
-      padding: 20px;
-      border-radius: 10px;
-      box-shadow: 0 4px 6px rgba(0,0,0,0.1);
-    }
-    form {
-      display: flex;
-      flex-direction: column;
-      margin-bottom: 20px;
-    }
-    form input, form textarea, form button {
-      margin: 10px 0;
-      padding: 10px;
-      font-size: 16px;
-    }
-    .review {
-      border-bottom: 1px solid #ddd;
-      padding: 10px 0;
-    }
-    .review:last-child {
-      border-bottom: none;
-    }
-    .album-art {
-      max-width: 100px;
-      border-radius: 5px;
-      margin-right: 15px;
-    }
-    .review-header {
-      display: flex;
-      align-items: center;
-    }
-    .review-info {
-      flex: 1;
-    }
-    .login-container {
-      margin-top: 50px;
-      background: #fff;
-      padding: 20px;
-      border-radius: 10px;
-      box-shadow: 0 4px 6px rgba(0,0,0,0.1);
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-    }
-    .login-container input, .login-container button {
-      width: 90%;
-      margin: 10px 0;
-      padding: 10px;
-      font-size: 16px;
-    }
-    .login-container button {
-      background-color: #4db8ff;
-      color: #fff;
-      font-weight: bold;
-      border: none;
-      cursor: pointer;
-      border-radius: 5px;
-    }
-    .review button {
-      background-color: #ff4d4d;
-      color: #fff;
-      border: none;
-      padding: 5px 10px;
-      border-radius: 5px;
-      cursor: pointer;
-      margin-top: 5px;
-    }
-  </style>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>ReviewHub — Rate Spotify albums & anything (0.5—10)</title>
+  <meta name="description" content="Paste a Spotify album link (or anything else), rate it 0.5—10 with decimals, and write a review. Login to manage and share your reviews.">
+  <link rel="stylesheet" href="styles.css">
 </head>
 <body>
-  <header>
-    <h1>Album Review Site</h1>
-  </header>
-
-  <div id="loginPage" class="login-container">
-    <h2>Login</h2>
-    <input type="text" id="username" placeholder="Username">
-    <input type="password" id="password" placeholder="Password">
-    <button onclick="login()">Login</button>
+  <!-- Login Modal -->
+  <div id="loginModal" class="modal">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h3>Login to ReviewHub</h3>
+        <button class="close-btn" id="closeLoginModal">&times;</button>
+      </div>
+      <div class="modal-body">
+        <div class="form-group">
+          <label for="loginUsername">Username</label>
+          <input id="loginUsername" type="text" placeholder="Enter your username" />
+        </div>
+        <div class="form-group">
+          <label for="loginPassword">Password</label>
+          <input id="loginPassword" type="password" placeholder="Enter your password" />
+        </div>
+        <div class="form-group">
+          <button id="loginBtn" class="btn primary">Login</button>
+          <button id="registerBtn" class="btn ghost">Register New Account</button>
+        </div>
+        <div id="loginError" class="error-msg" style="display:none"></div>
+      </div>
+    </div>
   </div>
 
-  <div id="app" class="container" style="display: none;">
-    <h2>Add a Review</h2>
-    <form id="reviewForm">
-      <input type="text" id="spotifyLink" placeholder="Spotify Album Link (optional)">
-      <input type="text" id="customTitle" placeholder="Custom Title (if no link)">
-      <textarea id="reviewText" placeholder="Write your review..."></textarea>
-      <input type="number" id="score" step="0.1" min="0" max="10" placeholder="Score (e.g. 7.5)">
-      <button type="submit">Add Review</button>
-    </form>
-
-    <h2>Your Reviews</h2>
-    <input type="text" id="search" placeholder="Search reviews...">
-    <select id="sort">
-      <option value="newest">Newest</option>
-      <option value="oldest">Oldest</option>
-      <option value="highest">Highest Score</option>
-      <option value="lowest">Lowest Score</option>
-    </select>
-    <div id="reviews"></div>
+  <!-- Share Modal -->
+  <div id="shareModal" class="modal">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h3>Share Your Reviews</h3>
+        <button class="close-btn" id="closeShareModal">&times;</button>
+      </div>
+      <div class="modal-body">
+        <div class="form-group">
+          <label>Your Public Review Page</label>
+          <div class="share-link-container">
+            <input id="shareLink" type="text" readonly />
+            <button id="copyLinkBtn" class="btn">Copy Link</button>
+          </div>
+          <div class="hint">Share this link with anyone to let them view your reviews</div>
+        </div>
+      </div>
+    </div>
   </div>
 
-  <script>
-    let storedUser = JSON.parse(localStorage.getItem('user')) || null;
+  <div class="app">
+    <!-- User Bar -->
+    <div id="userBar" class="user-bar" style="display:none">
+      <div class="user-info">
+        <span class="user-welcome">Welcome, <strong id="currentUser"></strong>!</span>
+        <button id="shareReviewsBtn" class="btn ghost small">🔗 Share Reviews</button>
+      </div>
+      <button id="logoutBtn" class="btn ghost small">Logout</button>
+    </div>
 
-    function login() {
-      const username = document.getElementById('username').value;
-      const password = document.getElementById('password').value;
+    <!-- Login Prompt -->
+    <div id="loginPrompt" class="login-prompt">
+      <div class="card">
+        <div class="bd" style="text-align:center; padding:40px">
+          <h2>Welcome to ReviewHub</h2>
+          <p>Login or create an account to start rating and reviewing albums</p>
+          <button id="showLoginBtn" class="btn primary">Login / Register</button>
+        </div>
+      </div>
+    </div>
 
-      if (!storedUser) {
-        storedUser = { username, password, reviews: [] };
-        localStorage.setItem('user', JSON.stringify(storedUser));
-        alert('Account created and logged in!');
-      } else if (storedUser.username === username && storedUser.password === password) {
-        alert('Login successful!');
-      } else {
-        alert('Invalid login');
-        return;
-      }
+    <!-- Main App Content -->
+    <div id="mainContent" style="display:none">
+      <div class="brand">
+        <div class="logo" aria-hidden></div>
+        <div>
+          <h1>ReviewHub</h1>
+          <div class="sub">Paste a Spotify album link or review anything. Scores are 0.5—10 with decimals. Share your reviews with friends.</div>
+        </div>
+      </div>
 
-      document.getElementById('loginPage').style.display = 'none';
-      document.getElementById('app').style.display = 'block';
-      renderReviews();
-    }
+      <div class="tabs">
+        <button class="tab active" data-tab="add">➕ Add Review</button>
+        <button class="tab" data-tab="browse">🗂️ Browse Reviews</button>
+        <button class="tab" data-tab="about">ℹ️ About</button>
+        <span class="right pill" id="statsPill">0 reviews</span>
+      </div>
 
-    document.getElementById('reviewForm').addEventListener('submit', async (e) => {
-      e.preventDefault();
-      const link = document.getElementById('spotifyLink').value.trim();
-      const customTitle = document.getElementById('customTitle').value.trim();
-      const text = document.getElementById('reviewText').value;
-      const score = parseFloat(document.getElementById('score').value);
+      <section id="tab-add" class="grid">
+        <div class="card">
+          <div class="hd"><strong>Add a Review</strong></div>
+          <div class="bd">
+            <div class="row">
+              <div>
+                <label for="type">Item type</label>
+                <select id="type">
+                  <option value="spotify">Spotify Album</option>
+                  <option value="other">Other</option>
+                </select>
+              </div>
+              <div id="otherTitleWrap" style="display:none">
+                <label for="otherTitle">Title (for Other)</label>
+                <input id="otherTitle" type="text" placeholder="e.g., My Favorite Pizza Place" />
+              </div>
+            </div>
 
-      let title = customTitle;
-      let artist = '';
-      let albumArt = '';
+            <div class="spacer"></div>
 
-      if (link.includes('open.spotify.com/album')) {
-        try {
-          const albumId = link.split('/album/')[1].split('?')[0];
-          const res = await fetch(`https://api.allorigins.win/get?url=${encodeURIComponent('https://open.spotify.com/oembed?url=spotify:album:' + albumId)}`);
-          const data = await res.json();
-          const parsed = JSON.parse(data.contents);
-          title = parsed.title;
-          albumArt = parsed.thumbnail_url;
-          if (parsed.author_name) artist = parsed.author_name;
-        } catch (err) {
-          console.error('Spotify fetch failed', err);
-        }
-      }
+            <div id="spotifyInputWrap" class="row-1 row">
+              <div>
+                <label for="spotifyUrl">Spotify album link</label>
+                <input id="spotifyUrl" type="text" placeholder="https://open.spotify.com/album/..." />
+                <div class="hint">Paste any Spotify <strong>album</strong> URL. We'll pull its title/artist/cover using Spotify oEmbed.</div>
+              </div>
+            </div>
 
-      storedUser.reviews.push({ title, artist, text, score, albumArt, date: new Date().getTime() });
-      localStorage.setItem('user', JSON.stringify(storedUser));
-      renderReviews();
-      document.getElementById('reviewForm').reset();
-    });
+            <div id="otherFields" class="row" style="display:none">
+              <div>
+                <label for="otherSubtitle">Subtitle / Creator (optional)</label>
+                <input id="otherSubtitle" type="text" placeholder="e.g., by Joe's Pizzeria" />
+              </div>
+              <div>
+                <label for="otherImage">Image URL (optional)</label>
+                <input id="otherImage" type="text" placeholder="https://example.com/cover.jpg" />
+              </div>
+            </div>
 
-    function renderReviews() {
-      const container = document.getElementById('reviews');
-      container.innerHTML = '';
-      if (!storedUser || !storedUser.reviews) return;
+            <div class="spacer"></div>
 
-      let reviews = [...storedUser.reviews];
+            <div class="row-1 row">
+              <div class="rating">
+                <label for="score">Score</label>
+                <input id="score" type="range" min="0.5" max="10" step="0.5" value="7" />
+                <span class="pill"><span>Current:</span> <strong id="scoreOut">7.0</strong>/10</span>
+              </div>
+              <div class="manual-score">
+                <label for="manualScore">Or type exact score (0.5-10.0)</label>
+                <input id="manualScore" type="number" min="0.5" max="10" step="0.1" placeholder="e.g., 8.7" />
+              </div>
+            </div>
 
-      const searchTerm = document.getElementById('search').value.toLowerCase();
-      if (searchTerm) {
-        reviews = reviews.filter(r => r.title.toLowerCase().includes(searchTerm) || r.artist.toLowerCase().includes(searchTerm) || r.text.toLowerCase().includes(searchTerm));
-      }
+            <div class="spacer"></div>
 
-      const sortType = document.getElementById('sort').value;
-      if (sortType === 'newest') reviews.sort((a,b)=> b.date - a.date);
-      if (sortType === 'oldest') reviews.sort((a,b)=> a.date - b.date);
-      if (sortType === 'highest') reviews.sort((a,b)=> b.score - a.score);
-      if (sortType === 'lowest') reviews.sort((a,b)=> a.score - b.score);
+            <div class="row-1 row">
+              <div>
+                <label for="review">Your review</label>
+                <textarea id="review" rows="5" placeholder="Say why you rated it like that…"></textarea>
+              </div>
+            </div>
 
-      reviews.forEach((r,i) => {
-        const div = document.createElement('div');
-        div.className = 'review';
-        div.innerHTML = `
-          <div class="review-header">
-            ${r.albumArt ? `<img src="${r.albumArt}" class="album-art">` : ''}
-            <div class="review-info">
-              <h3>${r.title} ${r.artist ? '- ' + r.artist : ''}</h3>
-              <p><strong>Score:</strong> ${r.score}/10</p>
+            <div class="spacer"></div>
+
+            <div class="toolbar">
+              <button id="previewBtn" class="btn">🔍 Preview</button>
+              <button id="saveBtn" class="btn primary">💾 Save Review</button>
+              <button id="clearFormBtn" class="btn ghost" title="Clear just the form fields">🧹 Clear Form</button>
             </div>
           </div>
-          <p>${r.text}</p>
-          <button onclick="deleteReview(${i})">Delete</button>
-        `;
-        container.appendChild(div);
-      });
-    }
+        </div>
 
-    function deleteReview(index) {
-      storedUser.reviews.splice(index,1);
-      localStorage.setItem('user', JSON.stringify(storedUser));
-      renderReviews();
-    }
+        <div class="card">
+          <div class="hd"><strong>Preview</strong></div>
+          <div class="bd" id="previewPane">
+            <div class="empty">No preview yet. Fill the form and click <em>Preview</em>.</div>
+          </div>
+        </div>
+      </section>
 
-    document.getElementById('search').addEventListener('input', renderReviews);
-    document.getElementById('sort').addEventListener('change', renderReviews);
+      <section id="tab-browse" style="display:none">
+        <div class="card">
+          <div class="hd"><strong>Browse & Manage</strong></div>
+          <div class="bd">
+            <div class="toolbar" style="margin-bottom:12px">
+              <input id="q" type="text" placeholder="Search title/artist/text…" style="max-width:360px">
+              <select id="filterType">
+                <option value="all">All types</option>
+                <option value="spotify">Spotify albums</option>
+                <option value="other">Other</option>
+              </select>
+              <select id="sortBy">
+                <option value="date-desc">Newest</option>
+                <option value="date-asc">Oldest</option>
+                <option value="score-desc">Highest score</option>
+                <option value="score-asc">Lowest score</option>
+                <option value="title-asc">Title A→Z</option>
+                <option value="title-desc">Title Z→A</option>
+              </select>
+              <button id="exportBtn" class="btn">⬇️ Export JSON</button>
+              <label class="btn" for="importInput" style="cursor:pointer">⬆️ Import JSON</label>
+              <input id="importInput" type="file" accept="application/json" style="display:none" />
+              <button id="wipeBtn" class="btn danger right" title="Delete ALL saved reviews">🗑️ Wipe All</button>
+            </div>
+            <div id="list" class="review-list"></div>
+            <div id="emptyList" class="empty" style="display:none">No reviews yet. Add one on the <strong>Add Review</strong> tab.</div>
+          </div>
+        </div>
+      </section>
 
-    if (storedUser) {
-      document.getElementById('loginPage').style.display = 'none';
-      document.getElementById('app').style.display = 'block';
-      renderReviews();
-    }
-  </script>
+      <section id="tab-about" style="display:none">
+        <div class="card">
+          <div class="hd"><strong>About</strong></div>
+          <div class="bd">
+            <p><strong>ReviewHub</strong> is a review tool for rating albums and anything else. Paste a Spotify album URL or enter anything, rate 0.5—10 with decimal precision, and write detailed reviews.</p>
+            <ul>
+              <li>Supports decimal ratings (e.g., 8.5, 9.2) for precise scoring</li>
+              <li>User accounts with login/registration system</li>
+              <li>Share your review collection with a public link</li>
+              <li>Spotify data uses the public <em>oEmbed</em> endpoint (no API keys)</li>
+              <li>Export/Import lets you back up or move your reviews</li>
+            </ul>
+          </div>
+        </div>
+      </section>
+    </div>
+
+    <!-- Public View (for shared links) -->
+    <div id="publicView" style="display:none">
+      <div class="brand">
+        <div class="logo" aria-hidden></div>
+        <div>
+          <h1>ReviewHub</h1>
+          <div class="sub">Public Reviews by <strong id="publicUsername"></strong></div>
+        </div>
+      </div>
+      
+      <div class="card">
+        <div class="hd"><strong>Reviews</strong></div>
+        <div class="bd">
+          <div id="publicList" class="review-list"></div>
+          <div id="publicEmpty" class="empty">No reviews found for this user.</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <template id="reviewCardTpl">
+    <div class="r-card">
+      <img class="r-cover" alt="Cover" />
+      <div>
+        <div class="r-title"></div>
+        <div class="r-sub"></div>
+        <div class="r-meta" style="margin-top:8px">
+          <span class="score"></span>
+          <span class="tag"></span>
+          <span class="time"></span>
+        </div>
+        <div class="r-text"></div>
+        <div class="toolbar" style="margin-top:10px">
+          <button class="btn ghost" data-action="edit">✏️ Edit</button>
+          <button class="btn ghost" data-action="dup">📄 Duplicate</button>
+          <button class="btn danger" data-action="del">🗑️ Delete</button>
+        </div>
+      </div>
+    </div>
+  </template>
+
+  <template id="publicReviewCardTpl">
+    <div class="r-card">
+      <img class="r-cover" alt="Cover" />
+      <div>
+        <div class="r-title"></div>
+        <div class="r-sub"></div>
+        <div class="r-meta" style="margin-top:8px">
+          <span class="score"></span>
+          <span class="tag"></span>
+          <span class="time"></span>
+        </div>
+        <div class="r-text"></div>
+      </div>
+    </div>
+  </template>
+
+  <script src="script.js"></script>
 </body>
 </html>
