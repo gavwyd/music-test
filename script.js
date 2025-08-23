@@ -6,7 +6,19 @@
   const USERS_KEY = 'reviewhub.users';
   const CURRENT_USER_KEY = 'reviewhub.currentUser';
   const REVIEWS_KEY = 'reviewhub.reviews';
-  const PUBLIC_REVIEWS_KEY = 'reviewhub.public.reviews'; // Shared public reviews
+  
+  // Global shared storage simulation (works across browsers via URL sharing)
+  let globalSharedReviews = {};
+  
+  // Try to load any existing global data from a special storage key
+  try {
+    const saved = localStorage.getItem('reviewhub.global.shared');
+    if (saved) {
+      globalSharedReviews = JSON.parse(saved);
+    }
+  } catch(_e) {
+    globalSharedReviews = {};
+  }
 
   // Elements
   const els = {
@@ -86,17 +98,18 @@
     loadCurrentUser();
     
     // Check if we're viewing a shared review collection
-    const urlParams = new URLSearchParams(window.location.search);
+    const urlParams = new URLSearchParams(globalThis.location.search);
     const shareData = urlParams.get('share');
     const publicUser = urlParams.get('user');
     
     if (shareData) {
-      try {
-        const decodedData = JSON.parse(atob(decodeURIComponent(shareData)));
+      const decodedData = loadSharedDataFromUrl(shareData);
+      if (decodedData) {
         showSharedView(decodedData);
         return;
-      } catch(_e) {
+      } else {
         console.error('Invalid share data');
+        // Continue to normal flow
       }
     }
     
@@ -273,18 +286,26 @@
   function showShareModal() {
     els.shareModal.classList.add('show');
     
-    // Create a shareable data URL that includes the user's reviews
+    // Create a comprehensive shareable data package
     const reviews = loadReviews();
+    const shareId = generateShareId(currentUser);
+    
     const shareData = {
       username: currentUser,
       reviews: reviews,
-      timestamp: new Date().toISOString()
+      timestamp: new Date().toISOString(),
+      shareId: shareId,
+      version: '1.0'
     };
     
-    // Encode the data in the URL
+    // Create the share URL with all data embedded
     const encodedData = encodeURIComponent(btoa(JSON.stringify(shareData)));
-    const shareUrl = `${window.location.origin}${window.location.pathname}?share=${encodedData}`;
+    const shareUrl = `${globalThis.location.origin}${globalThis.location.pathname}?share=${encodedData}`;
     
+    // Also create a simple fallback URL
+    const simpleUrl = `${globalThis.location.origin}${globalThis.location.pathname}?user=${encodeURIComponent(currentUser)}`;
+    
+    // Use the comprehensive share URL
     els.shareLink.value = shareUrl;
   }
 
@@ -379,6 +400,29 @@
     }
   }
 
+  function saveToGlobalShared(username, reviews) {
+    // Save to global shared storage
+    globalSharedReviews[username] = {
+      reviews: reviews,
+      lastUpdated: new Date().toISOString(),
+      shareId: generateShareId(username)
+    };
+    
+    // Persist to localStorage as backup
+    try {
+      localStorage.setItem('reviewhub.global.shared', JSON.stringify(globalSharedReviews));
+    } catch(_e) {
+      // Ignore storage errors
+    }
+  }
+  
+  function generateShareId(username) {
+    // Create a unique share ID based on username and timestamp
+    const timestamp = Date.now().toString(36);
+    const hash = btoa(username + timestamp).replace(/[^a-zA-Z0-9]/g, '').substring(0, 8);
+    return hash;
+  }
+
   function saveReviews(reviews) {
     if (!currentUser) return;
     try {
@@ -387,10 +431,8 @@
       allReviews[currentUser] = reviews;
       localStorage.setItem(REVIEWS_KEY, JSON.stringify(allReviews));
       
-      // Also save to public reviews for sharing
-      const publicReviews = JSON.parse(localStorage.getItem(PUBLIC_REVIEWS_KEY)) || {};
-      publicReviews[currentUser] = reviews;
-      localStorage.setItem(PUBLIC_REVIEWS_KEY, JSON.stringify(publicReviews));
+      // Also save to global shared storage for universal access
+      saveToGlobalShared(currentUser, reviews);
       
       updateStats();
     } catch(_e) {
@@ -399,18 +441,44 @@
   }
 
   function loadPublicReviews(username) {
+    // First check global shared storage
+    if (globalSharedReviews[username] && globalSharedReviews[username].reviews) {
+      return globalSharedReviews[username].reviews;
+    }
+    
     try {
-      // Try to load from public reviews first (for sharing across browsers/incognito)
-      const publicReviews = JSON.parse(localStorage.getItem(PUBLIC_REVIEWS_KEY)) || {};
-      if (publicReviews[username] && publicReviews[username].length > 0) {
-        return publicReviews[username];
-      }
-      
-      // Fallback to regular reviews (for same browser)
+      // Fallback to localStorage
       const allReviews = JSON.parse(localStorage.getItem(REVIEWS_KEY)) || {};
       return allReviews[username] || [];
     } catch(_e) {
       return [];
+    }
+  }
+  
+  function loadSharedDataFromUrl(shareData) {
+    try {
+      // Decode the share data from URL
+      const decodedData = JSON.parse(atob(decodeURIComponent(shareData)));
+      
+      // Store this data in global shared storage for future access
+      if (decodedData.username && decodedData.reviews) {
+        globalSharedReviews[decodedData.username] = {
+          reviews: decodedData.reviews,
+          lastUpdated: decodedData.timestamp || new Date().toISOString(),
+          shareId: decodedData.shareId || generateShareId(decodedData.username)
+        };
+        
+        // Persist to localStorage
+        try {
+          localStorage.setItem('reviewhub.global.shared', JSON.stringify(globalSharedReviews));
+        } catch(_e) {
+          // Ignore storage errors
+        }
+      }
+      
+      return decodedData;
+    } catch(_e) {
+      return null;
     }
   }
 
@@ -817,16 +885,17 @@
   function wipeData() {
     if (!confirm('Delete ALL your reviews? This cannot be undone.')) return;
     
-    // Clear both private and public reviews for the user
+    // Clear private reviews
     saveReviews([]);
     
-    // Also remove from public storage
-    try {
-      const publicReviews = JSON.parse(localStorage.getItem(PUBLIC_REVIEWS_KEY)) || {};
-      delete publicReviews[currentUser];
-      localStorage.setItem(PUBLIC_REVIEWS_KEY, JSON.stringify(publicReviews));
-    } catch(_e) {
-      // Ignore errors
+    // Also remove from global shared storage
+    if (globalSharedReviews[currentUser]) {
+      delete globalSharedReviews[currentUser];
+      try {
+        localStorage.setItem('reviewhub.global.shared', JSON.stringify(globalSharedReviews));
+      } catch(_e) {
+        // Ignore errors
+      }
     }
     
     renderList();
