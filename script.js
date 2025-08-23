@@ -23,12 +23,6 @@
     emailLoginBtn: $('#emailLoginBtn'),
     emailRegisterBtn: $('#emailRegisterBtn'),
     
-    // Phone auth
-    loginPhone: $('#loginPhone'),
-    otpCode: $('#otpCode'),
-    phoneLoginBtn: $('#phoneLoginBtn'),
-    phoneButtonText: $('#phoneButtonText'),
-    
     // User interface
     userBar: $('#userBar'),
     currentUser: $('#currentUser'),
@@ -91,8 +85,6 @@
   let selectedMusicData = null
   let spotifyToken = null
   let searchTimeout = null
-  const _otpTimer = null
-  let awaitingOtp = false
 
   // Initialize
   init()
@@ -111,7 +103,6 @@
     // Auth
     els.emailLoginBtn.addEventListener('click', handleEmailLogin)
     els.emailRegisterBtn.addEventListener('click', handleEmailRegister)
-    els.phoneLoginBtn.addEventListener('click', handlePhoneAuth)
     els.logoutBtn.addEventListener('click', handleLogout)
 
     // Main tabs
@@ -176,7 +167,7 @@
 
     try {
       els.emailLoginBtn.disabled = true
-      els.emailLoginBtn.textContent = 'Logging in...'
+      els.emailLoginBtn.textContent = 'Signing in...'
       
       const { error } = await supabase.auth.signInWithPassword({ email, password })
       if (error) throw error
@@ -189,7 +180,7 @@
         <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
           <path d="M20 4H4C2.9 4 2.01 4.9 2.01 6L2 18C2 19.1 2.9 20 4 20H20C21.1 20 22 19.1 22 18V6C22 4.9 21.1 4 20 4ZM20 8L12 13L4 8V6L12 11L20 6V8Z"/>
         </svg>
-        Login with Email
+        Sign In
       `
     }
   }
@@ -229,109 +220,37 @@
       els.emailRegisterBtn.disabled = false
       els.emailRegisterBtn.innerHTML = `
         <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
-          <path d="M20 4H4C2.9 4 2.01 4.9 2.01 6L2 18C2 19.1 2.9 20 4 20H20C21.1 20 22 19.1 22 18V6C22 4.9 21.1 4 20 4ZM20 8L12 13L4 8V6L12 11L20 6V8Z"/>
+          <path d="M19 13H13V19H11V13H5V11H11V5H13V11H19V13Z"/>
         </svg>
-        Sign Up with Email
+        Create Account
       `
     }
-  }
-
-  async function handlePhoneAuth() {
-    if (!awaitingOtp) {
-      // Step 1: Send OTP
-      const phone = els.loginPhone.value.trim()
-      
-      if (!phone) {
-        showError('Please enter your phone number')
-        return
-      }
-
-      if (!phone.startsWith('+')) {
-        showError('Please include country code (e.g., +1234567890)')
-        return
-      }
-
-      try {
-        els.phoneLoginBtn.disabled = true
-        els.phoneButtonText.textContent = 'Sending code...'
-        
-        const { error } = await supabase.auth.signInWithOtp({
-          phone: phone
-        })
-        
-        if (error) throw error
-        
-        // Show OTP input
-        els.otpCode.style.display = 'block'
-        els.otpCode.focus()
-        awaitingOtp = true
-        els.phoneButtonText.textContent = 'Verify Code'
-        showError('Check your phone for verification code', 'success')
-        
-      } catch (error) {
-        showError(error.message)
-      } finally {
-        els.phoneLoginBtn.disabled = false
-      }
-    } else {
-      // Step 2: Verify OTP
-      const phone = els.loginPhone.value.trim()
-      const token = els.otpCode.value.trim()
-      
-      if (!token || token.length !== 6) {
-        showError('Please enter the 6-digit verification code')
-        return
-      }
-
-      try {
-        els.phoneLoginBtn.disabled = true
-        els.phoneButtonText.textContent = 'Verifying...'
-        
-        const { error } = await supabase.auth.verifyOtp({
-          phone: phone,
-          token: token,
-          type: 'sms'
-        })
-        
-        if (error) throw error
-        
-      } catch (error) {
-        showError(error.message)
-        // Reset on error
-        resetPhoneAuth()
-      } finally {
-        els.phoneLoginBtn.disabled = false
-      }
-    }
-  }
-
-  function resetPhoneAuth() {
-    awaitingOtp = false
-    els.otpCode.style.display = 'none'
-    els.otpCode.value = ''
-    els.phoneButtonText.textContent = 'Login/Sign Up with Phone'
   }
 
   async function handleAuthSuccess(user) {
     currentUser = user
     
-    // Create or update profile
+    // Create or update profile with proper user_id
     const { error: profileError } = await supabase
       .from('profiles')
       .upsert({
-        id: user.id,
-        username: user.user_metadata?.full_name || user.email?.split('@')[0] || user.phone || 'User',
-        full_name: user.user_metadata?.full_name || user.email?.split('@')[0] || user.phone || 'User',
-        avatar_url: user.user_metadata?.avatar_url || `https://ui-avatars.com/api/?name=${encodeURIComponent(user.email || user.phone || 'User')}&background=4da3ff&color=fff`
+        id: user.id,  // This is crucial - user.id becomes the primary key
+        username: user.user_metadata?.full_name || user.email?.split('@')[0] || 'User',
+        full_name: user.user_metadata?.full_name || user.email?.split('@')[0] || 'User',
+        avatar_url: user.user_metadata?.avatar_url || `https://ui-avatars.com/api/?name=${encodeURIComponent(user.email || 'User')}&background=4da3ff&color=fff`
       }, {
         onConflict: 'id'
       })
 
-    if (profileError) console.error('Profile error:', profileError)
+    if (profileError) {
+      console.error('Profile creation error:', profileError)
+    } else {
+      console.log('Profile created/updated successfully for user:', user.id)
+    }
 
     // Update UI
-    const displayName = user.user_metadata?.full_name || user.email?.split('@')[0] || user.phone || 'User'
-    const avatarUrl = user.user_metadata?.avatar_url || `https://ui-avatars.com/api/?name=${encodeURIComponent(user.email || user.phone || 'User')}&background=4da3ff&color=fff`
+    const displayName = user.user_metadata?.full_name || user.email?.split('@')[0] || 'User'
+    const avatarUrl = user.user_metadata?.avatar_url || `https://ui-avatars.com/api/?name=${encodeURIComponent(user.email || 'User')}&background=4da3ff&color=fff`
     
     els.currentUser.textContent = displayName
     els.userAvatar.src = avatarUrl
@@ -369,7 +288,6 @@
     currentUser = null
     selectedMusicData = null
     spotifyToken = null
-    resetPhoneAuth()
   }
 
   function showMainApp() {
@@ -419,6 +337,7 @@
       
       const data = await response.json()
       spotifyToken = data.access_token
+      console.log('Spotify token obtained successfully')
     } catch (error) {
       console.error('Failed to get Spotify token:', error)
     }
@@ -670,7 +589,7 @@
       review_text: reviewText,
       created_at: new Date().toISOString(),
       user: { 
-        full_name: currentUser?.user_metadata?.full_name || currentUser?.email?.split('@')[0] || currentUser?.phone || 'User',
+        full_name: currentUser?.user_metadata?.full_name || currentUser?.email?.split('@')[0] || 'User',
         avatar_url: currentUser?.user_metadata?.avatar_url || els.userAvatar?.src
       }
     }
@@ -682,6 +601,11 @@
   async function handleSaveReview() {
     if (!selectedMusicData) {
       alert('Please select music to review')
+      return
+    }
+
+    if (!currentUser) {
+      alert('Please log in to save reviews')
       return
     }
 
@@ -700,8 +624,9 @@
     els.saveBtn.textContent = 'Saving...'
 
     try {
+      // Ensure user_id is explicitly set
       const reviewData = {
-        user_id: currentUser.id,
+        user_id: currentUser.id, // This is critical for the foreign key relationship
         title: selectedMusicData.title,
         artist: selectedMusicData.artist,
         album_title: selectedMusicData.album_title || null,
@@ -715,7 +640,7 @@
         release_date: selectedMusicData.release_date || null
       }
 
-      console.log('Saving review:', reviewData)
+      console.log('Saving review with user_id:', currentUser.id, reviewData)
 
       const { data, error } = await supabase
         .from('reviews')
@@ -758,7 +683,7 @@
     updatePreview()
   }
 
-  // Reviews Loading
+  // Reviews Loading - Fixed Supabase queries
   async function loadMyReviews() {
     if (!currentUser) return
 
@@ -769,11 +694,12 @@
       const searchQuery = els.mySearch.value.trim().toLowerCase()
       const sortBy = els.mySortBy.value
 
+      // Use explicit join with profiles table
       let query = supabase
         .from('reviews')
         .select(`
           *,
-          profiles!reviews_user_id_fkey (
+          profiles:user_id (
             full_name,
             avatar_url
           )
@@ -810,14 +736,14 @@
         throw error
       }
 
-      console.log('My reviews loaded:', reviews)
+      console.log('My reviews loaded:', reviews?.length || 0)
 
       // Process reviews data
       const processedReviews = reviews.map(review => ({
         ...review,
         user: review.profiles || {
-          full_name: currentUser.user_metadata?.full_name || currentUser.email?.split('@')[0] || currentUser.phone || 'User',
-          avatar_url: currentUser.user_metadata?.avatar_url || `https://ui-avatars.com/api/?name=${encodeURIComponent(currentUser.email || currentUser.phone || 'User')}&background=4da3ff&color=fff`
+          full_name: currentUser.user_metadata?.full_name || currentUser.email?.split('@')[0] || 'User',
+          avatar_url: currentUser.user_metadata?.avatar_url || `https://ui-avatars.com/api/?name=${encodeURIComponent(currentUser.email || 'User')}&background=4da3ff&color=fff`
         }
       }))
 
@@ -844,15 +770,16 @@
       const typeFilter = els.globalTypeFilter.value
       const genreFilter = els.globalGenreFilter.value
 
+      // Use explicit join syntax
       let query = supabase
         .from('reviews')
         .select(`
           *,
-          profiles!reviews_user_id_fkey (
+          profiles:user_id (
             full_name,
             avatar_url
           ),
-          review_likes!review_likes_review_id_fkey (
+          review_likes (
             id,
             user_id
           )
@@ -878,7 +805,7 @@
         throw error
       }
 
-      console.log('Global reviews loaded:', reviews)
+      console.log('Global reviews loaded:', reviews?.length || 0)
 
       // Process likes and sorting
       const processedReviews = reviews.map(review => ({
@@ -1208,16 +1135,16 @@
 
       if (profileError) throw profileError
 
-      // Get user's reviews
+      // Get user's reviews with proper joins
       const { data: reviews, error: reviewsError } = await supabase
         .from('reviews')
         .select(`
           *,
-          profiles!reviews_user_id_fkey (
+          profiles:user_id (
             full_name,
             avatar_url
           ),
-          review_likes!review_likes_review_id_fkey (
+          review_likes (
             id,
             user_id
           )
@@ -1335,4 +1262,3 @@
   }
 
 })();
-
