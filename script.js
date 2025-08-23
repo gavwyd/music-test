@@ -8,7 +8,7 @@
   
   // Utility functions
   const $ = (sel, root=document) => root.querySelector(sel)
-  const $$ = (sel, root=document) => Array.from(root.querySelectorAll(sel))  // renamed from $
+  const $$ = (sel, root=document) => Array.from(root.querySelectorAll(sel))
 
   // Elements
   const els = {
@@ -20,7 +20,7 @@
     closeLoginModal: $('#closeLoginModal'),
     
     // Auth tabs
-    authTabs: $$('.auth-tab'),  // updated to $$
+    authTabs: $$('.auth-tab'),
     emailAuth: $('#emailAuth'),
     spotifyAuth: $('#spotifyAuth'),
     
@@ -42,7 +42,7 @@
     loginError: $('#loginError'),
 
     // Tabs
-    tabs: $$('.tab'),  // updated to $$
+    tabs: $$('.tab'),
     tabAdd: $('#tab-add'),
     tabMyReviews: $('#tab-my-reviews'),
     tabGlobalFeed: $('#tab-global-feed'),
@@ -82,7 +82,6 @@
     globalReviewsEmpty: $('#globalReviewsEmpty'),
     globalCount: $('#globalCount')
   }
-
 
   let currentUser = null
   let selectedMusicData = null
@@ -139,6 +138,7 @@
     // Form
     els.score.addEventListener('input', updateScoreDisplay)
     els.manualScore.addEventListener('input', handleManualScoreInput)
+    els.review.addEventListener('input', updatePreview)
     els.saveBtn.addEventListener('click', handleSaveReview)
     els.clearFormBtn.addEventListener('click', clearForm)
 
@@ -236,7 +236,7 @@
         provider: 'spotify',
         options: {
           scopes: 'user-read-email user-read-private',
-          redirectTo: 'https://cheery-dango-a6b92b.netlify.app/#'  // fixed redirect
+          redirectTo: `${window.location.origin}/`
         }
       })
       if (error) throw error
@@ -254,9 +254,9 @@
       .from('profiles')
       .upsert({
         id: user.id,
-        username: user.user_metadata?.full_name || user.email.split('@')[0],
-        full_name: user.user_metadata?.full_name || user.email.split('@')[0],
-        avatar_url: user.user_metadata?.avatar_url || `https://ui-avatars.com/api/?name=${encodeURIComponent(user.email)}&background=4da3ff&color=fff`
+        username: user.user_metadata?.full_name || user.email?.split('@')[0] || 'User',
+        full_name: user.user_metadata?.full_name || user.email?.split('@')[0] || 'User',
+        avatar_url: user.user_metadata?.avatar_url || `https://ui-avatars.com/api/?name=${encodeURIComponent(user.email || 'User')}&background=4da3ff&color=fff`
       }, {
         onConflict: 'id'
       })
@@ -264,8 +264,11 @@
     if (profileError) console.error('Profile error:', profileError)
 
     // Update UI
-    els.currentUser.textContent = user.user_metadata?.full_name || user.email.split('@')[0]
-    els.userAvatar.src = user.user_metadata?.avatar_url || `https://ui-avatars.com/api/?name=${encodeURIComponent(user.email)}&background=4da3ff&color=fff`
+    const displayName = user.user_metadata?.full_name || user.email?.split('@')[0] || 'User'
+    const avatarUrl = user.user_metadata?.avatar_url || `https://ui-avatars.com/api/?name=${encodeURIComponent(user.email || 'User')}&background=4da3ff&color=fff`
+    
+    els.currentUser.textContent = displayName
+    els.userAvatar.src = avatarUrl
     
     showMainApp()
     await getSpotifyToken()
@@ -601,8 +604,8 @@
       review_text: reviewText,
       created_at: new Date().toISOString(),
       user: { 
-        full_name: currentUser.user_metadata?.full_name || currentUser.email.split('@')[0],
-        avatar_url: currentUser.user_metadata?.avatar_url || els.userAvatar.src
+        full_name: currentUser?.user_metadata?.full_name || currentUser?.email?.split('@')[0] || 'User',
+        avatar_url: currentUser?.user_metadata?.avatar_url || els.userAvatar?.src
       }
     }
 
@@ -631,22 +634,26 @@
     els.saveBtn.textContent = 'Saving...'
 
     try {
+      const reviewData = {
+        user_id: currentUser.id,
+        title: selectedMusicData.title,
+        artist: selectedMusicData.artist,
+        album_title: selectedMusicData.album_title || null,
+        cover_url: selectedMusicData.cover || null,
+        spotify_id: selectedMusicData.id,
+        spotify_url: selectedMusicData.spotify_url,
+        type: selectedMusicData.type,
+        score: Math.round(score * 10) / 10,
+        review_text: reviewText || null,
+        genres: selectedMusicData.genres || [],
+        release_date: selectedMusicData.release_date || null
+      }
+
+      console.log('Saving review:', reviewData)
+
       const { data, error } = await supabase
         .from('reviews')
-        .insert({
-          user_id: currentUser.id,
-          title: selectedMusicData.title,
-          artist: selectedMusicData.artist,
-          album_title: selectedMusicData.album_title || null,
-          cover_url: selectedMusicData.cover || null,
-          spotify_id: selectedMusicData.id,
-          spotify_url: selectedMusicData.spotify_url,
-          type: selectedMusicData.type,
-          score: Math.round(score * 10) / 10,
-          review_text: reviewText || null,
-          genres: selectedMusicData.genres || [],
-          release_date: selectedMusicData.release_date || null
-        })
+        .insert(reviewData)
         .select()
 
       if (error) {
@@ -658,9 +665,11 @@
       alert('Review saved successfully!')
       clearForm()
       
-      // Reload reviews to show the new one
-      await loadMyReviews()
-      await loadGlobalReviews()
+      // Force reload reviews to show the new one
+      await Promise.all([
+        loadMyReviews(),
+        loadGlobalReviews()
+      ])
       
     } catch (error) {
       console.error('Save error:', error)
@@ -733,8 +742,8 @@
       const processedReviews = reviews.map(review => ({
         ...review,
         user: review.profiles || {
-          full_name: currentUser.user_metadata?.full_name || currentUser.email.split('@')[0],
-          avatar_url: currentUser.user_metadata?.avatar_url || els.userAvatar.src
+          full_name: currentUser.user_metadata?.full_name || currentUser.email?.split('@')[0] || 'User',
+          avatar_url: currentUser.user_metadata?.avatar_url || `https://ui-avatars.com/api/?name=${encodeURIComponent(currentUser.email || 'User')}&background=4da3ff&color=fff`
         }
       }))
 
@@ -745,6 +754,8 @@
 
     } catch (error) {
       console.error('Error loading my reviews:', error)
+      els.myReviewsEmpty.style.display = ''
+      els.myReviewsEmpty.textContent = 'Error loading reviews. Please try again.'
     }
   }
 
@@ -822,6 +833,8 @@
 
     } catch (error) {
       console.error('Error loading global reviews:', error)
+      els.globalReviewsEmpty.style.display = ''
+      els.globalReviewsEmpty.textContent = 'Error loading reviews. Please try again.'
     }
   }
 
@@ -1119,4 +1132,3 @@
   }
 
 })();
-
