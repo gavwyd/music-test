@@ -1,54 +1,49 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>MP3 Metadata Editor</title>
-    <link rel="stylesheet" href="styles.css">
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/jsmediatags/3.9.5/jsmediatags.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/browser-id3-writer@4.0.0/dist/browser-id3-writer.min.js"></script>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Review Hub</title>
+  <link rel="stylesheet" href="style.css">
 </head>
 <body>
-    <div class="container">
-        <h1>MP3 Metadata Editor</h1>
 
-        <input type="file" id="fileInput" accept="audio/mp3">
+  <div id="loginPage" class="login-container">
+    <h2>Login to Review Hub</h2>
+    <input type="text" id="username" placeholder="Username">
+    <input type="password" id="password" placeholder="Password">
+    <button id="loginBtn">Login</button>
+  </div>
 
-        <div class="input-group">
-            <label>Title:</label>
-            <input type="text" id="title">
-        </div>
+  <div id="app" class="container" style="display:none;">
+    <header>
+      <h1>Review Hub</h1>
+    </header>
 
-        <div class="input-group">
-            <label>Artist:</label>
-            <input type="text" id="artist">
-        </div>
+    <section class="review-input">
+      <h2>Add a Review</h2>
+      <form id="reviewForm">
+        <input type="text" id="spotifyLink" placeholder="Spotify Album Link (optional)">
+        <input type="text" id="customTitle" placeholder="Custom Title (if no link)">
+        <textarea id="reviewText" placeholder="Write your review..."></textarea>
+        <input type="number" id="score" step="0.1" min="0" max="10" placeholder="Score (e.g. 7.5)">
+        <button type="submit">Add Review</button>
+      </form>
+    </section>
 
-        <div class="input-group">
-            <label>Album:</label>
-            <input type="text" id="album">
-        </div>
+    <section class="review-list">
+      <h2>Your Reviews</h2>
+      <input type="text" id="search" placeholder="Search reviews...">
+      <select id="sort">
+        <option value="newest">Newest</option>
+        <option value="oldest">Oldest</option>
+        <option value="highest">Highest Score</option>
+        <option value="lowest">Lowest Score</option>
+      </select>
+      <div id="reviews"></div>
+    </section>
+  </div>
 
-        <div class="input-group">
-            <label>Cover Image:</label>
-            <input type="file" id="coverInput" accept="image/*">
-        </div>
-
-        <img id="coverPreview" class="cover-preview" alt="Cover Preview">
-
-        <button id="updateButton">Update Tags</button>
-
-        <div id="previewSection" class="hidden">
-            <h2>Preview</h2>
-            <audio controls id="audioPlayer"></audio>
-            <p><strong>Title:</strong> <span id="previewTitle"></span></p>
-            <p><strong>Artist:</strong> <span id="previewArtist"></span></p>
-            <p><strong>Album:</strong> <span id="previewAlbum"></span></p>
-        </div>
-
-        <button id="downloadButton" class="hidden">Download Updated MP3</button>
-    </div>
-
-    <script src="script.js"></script>
+  <script src="script.js"></script>
 </body>
 </html>
