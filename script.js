@@ -8,7 +8,7 @@
   
   // Utility functions
   const $ = (sel, root=document) => root.querySelector(sel)
-  const $ = (sel, root=document) => Array.from(root.querySelectorAll(sel))
+  const $$ = (sel, root=document) => Array.from(root.querySelectorAll(sel))  // renamed from $
 
   // Elements
   const els = {
@@ -20,7 +20,7 @@
     closeLoginModal: $('#closeLoginModal'),
     
     // Auth tabs
-    authTabs: $('.auth-tab'),
+    authTabs: $$('.auth-tab'),  // updated to $$
     emailAuth: $('#emailAuth'),
     spotifyAuth: $('#spotifyAuth'),
     
@@ -42,7 +42,7 @@
     loginError: $('#loginError'),
 
     // Tabs
-    tabs: $('.tab'),
+    tabs: $$('.tab'),  // updated to $$
     tabAdd: $('#tab-add'),
     tabMyReviews: $('#tab-my-reviews'),
     tabGlobalFeed: $('#tab-global-feed'),
@@ -82,6 +82,7 @@
     globalReviewsEmpty: $('#globalReviewsEmpty'),
     globalCount: $('#globalCount')
   }
+
 
   let currentUser = null
   let selectedMusicData = null
@@ -235,7 +236,7 @@
         provider: 'spotify',
         options: {
           scopes: 'user-read-email user-read-private',
-          redirectTo: window.location.origin
+          redirectTo: 'https://cheery-dango-a6b92b.netlify.app/#'  // fixed redirect
         }
       })
       if (error) throw error
@@ -244,7 +245,7 @@
       showError('Spotify login failed. Please try again.')
     }
   }
-
+  
   async function handleAuthSuccess(user) {
     currentUser = user
     
@@ -1118,3 +1119,4 @@
   }
 
 })();
+
