@@ -1,212 +1,4 @@
-function clearForm() {
-    els.musicSearch.value = ''
-    els.score.value = 7
-    els.scoreOut.textContent = '7.00'
-    els.manualScore.value = ''
-    els.review.value = ''
-    els.selectedMusic.style.display = 'none'
-    els.searchSuggestions.style.display = 'none'
-    selectedMusicData = null
-    updatePreview()
-  }
-
-  // Reviews Loading
-  async function loadMyReviews() {
-    if (!currentUser) return
-
-    try {
-      els.myReviewsEmpty.style.display = 'none'
-      els.myReviewsList.innerHTML = '<div class="loading"><div class="spinner"></div><span>Loading reviews...</span></div>'
-
-      const searchQuery = els.mySearch.value.trim().toLowerCase()
-      const sortBy = els.mySortBy.value
-
-      let query = supabase
-        .from('reviews')
-        .select(`
-          *,
-          profiles:user_id (
-            username,
-            full_name,
-            avatar_url
-          )
-        `)
-        .eq('user_id', currentUser.id)
-
-      if (searchQuery) {
-        query = query.or(`title.ilike.%${searchQuery}%,artist.ilike.%${searchQuery}%,review_text.ilike.%${searchQuery}%`)
-      }
-
-      switch (sortBy) {
-        case 'date-asc':
-          query = query.order('created_at', { ascending: true })
-          break
-        case 'score-desc':
-          query = query.order('score', { ascending: false })
-          break
-        case 'score-asc':
-          query = query.order('score', { ascending: true })
-          break
-        case 'title-asc':
-          query = query.order('title', { ascending: true })
-          break
-        default:
-          query = query.order('created_at', { ascending: false })
-      }
-
-      const { data: reviews, error } = await query
-
-      if (error) throw error
-
-      const processedReviews = reviews.map(review => ({
-        ...review,
-        user: review.profiles || currentUserProfile || {
-          username: currentUser.email?.split('@')[0] || 'User',
-          full_name: currentUser.email?.split('@')[0] || 'User',
-          avatar_url: generatePlaceholderImage()
-        }
-      }))
-
-      renderReviews(processedReviews, els.myReviewsList, els.myReviewsEmpty, true)
-      
-      els.statsPill.textContent = `${reviews.length} review${reviews.length === 1 ? '' : 's'}`
-
-    } catch (error) {
-      console.error('Error loading my reviews:', error)
-      els.myReviewsList.innerHTML = ''
-      els.myReviewsEmpty.style.display = ''
-      els.myReviewsEmpty.textContent = 'Error loading reviews: ' + error.message
-    }
-  }
-
-  async function loadGlobalReviews() {
-    try {
-      els.globalReviewsEmpty.style.display = 'none'
-      els.globalReviewsList.innerHTML = '<div class="loading"><div class="spinner"></div><span>Loading reviews...</span></div>'
-
-      const searchQuery = els.globalSearch.value.trim().toLowerCase()
-      const sortBy = els.globalSortBy.value
-      const typeFilter = els.globalTypeFilter.value
-      const genreFilter = els.globalGenreFilter.value
-
-      let query = supabase
-        .from('reviews')
-        .select(`
-          *,
-          profiles:user_id (
-            username,
-            full_name,
-            avatar_url
-          ),
-          review_likes (
-            id,
-            user_id
-          )
-        `)
-
-      if (searchQuery) {
-        query = query.or(`title.ilike.%${searchQuery}%,artist.ilike.%${searchQuery}%,review_text.ilike.%${searchQuery}%`)
-      }
-
-      if (typeFilter !== 'all') {
-        query = query.eq('type', typeFilter)
-      }
-
-      if (genreFilter !== 'all') {
-        query = query.contains('genres', [genreFilter])
-      }
-
-      const { data: reviews, error } = await query
-
-      if (error) throw error
-
-      const processedReviews = reviews.map(review => ({
-        ...review,
-        like_count: review.review_likes?.length || 0,
-        user_liked: review.review_likes?.some(like => like.user_id === currentUser?.id) || false,
-        user: review.profiles || {
-          username: 'Anonymous',
-          full_name: 'Anonymous',
-          avatar_url: generatePlaceholderImage()
-        }
-      }))
-
-      // Apply sorting
-      switch (sortBy) {
-        case 'likes-desc':
-          processedReviews.sort((a, b) => b.like_count - a.like_count)
-          break
-        case 'score-desc':
-          processedReviews.sort((a, b) => b.score - a.score)
-          break
-        case 'score-asc':
-          processedReviews.sort((a, b) => a.score - b.score)
-          break
-        default:
-          processedReviews.sort((a, b) => new Date(b.created_at) - new Date(a.created_at))
-      }
-
-      renderReviews(processedReviews, els.globalReviewsList, els.globalReviewsEmpty, false)
-      
-      els.globalCount.textContent = `${processedReviews.length} review${processedReviews.length === 1 ? '' : 's'}`
-
-      updateGenreFilter(processedReviews)
-
-    } catch (error) {
-      console.error('Error loading global reviews:', error)
-      els.globalReviewsList.innerHTML = ''
-      els.globalReviewsEmpty.style.display = ''
-      els.globalReviewsEmpty.textContent = 'Error loading reviews: ' + error.message
-    }
-  }
-
-  function updateGenreFilter(reviews) {
-    const genres = new Set()
-    reviews.forEach(review => {
-      if (review.genres && Array.isArray(review.genres)) {
-        review.genres.forEach(genre => genres.add(genre))
-      }
-    })
-
-    const currentValue = els.globalGenreFilter.value
-    els.globalGenreFilter.innerHTML = '<option value="all">All genres</option>'
-    
-    Array.from(genres).sort().forEach(genre => {
-      const option = document.createElement('option')
-      option.value = genre
-      option.textContent = genre
-      els.globalGenreFilter.appendChild(option)
-    })
-
-    els.globalGenreFilter.value = currentValue
-  }
-
-  // Review Rendering
-  function renderReviews(reviews, listEl, emptyEl, showActions) {
-    listEl.innerHTML = ''
-    
-    if (reviews.length === 0) {
-      emptyEl.style.display = ''
-      return
-    }
-    
-    emptyEl.style.display = 'none'
-    
-    const fragment = document.createDocumentFragment()
-    reviews.forEach(review => {
-      fragment.appendChild(createReviewCard(review, showActions))
-    })
-    
-    listEl.appendChild(fragment)
-  }
-
-  function createReviewCard(review, showActions = false, isPreview = false) {
-    const div = document.createElement('div')
-    div.className = 'r-card'
-    
-    const likeSection = !isPreview ? `
-      <div class="like-section">
-        <button class="like-btn ${review.user_liked ? 'like(function(){
+(function(){
   // Configuration
   const SUPABASE_URL = 'https://qfvhzaxuocbtpinrjyqp.supabase.co'
   const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InFmdmh6YXh1b2NidHBpbnJqeXFwIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTU5NzEzMjAsImV4cCI6MjA3MTU0NzMyMH0.Xn9_ZY6OM59xgUnb_Rc29go5sO1OdK4DIiFvpqQatDE'
@@ -1199,3 +991,653 @@ function clearForm() {
     selectedMusicData = null
     updatePreview()
   }
+
+  // Reviews Loading
+  async function loadMyReviews() {
+    if (!currentUser) return
+
+    try {
+      els.myReviewsEmpty.style.display = 'none'
+      els.myReviewsList.innerHTML = '<div class="loading"><div class="spinner"></div><span>Loading reviews...</span></div>'
+
+      const searchQuery = els.mySearch.value.trim().toLowerCase()
+      const sortBy = els.mySortBy.value
+
+      let query = supabase
+        .from('reviews')
+        .select(`
+          *,
+          profiles:user_id (
+            username,
+            full_name,
+            avatar_url
+          )
+        `)
+        .eq('user_id', currentUser.id)
+
+      if (searchQuery) {
+        query = query.or(`title.ilike.%${searchQuery}%,artist.ilike.%${searchQuery}%,review_text.ilike.%${searchQuery}%`)
+      }
+
+      switch (sortBy) {
+        case 'date-asc':
+          query = query.order('created_at', { ascending: true })
+          break
+        case 'score-desc':
+          query = query.order('score', { ascending: false })
+          break
+        case 'score-asc':
+          query = query.order('score', { ascending: true })
+          break
+        case 'title-asc':
+          query = query.order('title', { ascending: true })
+          break
+        default:
+          query = query.order('created_at', { ascending: false })
+      }
+
+      const { data: reviews, error } = await query
+
+      if (error) throw error
+
+      const processedReviews = reviews.map(review => ({
+        ...review,
+        user: review.profiles || currentUserProfile || {
+          username: currentUser.email?.split('@')[0] || 'User',
+          full_name: currentUser.email?.split('@')[0] || 'User',
+          avatar_url: generatePlaceholderImage()
+        }
+      }))
+
+      renderReviews(processedReviews, els.myReviewsList, els.myReviewsEmpty, true)
+      
+      els.statsPill.textContent = `${reviews.length} review${reviews.length === 1 ? '' : 's'}`
+
+    } catch (error) {
+      console.error('Error loading my reviews:', error)
+      els.myReviewsList.innerHTML = ''
+      els.myReviewsEmpty.style.display = ''
+      els.myReviewsEmpty.textContent = 'Error loading reviews: ' + error.message
+    }
+  }
+
+  async function loadGlobalReviews() {
+    try {
+      els.globalReviewsEmpty.style.display = 'none'
+      els.globalReviewsList.innerHTML = '<div class="loading"><div class="spinner"></div><span>Loading reviews...</span></div>'
+
+      const searchQuery = els.globalSearch.value.trim().toLowerCase()
+      const sortBy = els.globalSortBy.value
+      const typeFilter = els.globalTypeFilter.value
+      const genreFilter = els.globalGenreFilter.value
+
+      let query = supabase
+        .from('reviews')
+        .select(`
+          *,
+          profiles:user_id (
+            username,
+            full_name,
+            avatar_url
+          ),
+          review_likes (
+            id,
+            user_id
+          )
+        `)
+
+      if (searchQuery) {
+        query = query.or(`title.ilike.%${searchQuery}%,artist.ilike.%${searchQuery}%,review_text.ilike.%${searchQuery}%`)
+      }
+
+      if (typeFilter !== 'all') {
+        query = query.eq('type', typeFilter)
+      }
+
+      if (genreFilter !== 'all') {
+        query = query.contains('genres', [genreFilter])
+      }
+
+      const { data: reviews, error } = await query
+
+      if (error) throw error
+
+      const processedReviews = reviews.map(review => ({
+        ...review,
+        like_count: review.review_likes?.length || 0,
+        user_liked: review.review_likes?.some(like => like.user_id === currentUser?.id) || false,
+        user: review.profiles || {
+          username: 'Anonymous',
+          full_name: 'Anonymous',
+          avatar_url: generatePlaceholderImage()
+        }
+      }))
+
+      // Apply sorting
+      switch (sortBy) {
+        case 'likes-desc':
+          processedReviews.sort((a, b) => b.like_count - a.like_count)
+          break
+        case 'score-desc':
+          processedReviews.sort((a, b) => b.score - a.score)
+          break
+        case 'score-asc':
+          processedReviews.sort((a, b) => a.score - b.score)
+          break
+        default:
+          processedReviews.sort((a, b) => new Date(b.created_at) - new Date(a.created_at))
+      }
+
+      renderReviews(processedReviews, els.globalReviewsList, els.globalReviewsEmpty, false)
+      
+      els.globalCount.textContent = `${processedReviews.length} review${processedReviews.length === 1 ? '' : 's'}`
+
+      updateGenreFilter(processedReviews)
+
+    } catch (error) {
+      console.error('Error loading global reviews:', error)
+      els.globalReviewsList.innerHTML = ''
+      els.globalReviewsEmpty.style.display = ''
+      els.globalReviewsEmpty.textContent = 'Error loading reviews: ' + error.message
+    }
+  }
+
+  function updateGenreFilter(reviews) {
+    const genres = new Set()
+    reviews.forEach(review => {
+      if (review.genres && Array.isArray(review.genres)) {
+        review.genres.forEach(genre => genres.add(genre))
+      }
+    })
+
+    const currentValue = els.globalGenreFilter.value
+    els.globalGenreFilter.innerHTML = '<option value="all">All genres</option>'
+    
+    Array.from(genres).sort().forEach(genre => {
+      const option = document.createElement('option')
+      option.value = genre
+      option.textContent = genre
+      els.globalGenreFilter.appendChild(option)
+    })
+
+    els.globalGenreFilter.value = currentValue
+  }
+
+  // Review Rendering
+  function renderReviews(reviews, listEl, emptyEl, showActions) {
+    listEl.innerHTML = ''
+    
+    if (reviews.length === 0) {
+      emptyEl.style.display = ''
+      return
+    }
+    
+    emptyEl.style.display = 'none'
+    
+    const fragment = document.createDocumentFragment()
+    reviews.forEach(review => {
+      fragment.appendChild(createReviewCard(review, showActions))
+    })
+    
+    listEl.appendChild(fragment)
+  }
+
+  function createReviewCard(review, showActions = false, isPreview = false) {
+    const div = document.createElement('div')
+    div.className = 'r-card'
+    
+    const likeSection = !isPreview ? `
+      <div class="like-section">
+        <button class="like-btn ${review.user_liked ? 'liked' : ''}" onclick="toggleLike(${review.id})">
+          ❤️ ${review.like_count || 0}
+        </button>
+        <button class="comment-btn" onclick="showComments(${review.id})">
+          💬 Comments
+        </button>
+      </div>
+    ` : ''
+    
+    const actionButtons = showActions && !isPreview ? `
+      <button class="btn danger small" onclick="deleteReview(${review.id})" style="margin-top: 8px;">
+        🗑️ Delete
+      </button>
+    ` : ''
+    
+    const coverSrc = review.cover_url && review.cover_url !== '' ? review.cover_url : generatePlaceholderImage()
+    
+    const genreTags = review.genres && review.genres.length > 0 
+      ? review.genres.map(genre => `<span class="genre-tag">${escapeHtml(genre)}</span>`).join('')
+      : ''
+    
+    div.innerHTML = `
+      <img class="r-cover" src="${coverSrc}" alt="Cover" onerror="this.src='${generatePlaceholderImage()}'">
+      <div>
+        <div class="r-title">
+          <a href="${review.spotify_url}" target="_blank" rel="noopener">${escapeHtml(review.title)}</a>
+        </div>
+        <div class="r-artist">${escapeHtml(review.artist)}</div>
+        <div class="r-meta">
+          <span class="score">${review.score}/10</span>
+          <span class="tag">${review.type === 'album' ? 'Album' : 'Single'}</span>
+          ${genreTags}
+        </div>
+        ${review.review_text ? `<div class="r-text">${escapeHtml(review.review_text)}</div>` : ''}
+        ${!isPreview ? `
+          <div class="r-user">
+            <img src="${review.user.avatar_url || generatePlaceholderImage()}" alt="Avatar" onerror="this.src='${generatePlaceholderImage()}'">
+            <span onclick="showUserProfile('${review.user_id}')">${escapeHtml(review.user.username || review.user.full_name || 'User')}</span>
+            <span class="time">${formatDate(review.created_at)}</span>
+          </div>
+        ` : ''}
+        ${actionButtons}
+      </div>
+      ${likeSection}
+    `
+    
+    return div
+  }
+
+  // Utility Functions
+  function debounce(func, wait) {
+    let timeout
+    return function executedFunction(...args) {
+      const later = () => {
+        clearTimeout(timeout)
+        func(...args)
+      }
+      clearTimeout(timeout)
+      timeout = setTimeout(later, wait)
+    }
+  }
+
+  function escapeHtml(text) {
+    if (!text) return ''
+    const map = {
+      '&': '&amp;',
+      '<': '&lt;',
+      '>': '&gt;',
+      '"': '&quot;',
+      "'": '&#039;'
+    }
+    return text.toString().replace(/[&<>"']/g, function(m) { return map[m] })
+  }
+
+  function generatePlaceholderImage() {
+    return 'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMTIwIiBoZWlnaHQ9IjEyMCIgdmlld0JveD0iMCAwIDEyMCAxMjAiIGZpbGw9Im5vbmUiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyI+CjxyZWN0IHdpZHRoPSIxMjAiIGhlaWdodD0iMTIwIiBmaWxsPSIjMEIxMjIwIi8+CjxwYXRoIGQ9Ik02MCA0NUMzNy41IDQ1IDIwIDYyLjUgMjAgODVTMzcuNSAxMjUgNjAgMTI1IDEwMCAxMDcuNSAxMDAgODUgODIuNSA0NSA2MCA0NVpNNjAgNTVDNzIgNTUgODIgNjUgODIgNzdTNzIgOTkgNjAgOTkgMzggODkgMzggNzcgNDggNTUgNjAgNTVaTTQ1IDIwQzQxLjcgMjAgMzkgMjIuNyAzOSAyNlYzOUMzOSA0Mi4zIDQxLjcgNDUgNDUgNDVINzVDNzguMyA0NSA4MSA0Mi4zIDgxIDM5VjI2Qzg1IDIyLjMgNzguMyAyMCA3NSAyMEg0NVoiIGZpbGw9IiM5QkIzRDMiLz4KPC9zdmc+'
+  }
+
+  function formatDate(dateString) {
+    const date = new Date(dateString)
+    const now = new Date()
+    const diffInSeconds = Math.floor((now - date) / 1000)
+    
+    if (diffInSeconds < 60) return 'just now'
+    if (diffInSeconds < 3600) return `${Math.floor(diffInSeconds / 60)}m ago`
+    if (diffInSeconds < 86400) return `${Math.floor(diffInSeconds / 3600)}h ago`
+    if (diffInSeconds < 2592000) return `${Math.floor(diffInSeconds / 86400)}d ago`
+    
+    return date.toLocaleDateString()
+  }
+
+  // Like System
+  window.toggleLike = async function(reviewId) {
+    if (!currentUser) {
+      alert('Please log in to like reviews')
+      return
+    }
+
+    try {
+      // Check if already liked
+      const { data: existingLike } = await supabase
+        .from('review_likes')
+        .select('id')
+        .eq('review_id', reviewId)
+        .eq('user_id', currentUser.id)
+        .single()
+
+      if (existingLike) {
+        // Remove like
+        const { error } = await supabase
+          .from('review_likes')
+          .delete()
+          .eq('id', existingLike.id)
+
+        if (error) throw error
+      } else {
+        // Add like
+        const { error } = await supabase
+          .from('review_likes')
+          .insert({
+            review_id: reviewId,
+            user_id: currentUser.id
+          })
+
+        if (error) throw error
+      }
+
+      // Reload current reviews
+      if (els.tabGlobalFeed.style.display !== 'none') {
+        await loadGlobalReviews()
+      }
+
+    } catch (error) {
+      console.error('Error toggling like:', error)
+      alert('Failed to toggle like: ' + error.message)
+    }
+  }
+
+  // Delete Review
+  window.deleteReview = async function(reviewId) {
+    if (!currentUser) {
+      alert('Please log in to delete reviews')
+      return
+    }
+
+    if (!confirm('Are you sure you want to delete this review?')) {
+      return
+    }
+
+    try {
+      const { error } = await supabase
+        .from('reviews')
+        .delete()
+        .eq('id', reviewId)
+        .eq('user_id', currentUser.id)
+
+      if (error) throw error
+
+      alert('Review deleted successfully!')
+      
+      // Reload reviews
+      await loadMyReviews()
+      await loadGlobalReviews()
+
+    } catch (error) {
+      console.error('Error deleting review:', error)
+      alert('Failed to delete review: ' + error.message)
+    }
+  }
+
+  // Comments System
+  window.showComments = function(reviewId) {
+    currentReviewForComments = reviewId
+    loadComments(reviewId)
+    els.commentsModal.classList.add('show')
+  }
+
+  function hideCommentsModal() {
+    els.commentsModal.classList.remove('show')
+    currentReviewForComments = null
+  }
+
+  async function loadComments(reviewId) {
+    try {
+      // Load review details
+      const { data: review } = await supabase
+        .from('reviews')
+        .select(`
+          *,
+          profiles:user_id (
+            username,
+            full_name,
+            avatar_url
+          )
+        `)
+        .eq('id', reviewId)
+        .single()
+
+      if (review) {
+        els.reviewDetails.innerHTML = `
+          <div class="r-card" style="margin-bottom: 16px;">
+            <img class="r-cover" src="${review.cover_url || generatePlaceholderImage()}" alt="Cover" onerror="this.src='${generatePlaceholderImage()}'">
+            <div>
+              <div class="r-title">${escapeHtml(review.title)}</div>
+              <div class="r-artist">${escapeHtml(review.artist)}</div>
+              <div class="r-meta">
+                <span class="score">${review.score}/10</span>
+                <span class="tag">${review.type === 'album' ? 'Album' : 'Single'}</span>
+              </div>
+              ${review.review_text ? `<div class="r-text">${escapeHtml(review.review_text)}</div>` : ''}
+            </div>
+          </div>
+        `
+      }
+
+      // Load comments
+      const { data: comments, error } = await supabase
+        .from('comments')
+        .select(`
+          *,
+          profiles:user_id (
+            username,
+            full_name,
+            avatar_url
+          )
+        `)
+        .eq('review_id', reviewId)
+        .order('created_at', { ascending: true })
+
+      if (error) throw error
+
+      renderComments(comments || [])
+
+    } catch (error) {
+      console.error('Error loading comments:', error)
+      els.reviewDetails.innerHTML = '<div class="error">Error loading review details</div>'
+      els.commentsList.innerHTML = '<div class="error">Error loading comments</div>'
+    }
+  }
+
+  function renderComments(comments) {
+    if (comments.length === 0) {
+      els.commentsList.innerHTML = '<div class="empty">No comments yet. Be the first to comment!</div>'
+      return
+    }
+
+    els.commentsList.innerHTML = ''
+    comments.forEach(comment => {
+      const div = document.createElement('div')
+      div.className = 'comment'
+      div.innerHTML = `
+        <div class="comment-header">
+          <img class="comment-avatar" src="${comment.profiles?.avatar_url || generatePlaceholderImage()}" alt="Avatar" onerror="this.src='${generatePlaceholderImage()}'">
+          <span class="comment-author" onclick="showUserProfile('${comment.user_id}')">${escapeHtml(comment.profiles?.username || 'User')}</span>
+          <span class="comment-time">${formatDate(comment.created_at)}</span>
+        </div>
+        <div class="comment-text">${escapeHtml(comment.comment_text)}</div>
+      `
+      els.commentsList.appendChild(div)
+    })
+  }
+
+  async function submitComment() {
+    if (!currentUser) {
+      alert('Please log in to comment')
+      return
+    }
+
+    const commentText = els.newComment.value.trim()
+    if (!commentText) {
+      alert('Please enter a comment')
+      return
+    }
+
+    try {
+      els.submitComment.disabled = true
+      els.submitComment.textContent = 'Posting...'
+
+      const { error } = await supabase
+        .from('comments')
+        .insert({
+          review_id: currentReviewForComments,
+          user_id: currentUser.id,
+          comment_text: commentText
+        })
+
+      if (error) throw error
+
+      els.newComment.value = ''
+      await loadComments(currentReviewForComments)
+
+    } catch (error) {
+      console.error('Error submitting comment:', error)
+      alert('Failed to post comment: ' + error.message)
+    } finally {
+      els.submitComment.disabled = false
+      els.submitComment.textContent = 'Post Comment'
+    }
+  }
+
+  // User Profile System
+  window.showUserProfile = async function(userId) {
+    if (userId === currentUser?.id) {
+      switchTab('profile')
+      return
+    }
+
+    try {
+      // Load user profile
+      const { data: profile } = await supabase
+        .from('profiles')
+        .select('*')
+        .eq('id', userId)
+        .single()
+
+      // Load user's reviews
+      const { data: reviews } = await supabase
+        .from('reviews')
+        .select('*')
+        .eq('user_id', userId)
+        .order('created_at', { ascending: false })
+
+      if (profile) {
+        els.userProfileName.textContent = `${profile.username || 'User'}'s Profile`
+        
+        const reviewCount = reviews?.length || 0
+        const avgScore = reviewCount > 0 
+          ? (reviews.reduce((sum, r) => sum + r.score, 0) / reviewCount).toFixed(2)
+          : '0.00'
+
+        els.userProfileContent.innerHTML = `
+          <div class="user-profile-header">
+            <img class="user-profile-avatar" src="${profile.avatar_url || generatePlaceholderImage()}" alt="Avatar" onerror="this.src='${generatePlaceholderImage()}'">
+            <div class="user-profile-info">
+              <h3>${escapeHtml(profile.username || 'User')}</h3>
+              ${profile.bio ? `<div class="user-profile-bio">${escapeHtml(profile.bio)}</div>` : ''}
+              <div class="user-profile-stats">
+                <div class="stat-item">
+                  <div class="stat-number">${reviewCount}</div>
+                  <div class="stat-label">Reviews</div>
+                </div>
+                <div class="stat-item">
+                  <div class="stat-number">${avgScore}</div>
+                  <div class="stat-label">Avg Score</div>
+                </div>
+              </div>
+            </div>
+          </div>
+          <div class="review-list">
+            ${reviews && reviews.length > 0 
+              ? reviews.map(review => {
+                  const processedReview = {
+                    ...review,
+                    user: profile,
+                    like_count: 0,
+                    user_liked: false
+                  }
+                  return createReviewCard(processedReview, false).outerHTML
+                }).join('')
+              : '<div class="empty">No reviews yet</div>'
+            }
+          </div>
+        `
+        
+        switchTab('user-profile')
+      }
+
+    } catch (error) {
+      console.error('Error loading user profile:', error)
+      alert('Failed to load user profile')
+    }
+  }
+
+  // Share Profile
+  function showShareModal() {
+    const profileUrl = `${window.location.origin}/?user=${currentUser.id}`
+    els.shareLink.value = profileUrl
+    els.shareModal.classList.add('show')
+  }
+
+  function hideShareModal() {
+    els.shareModal.classList.remove('show')
+    els.copySuccess.style.display = 'none'
+  }
+
+  async function copyShareLink() {
+    try {
+      await navigator.clipboard.writeText(els.shareLink.value)
+      els.copySuccess.style.display = 'block'
+      setTimeout(() => {
+        els.copySuccess.style.display = 'none'
+      }, 3000)
+    } catch (error) {
+      // Fallback for older browsers
+      els.shareLink.select()
+      document.execCommand('copy')
+      els.copySuccess.style.display = 'block'
+      setTimeout(() => {
+        els.copySuccess.style.display = 'none'
+      }, 3000)
+    }
+  }
+
+  // Check for shared profile URL
+  function checkForSharedProfile() {
+    const urlParams = new URLSearchParams(window.location.search)
+    const userId = urlParams.get('user')
+    
+    if (userId && currentUser) {
+      showUserProfile(userId)
+    }
+  }
+
+  // Export Reviews
+  async function exportReviews() {
+    if (!currentUser) return
+
+    try {
+      const { data: reviews, error } = await supabase
+        .from('reviews')
+        .select('*')
+        .eq('user_id', currentUser.id)
+        .order('created_at', { ascending: false })
+
+      if (error) throw error
+
+      const csvContent = [
+        ['Title', 'Artist', 'Type', 'Score', 'Review', 'Date', 'Spotify URL'].join(','),
+        ...reviews.map(review => [
+          `"${review.title}"`,
+          `"${review.artist}"`,
+          review.type,
+          review.score,
+          `"${review.review_text || ''}"`,
+          new Date(review.created_at).toLocaleDateString(),
+          review.spotify_url
+        ].join(','))
+      ].join('\n')
+
+      const blob = new Blob([csvContent], { type: 'text/csv' })
+      const url = window.URL.createObjectURL(blob)
+      const a = document.createElement('a')
+      a.href = url
+      a.download = `my-music-reviews-${new Date().toISOString().split('T')[0]}.csv`
+      a.click()
+      window.URL.revokeObjectURL(url)
+
+    } catch (error) {
+      console.error('Error exporting reviews:', error)
+      alert('Failed to export reviews')
+    }
+  }
+})();
