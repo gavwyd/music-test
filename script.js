@@ -300,11 +300,12 @@
       els.emailRegisterBtn.textContent = 'Creating account...'
       
       // Check if username is available
-      const { data: existingUser, error: checkError } = await supabase
-        .from('profiles')
-        .select('username')
-        .eq('username', username)
-        .single()
+     const { data: existingUser, error: _checkError } = await supabase
+  .from('users')
+  .select('*')
+  .eq('id', userId)
+  .single();
+
 
       if (existingUser) {
         throw new Error('Username is already taken')
@@ -600,9 +601,9 @@
       const fileExt = file.name.split('.').pop()
       const fileName = `${currentUser.id}-${Date.now()}.${fileExt}`
       
-      const { data, error: uploadError } = await supabase.storage
-        .from('avatars')
-        .upload(fileName, file)
+      const { data: _data, error: uploadError } = await supabase.storage
+  .from('uploads')
+  .upload(filePath, file);
 
       if (uploadError) throw uploadError
 
@@ -1280,7 +1281,7 @@
   }
 
   // Like System
-  window.toggleLike = async function(reviewId) {
+ globalThis.toggleLike = async function(reviewId) {
     if (!currentUser) {
       alert('Please log in to like reviews')
       return
@@ -1327,7 +1328,7 @@
   }
 
   // Delete Review
-  window.deleteReview = async function(reviewId) {
+  globalThis.deleteReview = async function(reviewId) {
     if (!currentUser) {
       alert('Please log in to delete reviews')
       return
@@ -1359,7 +1360,7 @@
   }
 
   // Comments System
-  window.showComments = function(reviewId) {
+  globalThis.showComments = function(reviewId) {
     currentReviewForComments = reviewId
     loadComments(reviewId)
     els.commentsModal.classList.add('show')
@@ -1489,7 +1490,7 @@
   }
 
   // User Profile System
-  window.showUserProfile = async function(userId) {
+  globalThis.showUserProfile = async function(userId) {
     if (userId === currentUser?.id) {
       switchTab('profile')
       return
@@ -1580,7 +1581,7 @@
       setTimeout(() => {
         els.copySuccess.style.display = 'none'
       }, 3000)
-    } catch (error) {
+   } catch (_error) {
       // Fallback for older browsers
       els.shareLink.select()
       document.execCommand('copy')
@@ -1641,3 +1642,4 @@
     }
   }
 })();
+
