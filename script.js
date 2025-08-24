@@ -788,6 +788,81 @@
         query = query.or(`title.ilike.%${searchQuery}%,artist.ilike.%${searchQuery}%,review_text.ilike.%${searchQuery}%`)
       }
 
+      switch (sortBy) {
+        case 'date-asc':
+          query = query.order('created_at', { ascending: true })
+          break
+        case 'score-desc':
+          query = query.order('score', { ascending: false })
+          break
+        case 'score-asc':
+          query = query.order('score', { ascending: true })
+          break
+        case 'title-asc':
+          query = query.order('title', { ascending: true })
+          break
+        default:
+          query = query.order('created_at', { ascending: false })
+      }
+
+      const { data: reviews, error } = await query
+
+      if (error) throw error
+
+      const processedReviews = reviews.map(review => ({
+        ...review,
+        like_count: review.review_likes?.length || 0,
+        user_liked: review.review_likes?.some(like => like.user_id === currentUser?.id) || false,
+        user: review.profiles || {
+          username: 'Anonymous',
+          full_name: 'Anonymous',
+          avatar_url: generatePlaceholderImage()
+        }
+      }))
+
+      renderReviews(processedReviews, els.myReviewsList, els.myReviewsEmpty, true) // Show actions for my reviews
+      
+      if (els.statsPill) {
+        els.statsPill.textContent = `${processedReviews.length} review${processedReviews.length === 1 ? '' : 's'}`
+      }
+
+    } catch (error) {
+      console.error('Error loading my reviews:', error)
+      els.myReviewsList.innerHTML = ''
+      els.myReviewsEmpty.style.display = 'block'
+      els.myReviewsEmpty.textContent = 'Error loading reviews: ' + error.message
+    }
+  }
+
+  async function loadGlobalReviews() {
+    try {
+      els.globalReviewsEmpty.style.display = 'none'
+      els.globalReviewsList.innerHTML = '<div class="loading"><div class="spinner"></div><span>Loading reviews...</span></div>'
+
+      const searchQuery = els.globalSearch.value.trim().toLowerCase()
+      const sortBy = els.globalSortBy.value
+      const typeFilter = els.globalTypeFilter.value
+      const genreFilter = els.globalGenreFilter.value
+
+      let query = supabase
+        .from('reviews')
+        .select(`
+          *,
+          profiles:user_id (
+            username,
+            full_name,
+            avatar_url
+          ),
+          review_likes (
+            id,
+            user_id
+          )
+        `)
+
+      if (searchQuery) {
+        query = query.or(`title.ilike.%${searchQuery}%,artist.ilike.%${searchQuery}%,review_text.ilike.%${searchQuery}%`)
+      }
+
       if (typeFilter !== 'all') {
         query = query.eq('type', typeFilter)
       }
@@ -1701,80 +1776,4 @@
     return date.toLocaleDateString()
   }
 
-.or(`artist.ilike.%${searchQuery}%,review_text.ilike.%${searchQuery}%`)
-      }
-
-      switch (sortBy) {
-        case 'date-asc':
-          query = query.order('created_at', { ascending: true })
-          break
-        case 'score-desc':
-          query = query.order('score', { ascending: false })
-          break
-        case 'score-asc':
-          query = query.order('score', { ascending: true })
-          break
-        case 'title-asc':
-          query = query.order('title', { ascending: true })
-          break
-        default:
-          query = query.order('created_at', { ascending: false })
-      }
-
-      const { data: reviews, error } = await query
-
-      if (error) throw error
-
-      const processedReviews = reviews.map(review => ({
-        ...review,
-        like_count: review.review_likes?.length || 0,
-        user_liked: review.review_likes?.some(like => like.user_id === currentUser?.id) || false,
-        user: review.profiles || {
-          username: 'Anonymous',
-          full_name: 'Anonymous',
-          avatar_url: generatePlaceholderImage()
-        }
-      }))
-
-      renderReviews(processedReviews, els.myReviewsList, els.myReviewsEmpty, true) // Show actions for my reviews
-      
-      if (els.statsPill) {
-        els.statsPill.textContent = `${processedReviews.length} review${processedReviews.length === 1 ? '' : 's'}`
-      }
-
-    } catch (error) {
-      console.error('Error loading my reviews:', error)
-      els.myReviewsList.innerHTML = ''
-      els.myReviewsEmpty.style.display = 'block'
-      els.myReviewsEmpty.textContent = 'Error loading reviews: ' + error.message
-    }
-  }
-
-  async function loadGlobalReviews() {
-    try {
-      els.globalReviewsEmpty.style.display = 'none'
-      els.globalReviewsList.innerHTML = '<div class="loading"><div class="spinner"></div><span>Loading reviews...</span></div>'
-
-      const searchQuery = els.globalSearch.value.trim().toLowerCase()
-      const sortBy = els.globalSortBy.value
-      const typeFilter = els.globalTypeFilter.value
-      const genreFilter = els.globalGenreFilter.value
-
-      let query = supabase
-        .from('reviews')
-        .select(`
-          *,
-          profiles:user_id (
-            username,
-            full_name,
-            avatar_url
-          ),
-          review_likes (
-            id,
-            user_id
-          )
-        `)
-
-      if (searchQuery) {
-        query = query.or(`title.ilike.%${searchQuery}%,
-})();;
+})()
