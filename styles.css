@@ -1,4 +1,4 @@
-  :root {
+:root {
     --bg: #0b0f14;
     --panel: #0f1520;
     --panel-2: #0b1220;
@@ -175,27 +175,26 @@
     z-index: 1000;
     left: 0;
     top: 0;
-    width: 100%;
-    height: 100%;
-    background: rgba(0, 0, 0, 0.8);
-    backdrop-filter: blur(8px);
-  }
-
-  .modal.show {
-    display: flex;
+    width: 100vw;
+    height: 100vh;
+    background: rgba(0, 0, 0, 0.5);
     align-items: center;
     justify-content: center;
   }
 
+  .modal.show {
+    display: flex;
+  }
+
   .modal-content {
-    background: linear-gradient(180deg, #0e1626, var(--panel));
-    border: 1px solid rgba(255, 255, 255, 0.06);
-    border-radius: var(--radius);
-    box-shadow: var(--shadow);
-    width: 90%;
-    max-width: 480px;
-    max-height: 90vh;
-    overflow-y: auto;
+    background: #181f2a;
+    color: #fff;
+    border-radius: 14px;
+    padding: 24px 24px 12px 24px;
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.25);
+    position: relative;
+    width: 100%;
+    max-width: 600px;
   }
 
   .modal-content.comments-modal {
@@ -224,16 +223,15 @@
   }
 
   .close-btn {
+    position: absolute;
+    right: 18px;
+    top: 12px;
     background: none;
     border: none;
-    color: var(--muted);
-    font-size: 24px;
+    color: #fff;
+    font-size: 2em;
     cursor: pointer;
-    line-height: 1;
-    padding: 4px;
-    position: absolute;
-    top: 16px;
-    right: 16px;
+    z-index: 2;
   }
 
   .close-btn:hover {
@@ -817,13 +815,13 @@
   }
 
   .tag {
-    padding: 6px 10px;
-    border-radius: 999px;
-    background: #0c1526;
-    border: 1px solid rgba(255, 255, 255, 0.08);
-    color: var(--muted);
-    font-weight: 600;
-    font-size: 12px;
+    display: inline-block;
+    background: #2a3a5a;
+    color: #7e94b1;
+    border-radius: 6px;
+    padding: 2px 8px;
+    margin-right: 4px;
+    font-size: 0.95em;
   }
 
   .genre-tag {
