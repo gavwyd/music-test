@@ -397,7 +397,7 @@
 
   function switchTab(tab) {
     els.tabs.forEach(t => t.classList.remove('active'))
-    const tabEl = els.tabs.find(t => t.dataset.tab === tab)
+    const tabEl = Array.from(els.tabs).find(t => t.dataset.tab === tab)
     if (tabEl) tabEl.classList.add('active')
     
     // Hide all tabs
@@ -468,7 +468,7 @@
       switchTab('profile-view')
       
       // Show profile tab
-      els.tabs.find(t => t.dataset.tab === 'profile-view').style.display = ''
+      Array.from(els.tabs).find(t => t.dataset.tab === 'profile-view').style.display = ''
 
     } catch (error) {
       console.error('Error loading profile:', error)
