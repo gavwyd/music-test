@@ -115,7 +115,22 @@
     commentsList: $('#commentsList'),
     newComment: $('#newComment'),
     postCommentBtn: $('#postCommentBtn'),
-    addCommentSection: $('#addCommentSection')
+    addCommentSection: $('#addCommentSection'),
+
+    // Album/Single Details Modal
+    musicDetailsModal: $('#musicDetailsModal'),
+    closeMusicDetailsModal: $('#closeMusicDetailsModal'),
+    musicDetailsCover: $('#musicDetailsCover'),
+    musicDetailsTitle: $('#musicDetailsTitle'),
+    musicDetailsArtist: $('#musicDetailsArtist'),
+    musicDetailsType: $('#musicDetailsType'),
+    musicDetailsRelease: $('#musicDetailsRelease'),
+    musicDetailsGenres: $('#musicDetailsGenres'),
+    musicDetailsAvgScore: $('#musicDetailsAvgScore'),
+    musicDetailsTracklist: $('#musicDetailsTracklist'),
+    musicDetailsReviews: $('#musicDetailsReviews'),
+    musicDetailsSearch: $('#musicDetailsSearch'),
+    musicDetailsSearchResults: $('#musicDetailsSearchResults')
   }
 
   let currentUser = null
@@ -211,6 +226,12 @@
       if (e.target === els.commentsModal) hideCommentsModal()
     })
     els.postCommentBtn.addEventListener('click', postComment)
+
+    // Album/Single Details Modal
+    els.closeMusicDetailsModal.addEventListener('click', hideMusicDetailsModal)
+    els.musicDetailsModal.addEventListener('click', (e) => {
+      if (e.target === els.musicDetailsModal) hideMusicDetailsModal()
+    })
 
     // Auth state changes
     supabase.auth.onAuthStateChange((event, session) => {
@@ -1610,5 +1631,139 @@
     div.textContent = text
     return div.innerHTML
   }
+
+  // Album/Single Details Modal
+  function showMusicDetailsModal(musicData) {
+    if (!musicData) return
+    
+    // Set content
+    els.musicDetailsCover.src = musicData.cover || generatePlaceholderImage()
+    els.musicDetailsCover.onerror = function() {
+      this.src = generatePlaceholderImage()
+    }
+    
+    els.musicDetailsTitle.textContent = musicData.title
+    els.musicDetailsArtist.textContent = musicData.artist
+    els.musicDetailsType.textContent = musicData.type === 'album' ? 'Album' : 'Single'
+    els.musicDetailsRelease.textContent = musicData.release_date ? new Date(musicData.release_date).toLocaleDateString() : 'N/A'
+    
+    els.musicDetailsGenres.innerHTML = ''
+    if (musicData.genres && musicData.genres.length > 0) {
+      musicData.genres.forEach(genre => {
+        const span = document.createElement('span')
+        span.className = 'genre-tag'
+        span.textContent = genre
+        els.musicDetailsGenres.appendChild(span)
+      })
+    }
+    
+    els.musicDetailsAvgScore.textContent = 'N/A'
+    els.musicDetailsTracklist.innerHTML = ''
+    els.musicDetailsReviews.innerHTML = ''
+    els.musicDetailsSearchResults.innerHTML = ''
+
+    // Load additional data
+    loadMusicDetails(musicData.id, musicData.type)
+    
+    els.musicDetailsModal.classList.add('show')
+  }
+
+  function hideMusicDetailsModal() {
+    els.musicDetailsModal.classList.remove('show')
+  }
+
+  async function loadMusicDetails(id, type) {
+    try {
+      // Get reviews for the music
+      const { data: reviews, error: reviewsError } = await supabase
+        .from('reviews')
+        .select(`
+          *,
+          profiles:user_id (
+            full_name,
+            username,
+            avatar_url
+          )
+        `)
+        .or(`spotify_id.eq.${id},album_title.eq.${id}`)
+        .order('created_at', { ascending: false })
+
+      if (reviewsError) throw reviewsError
+
+      const processedReviews = reviews.map(review => ({
+        ...review,
+        user: review.profiles || {
+          full_name: 'Anonymous',
+          avatar_url: generatePlaceholderImage()
+        }
+      }))
+
+      // Calculate average score
+      const avgScore = processedReviews.reduce((sum, review) => sum + (review.score || 0), 0) / processedReviews.length
+      els.musicDetailsAvgScore.textContent = isNaN(avgScore) ? 'N/A' : avgScore.toFixed(2)
+
+      renderReviews(processedReviews, els.musicDetailsReviews, null, false)
+
+      // Load tracklist if it's an album
+      if (type === 'album') {
+        loadAlbumTracks(id)
+      }
+
+    } catch (error) {
+      console.error('Error loading music details:', error)
+    }
+  }
+
+  async function loadAlbumTracks(albumId) {
+    try {
+      const { data: tracks, error } = await supabase
+        .from('reviews')
+        .select(`
+          *,
+          profiles:user_id (
+            full_name,
+            username,
+            avatar_url
+          )
+        `)
+        .eq('album_title', albumId)
+        .order('track_number', { ascending: true })
+
+      if (error) throw error
+
+      els.musicDetailsTracklist.innerHTML = ''
+      tracks.forEach(track => {
+        const div = document.createElement('div')
+        div.className = 'track-item'
+        div.innerHTML = `
+          <div class="track-info">
+            <span class="track-number">${track.track_number || '-'}</span>
+            <span class="track-title">${escapeHtml(track.title)}</span>
+            <span class="track-artist">${escapeHtml(track.artist)}</span>
+          </div>
+          <div class="track-actions">
+            <button class="btn play-btn" data-track-id="${track.id}">▶️</button>
+          </div>
+        `
+
+        // Add play button functionality if needed
+
+        els.musicDetailsTracklist.appendChild(div)
+      })
+
+    } catch (error) {
+      console.error('Error loading album tracks:', error)
+    }
+  }
+
+  // Initialization on page load
+  document.addEventListener('DOMContentLoaded', () => {
+    // Hide modals initially
+    els.loginModal.classList.remove('show')
+    els.shareModal.classList.remove('show')
+    els.editProfileModal.classList.remove('show')
+    els.commentsModal.classList.remove('show')
+    els.musicDetailsModal.classList.remove('show')
+  })
 
 })();
