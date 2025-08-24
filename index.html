@@ -364,6 +364,38 @@
     </div>
   </div>
 
+  <!-- Album/Single Details Modal -->
+  <div id="musicDetailsModal" class="modal">
+    <div class="modal-content" style="max-width:600px;">
+      <button id="closeMusicDetailsModal" class="close-btn">&times;</button>
+      <div style="display:flex;gap:20px;align-items:flex-start;">
+        <img id="musicDetailsCover" src="" alt="Cover" style="width:120px;height:120px;border-radius:12px;object-fit:cover;">
+        <div>
+          <div id="musicDetailsTitle" style="font-size:1.3em;font-weight:600;"></div>
+          <div id="musicDetailsArtist" style="color:var(--muted);margin-bottom:4px;"></div>
+          <div>
+            <span id="musicDetailsType" class="tag"></span>
+            <span id="musicDetailsRelease" class="tag"></span>
+          </div>
+          <div id="musicDetailsGenres" style="margin:8px 0;"></div>
+          <div>Average Score: <span id="musicDetailsAvgScore">N/A</span></div>
+        </div>
+      </div>
+      <div style="margin:16px 0;">
+        <strong>Tracklist:</strong>
+        <div id="musicDetailsTracklist" style="margin-top:4px;"></div>
+      </div>
+      <div style="margin:16px 0;">
+        <strong>Reviews:</strong>
+        <div id="musicDetailsReviews"></div>
+      </div>
+      <div style="margin:16px 0;">
+        <input id="musicDetailsSearch" type="text" placeholder="Search for any album or single..." style="width:100%;padding:8px;">
+        <div id="musicDetailsSearchResults" style="margin-top:8px;"></div>
+      </div>
+    </div>
+  </div>
+
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <script src="script.js"></script>
 </body>
