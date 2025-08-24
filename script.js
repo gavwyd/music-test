@@ -1,3 +1,212 @@
+// --- Album Search Modal Logic ---
+let albumSearchModal = null;
+let albumSearchInput = null;
+let albumSearchResults = null;
+let albumDetailsModal = null;
+
+function createAlbumSearchModal() {
+  if (document.getElementById('album-search-modal')) return;
+  albumSearchModal = document.createElement('div');
+  albumSearchModal.id = 'album-search-modal';
+  albumSearchModal.className = 'modal';
+  albumSearchModal.innerHTML = `
+    <div class="modal-content">
+      <span class="close" id="close-album-search">&times;</span>
+      <h2>Search Albums/Singles</h2>
+      <input type="text" id="album-search-input" placeholder="Search for an album or single..." />
+      <div id="album-search-results"></div>
+    </div>
+  `;
+  document.body.appendChild(albumSearchModal);
+  albumSearchInput = document.getElementById('album-search-input');
+  albumSearchResults = document.getElementById('album-search-results');
+  document.getElementById('close-album-search').onclick = () => {
+    albumSearchModal.style.display = 'none';
+  };
+  albumSearchInput.addEventListener('input', handleAlbumSearchInput);
+}
+
+function openAlbumSearchModal() {
+  if (!albumSearchModal) createAlbumSearchModal();
+  albumSearchModal.style.display = 'block';
+  albumSearchInput.value = '';
+  albumSearchResults.innerHTML = '';
+  albumSearchInput.focus();
+}
+
+async function handleAlbumSearchInput(e) {
+  const query = e.target.value.trim();
+  if (!query) {
+    albumSearchResults.innerHTML = '';
+    return;
+  }
+  // Use Spotify API to search for albums/singles
+  const results = await searchSpotifyAlbums(query);
+  renderAlbumSearchResults(results);
+}
+
+async function searchSpotifyAlbums(query) {
+  // You must have a valid Spotify access token in variable 'spotifyAccessToken'
+  const url = `https://api.spotify.com/v1/search?q=${encodeURIComponent(query)}&type=album&limit=8`;
+  const res = await fetch(url, {
+    headers: { 'Authorization': `Bearer ${spotifyAccessToken}` }
+  });
+  if (!res.ok) return [];
+  const data = await res.json();
+  return data.albums && data.albums.items ? data.albums.items : [];
+}
+
+function renderAlbumSearchResults(albums) {
+  if (!albums.length) {
+    albumSearchResults.innerHTML = '<p>No results found.</p>';
+    return;
+  }
+  albumSearchResults.innerHTML = albums.map(album => `
+    <div class="album-search-result" data-album-id="${album.id}">
+      <img src="${album.images[0]?.url || ''}" alt="${album.name}" class="album-thumb" />
+      <div class="album-info">
+        <span class="album-title">${album.name}</span>
+        <span class="album-artist">${album.artists.map(a => a.name).join(', ')}</span>
+        <span class="album-year">${album.release_date?.slice(0,4) || ''}</span>
+      </div>
+    </div>
+  `).join('');
+  Array.from(albumSearchResults.getElementsByClassName('album-search-result')).forEach(el => {
+    el.onclick = () => openAlbumDetailsModal(el.getAttribute('data-album-id'));
+  });
+}
+
+// --- Album Details Modal ---
+function createAlbumDetailsModal() {
+  if (document.getElementById('album-details-modal')) return;
+  albumDetailsModal = document.createElement('div');
+  albumDetailsModal.id = 'album-details-modal';
+  albumDetailsModal.className = 'modal';
+  albumDetailsModal.innerHTML = `
+    <div class="modal-content" id="album-details-content">
+      <span class="close" id="close-album-details">&times;</span>
+      <div id="album-details-body"></div>
+    </div>
+  `;
+  document.body.appendChild(albumDetailsModal);
+  document.getElementById('close-album-details').onclick = () => {
+    albumDetailsModal.style.display = 'none';
+  };
+}
+
+async function openAlbumDetailsModal(albumId) {
+  if (!albumDetailsModal) createAlbumDetailsModal();
+  albumDetailsModal.style.display = 'block';
+  const details = await fetchSpotifyAlbumDetails(albumId);
+  const reviews = await fetchReviewsForAlbum(albumId);
+  renderAlbumDetails(details, reviews);
+}
+
+async function fetchSpotifyAlbumDetails(albumId) {
+  const url = `https://api.spotify.com/v1/albums/${albumId}`;
+  const res = await fetch(url, {
+    headers: { 'Authorization': `Bearer ${spotifyAccessToken}` }
+  });
+  if (!res.ok) return null;
+  return await res.json();
+}
+
+async function fetchReviewsForAlbum(albumId) {
+  // Replace with your Supabase logic to fetch reviews for this albumId
+  // Example:
+  // const { data, error } = await supabase.from('reviews').select('*').eq('album_id', albumId);
+  // return data || [];
+  return await getReviewsByAlbumId(albumId); // assuming this function exists
+}
+
+function renderAlbumDetails(album, reviews) {
+  if (!album) {
+    document.getElementById('album-details-body').innerHTML = '<p>Album not found.</p>';
+    return;
+  }
+  let avgScore = '-';
+  if (reviews && reviews.length) {
+    const sum = reviews.reduce((acc, r) => acc + (parseFloat(r.score) || 0), 0);
+    avgScore = (sum / reviews.length).toFixed(1);
+  }
+  const reviewSection = reviews && reviews.length ? `
+    <div class="album-reviews">
+      <div class="album-score-row">
+        <span class="album-score">${avgScore}</span>
+        <span class="album-score-label">Average Score</span>
+      </div>
+      <div class="album-review-list">
+        ${reviews.map(r => `<div class="album-review-item">${escapeHtml(r.text)}</div>`).join('')}
+      </div>
+    </div>
+  ` : '<div class="album-reviews"><div class="album-score-row"><span class="album-score">-</span><span class="album-score-label">No reviews yet</span></div></div>';
+  document.getElementById('album-details-body').innerHTML = `
+    <div class="album-details-header">
+      <img src="${album.images[0]?.url || ''}" alt="${album.name}" class="album-details-thumb" />
+      <div class="album-details-meta">
+        <h3>${album.name}</h3>
+        <div>${album.artists.map(a => a.name).join(', ')}</div>
+        <div>${album.release_date?.slice(0,4) || ''}</div>
+      </div>
+    </div>
+    <div class="album-tracklist">
+      <h4>Tracklist</h4>
+      <ol>
+        ${album.tracks.items.map(t => `<li>${escapeHtml(t.name)}</li>`).join('')}
+      </ol>
+    </div>
+    ${reviewSection}
+  `;
+}
+
+// --- Add Search Button to UI ---
+function addAlbumSearchButton() {
+  if (document.getElementById('open-album-search-btn')) return;
+  const nav = document.querySelector('nav') || document.body;
+  const btn = document.createElement('button');
+  btn.id = 'open-album-search-btn';
+  btn.textContent = 'Search Albums';
+  btn.className = 'album-search-btn';
+  btn.onclick = openAlbumSearchModal;
+  nav.appendChild(btn);
+}
+
+// --- Style Fixes for Score/Review ---
+function fixScoreAndReviewStyles() {
+  // Find all review cards and update score/review layout
+  document.querySelectorAll('.review-card').forEach(card => {
+    const score = card.querySelector('.score');
+    const label = card.querySelector('.score-label');
+    const review = card.querySelector('.review-text');
+    if (score && label) {
+      label.className = 'score-label';
+      label.style.fontWeight = 'bold';
+      label.style.fontSize = score.style.fontSize || '1.2em';
+      label.style.color = score.style.color || '#333';
+      // Move label next to score
+      score.parentNode.insertBefore(label, score.nextSibling);
+    }
+    if (review && score) {
+      // Move review under score/label
+      score.parentNode.appendChild(review);
+    }
+  });
+}
+
+// --- Utility ---
+function escapeHtml(text) {
+  return text.replace(/[&<>"']/g, function(m) {
+    return ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;','\'':'&#39;'})[m];
+  });
+}
+
+// --- Init ---
+window.addEventListener('DOMContentLoaded', () => {
+  addAlbumSearchButton();
+  createAlbumSearchModal();
+  createAlbumDetailsModal();
+  fixScoreAndReviewStyles();
+});
 (function(){
   // Configuration
   const SUPABASE_URL = 'https://qfvhzaxuocbtpinrjyqp.supabase.co'
