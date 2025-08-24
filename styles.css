@@ -127,6 +127,145 @@ h3 {
   border: 2px solid var(--accent);
 }
 
+.user-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+/* Profile Components */
+.profile-header {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+
+.profile-avatar {
+  width: 64px;
+  height: 64px;
+  border-radius: 50%;
+  border: 3px solid var(--accent);
+  object-fit: cover;
+}
+
+.profile-info {
+  flex: 1;
+}
+
+.profile-bio {
+  color: var(--muted);
+  margin-top: 4px;
+  font-size: 14px;
+  line-height: 1.4;
+}
+
+.profile-stats {
+  display: flex;
+  gap: 16px;
+  margin-top: 8px;
+  font-size: 14px;
+}
+
+.profile-stat {
+  color: var(--accent);
+  font-weight: 600;
+}
+
+/* Comments */
+.comments-list {
+  max-height: 400px;
+  overflow-y: auto;
+  margin-bottom: 16px;
+}
+
+.comment {
+  padding: 12px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+  display: flex;
+  gap: 10px;
+}
+
+.comment:last-child {
+  border-bottom: none;
+}
+
+.comment-avatar {
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  border: 1px solid var(--accent);
+  object-fit: cover;
+  cursor: pointer;
+}
+
+.comment-content {
+  flex: 1;
+  min-width: 0;
+}
+
+.comment-header {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 4px;
+}
+
+.comment-username {
+  font-weight: 600;
+  color: var(--text);
+  font-size: 14px;
+  cursor: pointer;
+}
+
+.comment-username:hover {
+  color: var(--accent);
+}
+
+.comment-date {
+  color: var(--muted);
+  font-size: 12px;
+  font-weight: 400;
+}
+
+.comment-text {
+  color: var(--text);
+  font-size: 14px;
+  line-height: 1.4;
+  word-wrap: break-word;
+}
+
+.add-comment {
+  border-top: 1px solid rgba(255, 255, 255, 0.06);
+  padding-top: 16px;
+}
+
+.add-comment textarea {
+  width: 100%;
+  margin-bottom: 12px;
+  min-height: 80px;
+  resize: vertical;
+}
+
+.comments-btn {
+  background: none;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 12px;
+  padding: 6px 10px;
+  cursor: pointer;
+  color: var(--muted);
+  transition: 0.18s ease;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  font-family: inherit;
+  font-size: 12px;
+}
+
+.comments-btn:hover {
+  color: var(--text);
+  border-color: rgba(255, 255, 255, 0.15);
+}
+
 /* Modals */
 .modal {
   display: none;
@@ -153,6 +292,11 @@ h3 {
   box-shadow: var(--shadow);
   width: 90%;
   max-width: 480px;
+  position: relative;
+}
+
+.modal-large {
+  max-width: 600px;
 }
 
 .modal-header {
@@ -315,12 +459,6 @@ h3 {
   gap: 22px;
 }
 
-@media (max-width: 980px) {
-  .grid {
-    grid-template-columns: 1fr;
-  }
-}
-
 /* Cards */
 .card {
   background: linear-gradient(180deg, #0e1626, var(--panel));
@@ -359,12 +497,6 @@ h3 {
   grid-template-columns: 1fr;
 }
 
-@media (max-width: 780px) {
-  .row, .row-3 {
-    grid-template-columns: 1fr;
-  }
-}
-
 /* Form Elements */
 label {
   font-size: 14px;
@@ -380,6 +512,7 @@ input[type="email"],
 input[type="password"], 
 input[type="number"], 
 input[type="tel"],
+input[type="file"],
 textarea, 
 select {
   width: 100%;
@@ -710,6 +843,15 @@ select:focus {
   width: 20px;
   height: 20px;
   border-radius: 50%;
+  cursor: pointer;
+}
+
+.r-username {
+  cursor: pointer;
+}
+
+.r-username:hover {
+  color: var(--accent);
 }
 
 .like-section {
@@ -747,6 +889,12 @@ select:focus {
   font-size: 12px;
   color: var(--muted);
   font-weight: 500;
+}
+
+.r-actions {
+  display: flex;
+  gap: 8px;
+  margin-top: 8px;
 }
 
 .toolbar {
@@ -811,12 +959,87 @@ select:focus {
   flex: 1;
 }
 
-/* Responsive */
-@media (max-width: 640px) {
+/* Mobile Responsive Styles */
+@media (max-width: 1024px) {
+  .grid {
+    grid-template-columns: 1fr;
+  }
+  
+  .app {
+    padding: 20px;
+  }
+}
+
+@media (max-width: 768px) {
   .app {
     padding: 16px;
   }
   
+  .brand {
+    flex-direction: column;
+    text-align: center;
+    gap: 8px;
+  }
+  
+  h1 {
+    font-size: 24px;
+  }
+  
+  .tabs {
+    padding: 0 4px;
+    gap: 6px;
+  }
+  
+  .tab {
+    padding: 8px 10px;
+    font-size: 13px;
+  }
+  
+  .user-bar {
+    flex-direction: column;
+    gap: 12px;
+    align-items: stretch;
+    text-align: center;
+  }
+  
+  .user-actions {
+    justify-content: center;
+  }
+  
+  .profile-header {
+    flex-direction: column;
+    text-align: center;
+  }
+  
+  .profile-stats {
+    justify-content: center;
+  }
+  
+  .modal-content {
+    width: 95%;
+    margin: 20px;
+  }
+  
+  .modal-body {
+    padding: 16px;
+  }
+  
+  .filters {
+    flex-direction: column;
+    align-items: stretch;
+  }
+  
+  .filter-group {
+    justify-content: space-between;
+  }
+  
+  .filter-group input,
+  .filter-group select {
+    max-width: none;
+  }
+}
+
+@media (max-width: 640px) {
   .r-card {
     grid-template-columns: 80px 1fr;
     gap: 10px;
@@ -834,24 +1057,91 @@ select:focus {
     height: 80px;
   }
   
-  .filters {
-    flex-direction: column;
-    align-items: stretch;
+  .r-title {
+    font-size: 14px;
   }
   
-  .filter-group {
-    justify-content: space-between;
+  .r-artist {
+    font-size: 13px;
   }
   
-  .tabs {
-    padding: 0 4px;
+  .r-text {
+    font-size: 13px;
+  }
+  
+  .r-actions {
+    grid-column: 1/-1;
+    margin-top: 8px;
+  }
+  
+  .comment {
+    padding: 8px;
+  }
+  
+  .comment-avatar {
+    width: 28px;
+    height: 28px;
   }
   
   .auth-buttons {
-    gap: 6px;
+    gap: 8px;
   }
   
-  .modal-content {
-    width: 95%;
+  .toolbar {
+    flex-direction: column;
+  }
+  
+  .btn {
+    width: 100%;
+  }
+  
+  .btn.small {
+    width: auto;
+  }
+}
+
+@media (max-width: 480px) {
+  .app {
+    padding: 12px;
+  }
+  
+  h1 {
+    font-size: 20px;
+  }
+  
+  .brand .logo {
+    width: 36px;
+    height: 36px;
+  }
+  
+  .tabs {
+    gap: 4px;
+  }
+  
+  .tab {
+    padding: 6px 8px;
+    font-size: 12px;
+  }
+  
+  .pill {
+    font-size: 11px;
+    padding: 6px 8px;
+  }
+  
+  .r-card {
+    grid-template-columns: 1fr;
+    text-align: center;
+  }
+  
+  .r-cover {
+    width: 100%;
+    height: 120px;
+    margin: 0 auto;
+  }
+  
+  .like-section,
+  .r-actions {
+    grid-column: 1;
+    justify-self: center;
   }
 }
