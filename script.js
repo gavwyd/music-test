@@ -1546,6 +1546,7 @@ window.addEventListener('DOMContentLoaded', () => {
             ${review.genres.map(genre => `<span class="genre-tag">${escapeHtml(genre)}</span>`).join('')}
           </div>
         ` : ''}
+        </div>
         ${review.review_text ? `<div class="r-text">${escapeHtml(review.review_text)}</div>` : ''}
         ${!isPreview && review.user ? `
           <div class="r-user">
