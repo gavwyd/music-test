@@ -522,7 +522,7 @@
     }
   }
 
-  // Spotify Search - FIXED: Removed async keyword since no await is used
+  // Spotify Search
   function handleSearchInput() {
     const query = els.musicSearch.value.trim()
     
@@ -635,7 +635,7 @@
     updatePreview()
   }
 
-  // Score handling - FIXED: Slider only does whole and half numbers
+  // Score handling
   function updateScoreDisplay() {
     const score = parseFloat(els.score.value)
     els.scoreOut.textContent = score.toFixed(1)
@@ -651,7 +651,7 @@
     updatePreview()
   }
 
-  // Preview - FIXED: Now shows actual cover image
+  // Preview
   function updatePreview() {
     if (!selectedMusicData) {
       els.previewPane.innerHTML = '<div class="empty">Select music to see preview</div>'
@@ -720,7 +720,7 @@
         release_date: selectedMusicData.release_date || null
       }
 
-      const { _data, error } = await supabase
+      const { data, error } = await supabase
         .from('reviews')
         .insert(reviewData)
         .select()
@@ -757,7 +757,7 @@
     updatePreview()
   }
 
-  // Load Reviews - FIXED: Better like counting and My Reviews functionality
+  // Load My Reviews
   async function loadMyReviews() {
     if (!currentUser) return
 
@@ -954,7 +954,7 @@
     return div
   }
 
-  // Like System - FIXED: Now works properly
+  // Like System
   globalThis.toggleLike = async function(reviewId) {
     if (!currentUser) {
       alert('Please log in to like reviews')
@@ -1004,7 +1004,7 @@
     }
   }
 
-  // Edit Review - FIXED: Now works properly
+  // Edit Review
   globalThis.editReview = async function(reviewId) {
     if (!currentUser) {
       alert('Please log in to edit reviews')
@@ -1084,7 +1084,7 @@
     }
   }
 
-  // Delete Review - FIXED: Now works properly
+  // Delete Review
   globalThis.deleteReview = async function(reviewId) {
     if (!currentUser) {
       alert('Please log in to delete reviews')
@@ -1121,7 +1121,7 @@
     }
   }
 
-  // Comments System - FIXED: Now works properly
+  // Comments System
   globalThis.showComments = async function(reviewId) {
     currentReviewForComments = reviewId
     await loadComments(reviewId)
@@ -1253,7 +1253,7 @@
     }
   }
 
-  // Album/Track Detail System - FIXED: Now shows tracklist and reviews properly
+  // Album/Track Detail System
   globalThis.showAlbumDetail = async function(spotifyId, type) {
     try {
       els.albumDetailContent.innerHTML = '<div class="loading"><div class="spinner"></div><span>Loading details...</span></div>'
@@ -1380,7 +1380,7 @@
     return `${minutes}:${seconds.padStart(2, '0')}`
   }
 
-  // User Profile System - FIXED: Changed "Share Profile" to "Share Reviews"
+  // User Profile System
   globalThis.showUserProfile = async function(userId) {
     if (userId === currentUser?.id) {
       switchTab('profile')
@@ -1453,7 +1453,7 @@
     }
   }
 
-  // Profile Management - FIXED: Avatar upload and bio/username saving
+  // Profile Management
   async function handleAvatarUpload() {
     const file = els.avatarUpload?.files[0]
     if (!file) return
@@ -1467,7 +1467,7 @@
       const fileExt = file.name.split('.').pop()
       const fileName = `${currentUser.id}-${Date.now()}.${fileExt}`
       
-      const { _data, error } = await supabase.storage
+      const { data, error } = await supabase.storage
         .from('avatars')
         .upload(fileName, file, { upsert: true })
 
@@ -1568,7 +1568,7 @@
     }
   }
 
-  // Share Profile - FIXED: Changed to "Share Reviews"
+  // Share Profile
   function showShareModal() {
     const profileUrl = `${window.location.origin}/?user=${currentUser.id}`
     if (els.shareLink) {
@@ -1593,7 +1593,7 @@
           els.copySuccess.style.display = 'none'
         }, 3000)
       }
-    } catch (_error) {
+    } catch (error) {
       // Fallback for older browsers
       els.shareLink?.select()
       document.execCommand('copy')
@@ -1649,7 +1649,74 @@
       const url = window.URL.createObjectURL(blob)
       const a = document.createElement('a')
       a.href = url
-      a.download = "my-music.txt"title.ilike.%${searchQuery}%,artist.ilike.%${searchQuery}%,review_text.ilike.%${searchQuery}%`)
+      a.download = 'my-music-reviews.csv'
+      document.body.appendChild(a)
+      a.click()
+      document.body.removeChild(a)
+      window.URL.revokeObjectURL(url)
+
+    } catch (error) {
+      console.error('Export error:', error)
+      alert('Failed to export reviews: ' + error.message)
+    }
+  }
+
+  // Utility functions
+  function debounce(func, wait) {
+    let timeout
+    return function executedFunction(...args) {
+      const later = () => {
+        clearTimeout(timeout)
+        func(...args)
+      }
+      clearTimeout(timeout)
+      timeout = setTimeout(later, wait)
+    }
+  }
+
+  function escapeHtml(unsafe) {
+    return unsafe
+      .replace(/&/g, "&amp;")
+      .replace(/</g, "&lt;")
+      .replace(/>/g, "&gt;")
+      .replace(/"/g, "&quot;")
+      .replace(/'/g, "&#039;")
+  }
+
+  function generatePlaceholderImage() {
+    return 'data:image/svg+xml;base64,' + btoa(`
+      <svg xmlns="http://www.w3.org/2000/svg" width="200" height="200" viewBox="0 0 200 200">
+        <rect width="200" height="200" fill="#0d1422"/>
+        <circle cx="100" cy="80" r="25" fill="#4da3ff" opacity="0.3"/>
+        <rect x="60" y="120" width="80" height="8" rx="4" fill="#4da3ff" opacity="0.3"/>
+        <rect x="70" y="140" width="60" height="6" rx="3" fill="#4da3ff" opacity="0.2"/>
+      </svg>
+    `)
+  }
+
+  function formatDate(dateString) {
+    const date = new Date(dateString)
+    const now = new Date()
+    const diffTime = Math.abs(now - date)
+    const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24))
+
+    if (diffDays === 1) {
+      return 'Yesterday'
+    } else if (diffDays < 7) {
+      return `${diffDays} days ago`
+    } else if (diffDays < 30) {
+      const weeks = Math.floor(diffDays / 7)
+      return `${weeks} week${weeks > 1 ? 's' : ''} ago`
+    } else if (diffDays < 365) {
+      const months = Math.floor(diffDays / 30)
+      return `${months} month${months > 1 ? 's' : ''} ago`
+    } else {
+      const years = Math.floor(diffDays / 365)
+      return `${years} year${years > 1 ? 's' : ''} ago`
+    }
+  }
+
+})();text.ilike.%${searchQuery}%`)
       }
 
       switch (sortBy) {
@@ -1698,6 +1765,7 @@
     }
   }
 
+  // Load Global Reviews
   async function loadGlobalReviews() {
     try {
       els.globalReviewsEmpty.style.display = 'none'
@@ -1724,4 +1792,4 @@
         `)
 
       if (searchQuery) {
-        query
+        query = query.or(`title.ilike.%${searchQuery}%,artist.ilike.%${searchQuery}%,review_
