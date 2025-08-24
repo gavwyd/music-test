@@ -1701,7 +1701,7 @@
     return date.toLocaleDateString()
   }
 
-})();artist.ilike.%${searchQuery}%,review_text.ilike.%${searchQuery}%`)
+.or(`artist.ilike.%${searchQuery}%,review_text.ilike.%${searchQuery}%`)
       }
 
       switch (sortBy) {
@@ -1777,3 +1777,4 @@
 
       if (searchQuery) {
         query = query.or(`title.ilike.%${searchQuery}%,
+})();;
