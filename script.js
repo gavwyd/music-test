@@ -1,13 +1,13 @@
 (function(){
   // Configuration
   const SUPABASE_URL = 'https://qfvhzaxuocbtpinrjyqp.supabase.co';
-  const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InFmdmh6YXh1b2NidHBpbnJqeXFwIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTU5NzEzMjAsImV4cCI6MjA3MTU0NzMyMH0.Xn9_ZY6OM59xgUnb_Rc29go5sO1OdK4DIiFvpqQatDE';
-  const _SPOTIFY_CLIENT_ID = 'cf9a6e9189294eb4bfaa374f5481326d'; // unused, prefixed with _
-  const _SPOTIFY_CLIENT_SECRET = '8c58098d229c4a4dafacbadcabe687f8'; // unused, prefixed with _
-  
-  // FIX: Use the correct Supabase client variable
+  const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InFmdmh6YXh1b2NidHBpbnJqeXFwIiwicm9zZSI6ImFub24iLCJpYXQiOjE3NTU5NzEzMjAsImV4cCI6MjA3MTU0NzMyMH0.Xn9_ZY6OM59xgUnb_Rc29go5sO1OdK4DIiFvpqQatDE';
+  const SPOTIFY_CLIENT_ID = 'cf9a6e9189294eb4bfaa374f5481326d';
+  const SPOTIFY_CLIENT_SECRET = '8c58098d229c4a4dafacbadcabe687f8';
+
+  // Supabase client
   const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
-  
+
   // Utility functions
   const els = {
     // Auth
