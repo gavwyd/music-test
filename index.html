@@ -170,12 +170,12 @@
 
             <div class="row-1 row">
               <div class="rating">
-                <label for="score">Score</label>
-                <input id="score" type="range" min="0" max="10" step="0.01" value="7" />
-                <span class="pill"><span>Current:</span> <strong id="scoreOut">7.00</strong>/10</span>
+                <label for="score">Score (sliding scale: whole and half numbers only)</label>
+                <input id="score" type="range" min="0" max="10" step="0.5" value="7" />
+                <span class="pill"><span>Current:</span> <strong id="scoreOut">7.0</strong>/10</span>
               </div>
               <div class="manual-score">
-                <label for="manualScore">Or type exact score (0-10.00)</label>
+                <label for="manualScore">Or type exact score with decimals (0-10.00)</label>
                 <input id="manualScore" type="number" min="0" max="10" step="0.01" placeholder="e.g., 8.73" />
               </div>
             </div>
@@ -212,7 +212,7 @@
           <div class="hd">
             <strong>My Reviews</strong>
             <div class="toolbar">
-              <button id="shareProfileBtn" class="btn small">🔗 Share Profile</button>
+              <button id="shareProfileBtn" class="btn small">🔗 Share Reviews</button>
               <button id="exportBtn" class="btn small">⬇️ Export</button>
             </div>
           </div>
@@ -281,6 +281,19 @@
         </div>
       </section>
 
+      <!-- Album/Track Detail View -->
+      <section id="tab-album-detail" style="display:none">
+        <div class="card">
+          <div class="hd">
+            <strong id="albumDetailTitle">Album Details</strong>
+            <button id="backFromAlbum" class="btn small ghost">← Back</button>
+          </div>
+          <div class="bd">
+            <div id="albumDetailContent"></div>
+          </div>
+        </div>
+      </section>
+
       <!-- About Tab -->
       <section id="tab-about" style="display:none">
         <div class="card">
@@ -297,7 +310,8 @@
               <li><strong>Like System:</strong> Show appreciation for great reviews</li>
               <li><strong>Smart Filtering:</strong> Filter by genre, popularity, rating, and more</li>
               <li><strong>Cloud Sync:</strong> Your reviews are saved and accessible anywhere</li>
-              <li><strong>Share Profile:</strong> Share your review collection with others</li>
+              <li><strong>Share Reviews:</strong> Share your review collection with others</li>
+              <li><strong>Album Details:</strong> View tracklists and average scores for albums</li>
             </ul>
             <p>Built with Supabase for real-time data and Spotify Web API for music discovery.</p>
           </div>
@@ -310,7 +324,7 @@
   <div id="shareModal" class="modal">
     <div class="modal-content">
       <div class="modal-header">
-        <h3>Share Your Profile</h3>
+        <h3>Share Your Reviews</h3>
         <button class="close-btn" id="closeShareModal">&times;</button>
       </div>
       <div class="modal-body">
@@ -340,6 +354,30 @@
             <button id="submitComment" class="btn primary small">Post Comment</button>
           </div>
           <div id="commentsList"></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Edit Review Modal -->
+  <div id="editModal" class="modal">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h3>Edit Review</h3>
+        <button class="close-btn" id="closeEditModal">&times;</button>
+      </div>
+      <div class="modal-body">
+        <div class="form-group">
+          <label for="editScore">Score</label>
+          <input id="editScore" type="number" min="0" max="10" step="0.01" />
+        </div>
+        <div class="form-group">
+          <label for="editReview">Review</label>
+          <textarea id="editReview" rows="4"></textarea>
+        </div>
+        <div class="toolbar">
+          <button id="saveEditBtn" class="btn primary">Save Changes</button>
+          <button id="cancelEditBtn" class="btn ghost">Cancel</button>
         </div>
       </div>
     </div>
