@@ -1,71 +1,10 @@
 // --- Add Album Search Input to Tabs ---
 function addAlbumSearchInputToTabs() {
-  if (document.getElementById('album-search-tab-input')) return;
-  // Find the tab bar (should have class 'tabs')
-  const tabs = document.querySelector('.tabs');
-  if (!tabs) return;
-  const searchContainer = document.createElement('div');
-  searchContainer.className = 'search-container';
-  searchContainer.style.flex = '1';
-  searchContainer.style.maxWidth = '260px';
-  searchContainer.style.marginLeft = 'auto';
-  searchContainer.innerHTML = `
-    <input type="text" id="album-search-tab-input" placeholder="Search albums/singles..." autocomplete="off" style="width:100%;padding:8px 12px;border-radius:10px;border:1px solid rgba(125,175,255,0.18);background:var(--panel-2);color:var(--text);font-size:15px;" />
-    <div id="album-search-suggestions" class="search-suggestions" style="display:none;"></div>
-  `;
-  tabs.appendChild(searchContainer);
-  const input = document.getElementById('album-search-tab-input');
-  const suggestions = document.getElementById('album-search-suggestions');
-  // Use the same logic as the add reviews search for suggestions
-  let searchTimeout;
-  input.addEventListener('input', async (e) => {
-    const query = e.target.value.trim();
-    if (!query) {
-      suggestions.style.display = 'none';
-      suggestions.innerHTML = '';
-      return;
-    }
-    if (searchTimeout) clearTimeout(searchTimeout);
-    searchTimeout = setTimeout(async () => {
-      const results = await searchSpotify(query); // use the same function as add reviews search
-      if (!results.length) {
-        suggestions.innerHTML = '<div class="search-suggestion">No results found.</div>';
-        suggestions.style.display = 'block';
-        return;
-      }
-      suggestions.innerHTML = '';
-      results.forEach(item => {
-        const div = document.createElement('div');
-        div.className = 'search-suggestion';
-        const imgSrc = item.cover && item.cover !== '' ? item.cover : (typeof generatePlaceholderImage === 'function' ? generatePlaceholderImage() : '');
-        div.innerHTML = `
-          <img src="${imgSrc}" alt="Cover" onerror="this.src='${typeof generatePlaceholderImage === 'function' ? generatePlaceholderImage() : ''}'">
-          <div class="suggestion-info">
-            <div class="suggestion-title">${escapeHtml(item.title)}</div>
-            <div class="suggestion-artist">${escapeHtml(item.artist)}</div>
-            ${item.album_title ? `<div class="suggestion-artist">${escapeHtml(item.album_title)}</div>` : ''}
-          </div>
-          <div class="suggestion-type">${item.type === 'album' ? 'Album' : 'Single'}</div>
-        `;
-        div.addEventListener('click', () => {
-          window.location.href = `album.html?id=${item.id}`;
-        });
-        suggestions.appendChild(div);
-      });
-      suggestions.style.display = 'block';
-    }, 300);
-  });
-  // Hide suggestions on blur
-  input.addEventListener('blur', () => {
-    setTimeout(() => { suggestions.style.display = 'none'; }, 150);
-  });
-  input.addEventListener('focus', () => {
-    if (suggestions.innerHTML) suggestions.style.display = 'block';
-  });
+  // Intentionally left blank: album search in tab bar removed as requested.
 }
 // --- DOM Observer for UI Consistency ---
 window.addEventListener('DOMContentLoaded', () => {
-  addAlbumSearchInputToTabs();
+  // addAlbumSearchInputToTabs(); // removed as requested
   createAlbumSearchModal(); // still needed for modal details
   createAlbumDetailsModal();
   fixScoreAndReviewStyles();
