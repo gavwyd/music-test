@@ -3,8 +3,8 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>ReviewHub — Rate Spotify albums & singles (0—10)</title>
-  <meta name="description" content="Search or paste Spotify links for albums and singles, rate them 0—10, and share reviews with the community.">
+  <title>ReviewHub — Rate Spotify albums & singles (0.5—10)</title>
+  <meta name="description" content="Search or paste Spotify links for albums and singles, rate them 0.5—10, and share reviews with the community.">
   <link rel="stylesheet" href="styles.css">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -28,10 +28,6 @@
           <div class="form-group">
             <label for="loginPassword">Password</label>
             <input id="loginPassword" type="password" placeholder="Enter your password" />
-          </div>
-          <div class="form-group" id="usernameGroup" style="display:none">
-            <label for="loginUsername">Username</label>
-            <input id="loginUsername" type="text" placeholder="Choose a username" />
           </div>
           
           <div class="auth-buttons">
@@ -64,8 +60,8 @@
     <!-- User Bar -->
     <div id="userBar" class="user-bar" style="display:none">
       <div class="user-info">
-        <img id="userAvatar" class="user-avatar clickable" src="" alt="">
-        <span class="user-welcome">Welcome, <strong id="currentUser" class="clickable"></strong>!</span>
+        <img id="userAvatar" class="user-avatar" src="" alt="">
+        <span class="user-welcome">Welcome, <strong id="currentUser"></strong>!</span>
       </div>
       <button id="logoutBtn" class="btn ghost small">Logout</button>
     </div>
@@ -82,21 +78,123 @@
         <div class="logo" aria-hidden></div>
         <div>
           <h1>ReviewHub</h1>
-          <div class="sub">Search or paste Spotify links for albums and singles. Rate 0—10 and share with the community.</div>
+          <div class="sub">Search or paste Spotify links for albums and singles. Rate 0.5—10 and share with the community.</div>
         </div>
       </div>
 
       <div class="tabs">
-        <button class="tab" data-tab="global-feed">🌍 Global Feed</button>
-        <button class="tab" data-tab="add">➕ Add Review</button>
+        <button class="tab active" data-tab="add">➕ Add Review</button>
         <button class="tab" data-tab="my-reviews">📝 My Reviews</button>
-        <button class="tab" data-tab="profile">👤 Profile</button>
+        <button class="tab" data-tab="global-feed">🌍 Global Feed</button>
         <button class="tab" data-tab="about">ℹ️ About</button>
         <span class="right pill" id="statsPill">0 reviews</span>
       </div>
 
+      <!-- Add Review Tab -->
+      <section id="tab-add" class="grid">
+        <div class="card">
+          <div class="hd"><strong>Add a Review</strong></div>
+          <div class="bd">
+            <div class="row-1">
+              <div>
+                <label for="musicSearch">Search for music or paste Spotify link</label>
+                <div class="search-container">
+                  <input id="musicSearch" type="text" placeholder="Search for albums or singles..." />
+                  <div id="searchSuggestions" class="search-suggestions" style="display:none"></div>
+                </div>
+                <div class="hint">Search by artist, album, or song name. Or paste any Spotify album/track URL.</div>
+              </div>
+            </div>
+
+            <div class="spacer"></div>
+
+            <div id="selectedMusic" style="display:none">
+              <div class="r-card" style="margin-bottom:16px;">
+                <img id="selectedCover" class="r-cover" alt="Cover" />
+                <div>
+                  <div id="selectedTitle" class="r-title"></div>
+                  <div id="selectedArtist" class="r-artist"></div>
+                  <div class="r-meta">
+                    <span id="selectedType" class="tag"></span>
+                    <div id="selectedGenres" class="genre-list"></div>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <div class="spacer"></div>
+
+            <div class="row-1 row">
+              <div class="rating">
+                <label for="score">Score</label>
+                <input id="score" type="range" min="0.5" max="10" step="0.5" value="7" />
+                <span class="pill"><span>Current:</span> <strong id="scoreOut">7.0</strong>/10</span>
+              </div>
+              <div class="manual-score">
+                <label for="manualScore">Or type exact score (0.5-10.0)</label>
+                <input id="manualScore" type="number" min="0.5" max="10" step="0.1" placeholder="e.g., 8.7" />
+              </div>
+            </div>
+
+            <div class="spacer"></div>
+
+            <div class="row-1">
+              <div>
+                <label for="review">Your review</label>
+                <textarea id="review" rows="5" placeholder="What did you think about this music?"></textarea>
+              </div>
+            </div>
+
+            <div class="spacer"></div>
+
+            <div class="toolbar">
+              <button id="saveBtn" class="btn primary">💾 Save Review</button>
+              <button id="clearFormBtn" class="btn ghost">🧹 Clear</button>
+            </div>
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="hd"><strong>Preview</strong></div>
+          <div class="bd" id="previewPane">
+            <div class="empty">Select music to see preview</div>
+          </div>
+        </div>
+      </section>
+
+      <!-- My Reviews Tab -->
+      <section id="tab-my-reviews" style="display:none">
+        <div class="card">
+          <div class="hd">
+            <strong>My Reviews</strong>
+            <div class="toolbar">
+              <button id="shareProfileBtn" class="btn small">🔗 Share Profile</button>
+              <button id="exportBtn" class="btn small">⬇️ Export</button>
+            </div>
+          </div>
+          <div class="bd">
+            <div class="filters">
+              <div class="filter-group">
+                <input id="mySearch" type="text" placeholder="Search my reviews..." style="max-width:200px">
+              </div>
+              <div class="filter-group">
+                <select id="mySortBy">
+                  <option value="date-desc">Newest first</option>
+                  <option value="date-asc">Oldest first</option>
+                  <option value="score-desc">Highest rated</option>
+                  <option value="score-asc">Lowest rated</option>
+                  <option value="title-asc">Title A→Z</option>
+                </select>
+              </div>
+            </div>
+            <div id="myReviewsList" class="review-list"></div>
+            <div id="myReviewsEmpty" class="empty" style="display:none">No reviews yet. Add one on the Add Review tab.</div>
+          </div>
+        </div>
+      </section>
+
       <!-- Global Feed Tab -->
-      <section id="tab-global-feed">
+      <section id="tab-global-feed" style="display:none">
         <div class="card">
           <div class="hd">
             <strong>Global Feed</strong>
@@ -134,166 +232,6 @@
         </div>
       </section>
 
-      <!-- Add Review Tab -->
-      <section id="tab-add" class="grid" style="display:none">
-        <div class="card">
-          <div class="hd"><strong>Add a Review</strong></div>
-          <div class="bd">
-            <div class="row-1">
-              <div>
-                <label for="musicSearch">Search for music or paste Spotify link</label>
-                <div class="search-container">
-                  <input id="musicSearch" type="text" placeholder="Search for albums or singles..." />
-                  <div id="searchSuggestions" class="search-suggestions" style="display:none"></div>
-                </div>
-                <div class="hint">Search by artist, album, or song name. Or paste any Spotify album/track URL.</div>
-              </div>
-            </div>
-
-            <div class="spacer"></div>
-
-            <div id="selectedMusic" style="display:none">
-              <div class="r-card" style="margin-bottom:16px;">
-                <img id="selectedCover" class="r-cover" alt="Cover" />
-                <div>
-                  <div id="selectedTitle" class="r-title"></div>
-                  <div id="selectedArtist" class="r-artist"></div>
-                  <div class="r-meta">
-                    <span id="selectedType" class="tag"></span>
-                    <div id="selectedGenres" class="genre-list"></div>
-                  </div>
-                </div>
-              </div>
-            </div>
-
-            <div class="spacer"></div>
-
-            <div class="row-1 row">
-              <div class="rating">
-                <label for="score">Score (sliding scale: whole and half numbers only)</label>
-                <input id="score" type="range" min="0" max="10" step="0.5" value="7" />
-                <span class="pill"><span>Current:</span> <strong id="scoreOut">7.0</strong>/10</span>
-              </div>
-              <div class="manual-score">
-                <label for="manualScore">Or type exact score with decimals (0-10.00)</label>
-                <input id="manualScore" type="number" min="0" max="10" step="0.01" placeholder="e.g., 8.73" />
-              </div>
-            </div>
-
-            <div class="spacer"></div>
-
-            <div class="row-1">
-              <div>
-                <label for="review">Your review</label>
-                <textarea id="review" rows="5" placeholder="What did you think about this music?"></textarea>
-              </div>
-            </div>
-
-            <div class="spacer"></div>
-
-            <div class="toolbar">
-              <button id="saveBtn" class="btn primary">💾 Save Review</button>
-              <button id="clearFormBtn" class="btn ghost">🧹 Clear</button>
-            </div>
-          </div>
-        </div>
-
-        <div class="card">
-          <div class="hd"><strong>Preview</strong></div>
-          <div class="bd" id="previewPane">
-            <div class="empty">Select music to see preview</div>
-          </div>
-        </div>
-      </section>
-
-      <!-- My Reviews Tab -->
-      <section id="tab-my-reviews" style="display:none">
-        <div class="card">
-          <div class="hd">
-            <strong>My Reviews</strong>
-            <div class="toolbar">
-              <button id="shareProfileBtn" class="btn small">🔗 Share Reviews</button>
-              <button id="exportBtn" class="btn small">⬇️ Export</button>
-            </div>
-          </div>
-          <div class="bd">
-            <div class="filters">
-              <div class="filter-group">
-                <input id="mySearch" type="text" placeholder="Search my reviews..." style="max-width:200px">
-              </div>
-              <div class="filter-group">
-                <select id="mySortBy">
-                  <option value="date-desc">Newest first</option>
-                  <option value="date-asc">Oldest first</option>
-                  <option value="score-desc">Highest rated</option>
-                  <option value="score-asc">Lowest rated</option>
-                  <option value="title-asc">Title A→Z</option>
-                </select>
-              </div>
-            </div>
-            <div id="myReviewsList" class="review-list"></div>
-            <div id="myReviewsEmpty" class="empty" style="display:none">No reviews yet. Add one on the Add Review tab.</div>
-          </div>
-        </div>
-      </section>
-
-      <!-- Profile Tab -->
-      <section id="tab-profile" style="display:none">
-        <div class="card">
-          <div class="hd"><strong>My Profile</strong></div>
-          <div class="bd">
-            <div class="profile-header">
-              <div class="profile-avatar-section">
-                <img id="profileAvatar" class="profile-avatar" src="" alt="Profile">
-                <input id="avatarUpload" type="file" accept="image/*" style="display:none">
-                <button id="changeAvatarBtn" class="btn small">Change Photo</button>
-              </div>
-              <div class="profile-info">
-                <div class="form-group">
-                  <label for="profileUsername">Username</label>
-                  <div class="username-container">
-                    <input id="profileUsername" type="text" />
-                    <button id="saveUsernameBtn" class="btn small" disabled>Save</button>
-                  </div>
-                  <div class="hint" id="usernameHint">You can change your username every 3 days</div>
-                </div>
-                <div class="form-group">
-                  <label for="profileBio">Bio</label>
-                  <textarea id="profileBio" rows="3" placeholder="Tell us about yourself..."></textarea>
-                  <button id="saveBioBtn" class="btn small">Save Bio</button>
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
-      </section>
-
-      <!-- User Profile View -->
-      <section id="tab-user-profile" style="display:none">
-        <div class="card">
-          <div class="hd">
-            <strong id="userProfileName">User Profile</strong>
-            <button id="backToFeed" class="btn small ghost">← Back</button>
-          </div>
-          <div class="bd">
-            <div id="userProfileContent"></div>
-          </div>
-        </div>
-      </section>
-
-      <!-- Album/Track Detail View -->
-      <section id="tab-album-detail" style="display:none">
-        <div class="card">
-          <div class="hd">
-            <strong id="albumDetailTitle">Album Details</strong>
-            <button id="backFromAlbum" class="btn small ghost">← Back</button>
-          </div>
-          <div class="bd">
-            <div id="albumDetailContent"></div>
-          </div>
-        </div>
-      </section>
-
       <!-- About Tab -->
       <section id="tab-about" style="display:none">
         <div class="card">
@@ -303,15 +241,12 @@
             <h3>Features:</h3>
             <ul>
               <li><strong>Spotify Integration:</strong> Search for music or paste Spotify links</li>
-              <li><strong>Precise Ratings:</strong> Rate music from 0 to 10.00 with decimal precision</li>
+              <li><strong>Precise Ratings:</strong> Rate music from 0.5 to 10.0 with decimal precision</li>
               <li><strong>Community Feed:</strong> Discover reviews from other music lovers</li>
-              <li><strong>Comments:</strong> Engage with reviews through comments</li>
-              <li><strong>User Profiles:</strong> View profiles and review history</li>
               <li><strong>Like System:</strong> Show appreciation for great reviews</li>
               <li><strong>Smart Filtering:</strong> Filter by genre, popularity, rating, and more</li>
               <li><strong>Cloud Sync:</strong> Your reviews are saved and accessible anywhere</li>
-              <li><strong>Share Reviews:</strong> Share your review collection with others</li>
-              <li><strong>Album Details:</strong> View tracklists and average scores for albums</li>
+              <li><strong>Share Profile:</strong> Share your review collection with others</li>
             </ul>
             <p>Built with Supabase for real-time data and Spotify Web API for music discovery.</p>
           </div>
@@ -320,11 +255,11 @@
     </div>
   </div>
 
-  <!-- Share Reviews Modal -->
+  <!-- Share Profile Modal -->
   <div id="shareModal" class="modal">
     <div class="modal-content">
       <div class="modal-header">
-        <h3>Share Your Reviews</h3>
+        <h3>Share Your Profile</h3>
         <button class="close-btn" id="closeShareModal">&times;</button>
       </div>
       <div class="modal-body">
@@ -338,54 +273,7 @@
     </div>
   </div>
 
-  <!-- Comments Modal -->
-  <div id="commentsModal" class="modal">
-    <div class="modal-content">
-      <div class="modal-header">
-        <h3>Comments</h3>
-        <button class="close-btn" id="closeCommentsModal">&times;</button>
-      </div>
-      <div class="modal-body">
-        <div id="reviewDetails"></div>
-        <div class="comments-section">
-          <h4>Comments</h4>
-          <div class="add-comment">
-            <textarea id="newComment" placeholder="Add a comment..." rows="3"></textarea>
-            <button id="submitComment" class="btn primary small">Post Comment</button>
-          </div>
-          <div id="commentsList"></div>
-        </div>
-      </div>
-    </div>
-  </div>
-
-  <!-- Edit Review Modal -->
-  <div id="editModal" class="modal">
-    <div class="modal-content">
-      <div class="modal-header">
-        <h3>Edit Review</h3>
-        <button class="close-btn" id="closeEditModal">&times;</button>
-      </div>
-      <div class="modal-body">
-        <div class="form-group">
-          <label for="editScore">Score</label>
-          <input id="editScore" type="number" min="0" max="10" step="0.01" />
-        </div>
-        <div class="form-group">
-          <label for="editReview">Review</label>
-          <textarea id="editReview" rows="4"></textarea>
-        </div>
-        <div class="toolbar">
-          <button id="saveEditBtn" class="btn primary">Save Changes</button>
-          <button id="cancelEditBtn" class="btn ghost">Cancel</button>
-        </div>
-      </div>
-    </div>
-  </div>
-
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <script src="script.js"></script>
 </body>
 </html>
-
-
