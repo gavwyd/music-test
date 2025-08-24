@@ -114,7 +114,8 @@
     reviewSummary: $('#reviewSummary'),
     commentsList: $('#commentsList'),
     newComment: $('#newComment'),
-    postCommentBtn: $('#postCommentBtn')
+    postCommentBtn: $('#postCommentBtn'),
+    addCommentSection: $('#addCommentSection')
   }
 
   let currentUser = null
