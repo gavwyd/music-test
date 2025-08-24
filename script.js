@@ -1696,7 +1696,7 @@
     return date.toLocaleDateString()
   }
 
-})();error) throw error
+})();
 
       const processedReviews = reviews.map(review => ({
         ...review,
@@ -1761,3 +1761,4 @@
       const { data: reviews, error } = await query
 
       if (
+
