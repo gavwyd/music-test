@@ -1,13 +1,84 @@
+// --- Add Album Search Input to Tabs ---
+function addAlbumSearchInputToTabs() {
+  if (document.getElementById('album-search-tab-input')) return;
+  // Find the tab bar (should have class 'tabs')
+  const tabs = document.querySelector('.tabs');
+  if (!tabs) return;
+  const searchContainer = document.createElement('div');
+  searchContainer.className = 'search-container';
+  searchContainer.style.flex = '1';
+  searchContainer.style.maxWidth = '260px';
+  searchContainer.style.marginLeft = 'auto';
+  searchContainer.innerHTML = `
+    <input type="text" id="album-search-tab-input" placeholder="Search albums/singles..." autocomplete="off" style="width:100%;padding:8px 12px;border-radius:10px;border:1px solid rgba(125,175,255,0.18);background:var(--panel-2);color:var(--text);font-size:15px;" />
+    <div id="album-search-suggestions" class="search-suggestions" style="display:none;"></div>
+  `;
+  tabs.appendChild(searchContainer);
+  const input = document.getElementById('album-search-tab-input');
+  const suggestions = document.getElementById('album-search-suggestions');
+  input.addEventListener('input', async (e) => {
+    const query = e.target.value.trim();
+    if (!query) {
+      suggestions.style.display = 'none';
+      suggestions.innerHTML = '';
+      return;
+    }
+    const results = await searchSpotifyAlbums(query);
+    if (!results.length) {
+      suggestions.innerHTML = '<div class="search-suggestion">No results found.</div>';
+      suggestions.style.display = 'block';
+      return;
+    }
+    suggestions.innerHTML = results.map(album => `
+      <div class="search-suggestion" data-album-id="${album.id}">
+        <img src="${album.images[0]?.url || ''}" alt="${album.name}" />
+        <div class="suggestion-info">
+          <div class="suggestion-title">${album.name}</div>
+          <div class="suggestion-artist">${album.artists.map(a => a.name).join(', ')}</div>
+          <div class="suggestion-type">${album.album_type.charAt(0).toUpperCase() + album.album_type.slice(1)}</div>
+        </div>
+      </div>
+    `).join('');
+    suggestions.style.display = 'block';
+    Array.from(suggestions.getElementsByClassName('search-suggestion')).forEach(el => {
+      el.onclick = () => {
+        openAlbumDetailsModal(el.getAttribute('data-album-id'));
+        suggestions.style.display = 'none';
+        input.value = '';
+      };
+    });
+  });
+  // Hide suggestions on blur
+  input.addEventListener('blur', () => {
+    setTimeout(() => { suggestions.style.display = 'none'; }, 150);
+  });
+  input.addEventListener('focus', () => {
+    if (suggestions.innerHTML) suggestions.style.display = 'block';
+  });
+}
 // --- DOM Observer for UI Consistency ---
 window.addEventListener('DOMContentLoaded', () => {
-  addAlbumSearchButton();
+  addAlbumSearchInputToTabs();
+  createAlbumSearchModal(); // still needed for modal details
+  createAlbumDetailsModal();
+  fixScoreAndReviewStyles();
+  // Also re-run style fixes after any AJAX/page update
+  const observer = new MutationObserver(() => {
+    fixScoreAndReviewStyles();
+    addAlbumSearchInputToTabs();
+  });
+  observer.observe(document.body, { childList: true, subtree: true });
+});
+// --- DOM Observer for UI Consistency ---
+window.addEventListener('DOMContentLoaded', () => {
+
   createAlbumSearchModal();
   createAlbumDetailsModal();
   fixScoreAndReviewStyles();
   // Also re-run style fixes after any AJAX/page update
   const observer = new MutationObserver(() => {
     fixScoreAndReviewStyles();
-    if (!document.getElementById('open-album-search-btn')) addAlbumSearchButton();
+
   });
   observer.observe(document.body, { childList: true, subtree: true });
 });
@@ -174,16 +245,6 @@ function renderAlbumDetails(album, reviews) {
 }
 
 // --- Add Search Button to UI ---
-function addAlbumSearchButton() {
-  if (document.getElementById('open-album-search-btn')) return;
-  const nav = document.querySelector('nav') || document.body;
-  const btn = document.createElement('button');
-  btn.id = 'open-album-search-btn';
-  btn.textContent = 'Search Albums';
-  btn.className = 'album-search-btn';
-  btn.onclick = openAlbumSearchModal;
-  nav.appendChild(btn);
-}
 
 // --- Style Fixes for Score/Review ---
 function fixScoreAndReviewStyles() {
@@ -216,7 +277,7 @@ function escapeHtml(text) {
 
 // --- Init ---
 window.addEventListener('DOMContentLoaded', () => {
-  addAlbumSearchButton();
+
   createAlbumSearchModal();
   createAlbumDetailsModal();
   fixScoreAndReviewStyles();
