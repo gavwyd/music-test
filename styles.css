@@ -152,17 +152,16 @@
   margin-bottom: 8px;
 }
 /* Album score and indicator style (matches .album-score) */
-.album-score, .album-score-label {
+.album-score, .album-score-label, .tag {
   display: inline-block;
   font-weight: 800;
+  font-size: 13px;
   color: var(--accent);
   background: #0c1526;
   border: 1px solid rgba(125,175,255,0.35);
+  padding: 6px 10px;
   border-radius: 12px;
   margin: 6px 0 6px 8px;
-  /* Use font-size and padding for .album-score and .album-score-label separately if needed */
-  font-size: 15px;
-  padding: 6px 12px;
 }
 .album-review-list {
   display: flex;
@@ -952,6 +951,7 @@
     padding: 14px;
     border-radius: 16px;
     align-items: flex-start;
+    position: relative;
   }
   .r-card > div {
     display: flex;
@@ -963,10 +963,11 @@
     align-items: center;
     gap: 8px;
     justify-content: flex-end;
-    margin-left: auto;
+    margin-left: 0;
     margin-top: 0;
     grid-column: 3;
-    width: 100%;
+    justify-self: end;
+    width: auto;
   }
   @media (max-width: 768px) {
     .r-card {
@@ -1191,10 +1192,11 @@
     align-items: center;
     gap: 8px;
     justify-content: flex-end;
-    margin-left: auto;
+    margin-left: 0;
     margin-top: 0;
     grid-column: 3;
-    width: 100%;
+    justify-self: end;
+    width: auto;
   }
 
   .toolbar {
@@ -1373,7 +1375,8 @@
     
     .share-link-container {
       flex-direction: column;
-      gap: 12px;
+      gap: 8px;
+      width: 100%;      gap: 12px;
     }
   }
 
