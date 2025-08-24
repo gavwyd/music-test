@@ -5,31 +5,26 @@
   const _SPOTIFY_CLIENT_ID = 'cf9a6e9189294eb4bfaa374f5481326d'; // unused, prefixed with _
   const _SPOTIFY_CLIENT_SECRET = '8c58098d229c4a4dafacbadcabe687f8'; // unused, prefixed with _
   
-  const _supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY); // unused, prefixed with _
+  // FIX: Use the correct Supabase client variable
+  const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
   
   // Utility functions
-  const _els = { // unused, prefixed with _
+  const els = {
     // Auth
     loginModal: $('#loginModal'),
     loadingApp: $('#loadingApp'),
-    
-    // Email auth
     loginEmail: $('#loginEmail'),
     loginPassword: $('#loginPassword'),
     loginUsername: $('#loginUsername'),
     usernameGroup: $('#usernameGroup'),
     emailLoginBtn: $('#emailLoginBtn'),
     emailRegisterBtn: $('#emailRegisterBtn'),
-    
-    // User interface
     userBar: $('#userBar'),
     currentUser: $('#currentUser'),
     userAvatar: $('#userAvatar'),
     logoutBtn: $('#logoutBtn'),
     mainContent: $('#mainContent'),
     loginError: $('#loginError'),
-
-    // Tabs
     tabs: $$('.tab'),
     tabAdd: $('#tab-add'),
     tabMyReviews: $('#tab-my-reviews'),
@@ -38,8 +33,6 @@
     tabUserProfile: $('#tab-user-profile'),
     tabAlbumDetail: $('#tab-album-detail'),
     tabAbout: $('#tab-about'),
-
-    // Add Review
     musicSearch: $('#musicSearch'),
     searchSuggestions: $('#searchSuggestions'),
     selectedMusic: $('#selectedMusic'),
@@ -56,16 +49,12 @@
     saveBtn: $('#saveBtn'),
     clearFormBtn: $('#clearFormBtn'),
     statsPill: $('#statsPill'),
-
-    // My Reviews
     mySearch: $('#mySearch'),
     mySortBy: $('#mySortBy'),
     myReviewsList: $('#myReviewsList'),
     myReviewsEmpty: $('#myReviewsEmpty'),
     exportBtn: $('#exportBtn'),
     shareProfileBtn: $('#shareProfileBtn'),
-
-    // Global Feed
     globalSearch: $('#globalSearch'),
     globalSortBy: $('#globalSortBy'),
     globalTypeFilter: $('#globalTypeFilter'),
@@ -73,8 +62,6 @@
     globalReviewsList: $('#globalReviewsList'),
     globalReviewsEmpty: $('#globalReviewsEmpty'),
     globalCount: $('#globalCount'),
-
-    // Profile
     profileAvatar: $('#profileAvatar'),
     avatarUpload: $('#avatarUpload'),
     changeAvatarBtn: $('#changeAvatarBtn'),
@@ -83,33 +70,23 @@
     usernameHint: $('#usernameHint'),
     profileBio: $('#profileBio'),
     saveBioBtn: $('#saveBioBtn'),
-
-    // User Profile View
     userProfileName: $('#userProfileName'),
     backToFeed: $('#backToFeed'),
     userProfileContent: $('#userProfileContent'),
-
-    // Album Detail View
     albumDetailTitle: $('#albumDetailTitle'),
     backFromAlbum: $('#backFromAlbum'),
     albumDetailContent: $('#albumDetailContent'),
-
-    // Share Modal
     shareModal: $('#shareModal'),
     closeShareModal: $('#closeShareModal'),
     shareLink: $('#shareLink'),
     copyLinkBtn: $('#copyLinkBtn'),
     copySuccess: $('#copySuccess'),
-
-    // Comments Modal
     commentsModal: $('#commentsModal'),
     closeCommentsModal: $('#closeCommentsModal'),
     reviewDetails: $('#reviewDetails'),
     newComment: $('#newComment'),
     submitComment: $('#submitComment'),
     commentsList: $('#commentsList'),
-
-    // Edit Modal
     editModal: $('#editModal'),
     closeEditModal: $('#closeEditModal'),
     editScore: $('#editScore'),
