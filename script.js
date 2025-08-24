@@ -522,8 +522,8 @@
     }
   }
 
-  // Spotify Search
-  async function handleSearchInput() {
+  // Spotify Search - FIXED: Removed async keyword since no await is used
+  function handleSearchInput() {
     const query = els.musicSearch.value.trim()
     
     clearTimeout(searchTimeout)
@@ -720,7 +720,7 @@
         release_date: selectedMusicData.release_date || null
       }
 
-      const { data, error } = await supabase
+      const { _data, error } = await supabase
         .from('reviews')
         .insert(reviewData)
         .select()
@@ -783,81 +783,6 @@
           )
         `)
         .eq('user_id', currentUser.id)
-
-      if (searchQuery) {
-        query = query.or(`title.ilike.%${searchQuery}%,artist.ilike.%${searchQuery}%,review_text.ilike.%${searchQuery}%`)
-      }
-
-      switch (sortBy) {
-        case 'date-asc':
-          query = query.order('created_at', { ascending: true })
-          break
-        case 'score-desc':
-          query = query.order('score', { ascending: false })
-          break
-        case 'score-asc':
-          query = query.order('score', { ascending: true })
-          break
-        case 'title-asc':
-          query = query.order('title', { ascending: true })
-          break
-        default:
-          query = query.order('created_at', { ascending: false })
-      }
-
-      const { data: reviews, error } = await query
-
-      if (error) throw error
-
-      const processedReviews = reviews.map(review => ({
-        ...review,
-        like_count: review.review_likes?.length || 0,
-        user_liked: review.review_likes?.some(like => like.user_id === currentUser?.id) || false,
-        user: review.profiles || {
-          username: 'Anonymous',
-          full_name: 'Anonymous',
-          avatar_url: generatePlaceholderImage()
-        }
-      }))
-
-      renderReviews(processedReviews, els.myReviewsList, els.myReviewsEmpty, true) // Show actions for my reviews
-      
-      if (els.statsPill) {
-        els.statsPill.textContent = `${processedReviews.length} review${processedReviews.length === 1 ? '' : 's'}`
-      }
-
-    } catch (error) {
-      console.error('Error loading my reviews:', error)
-      els.myReviewsList.innerHTML = ''
-      els.myReviewsEmpty.style.display = 'block'
-      els.myReviewsEmpty.textContent = 'Error loading reviews: ' + error.message
-    }
-  }
-
-  async function loadGlobalReviews() {
-    try {
-      els.globalReviewsEmpty.style.display = 'none'
-      els.globalReviewsList.innerHTML = '<div class="loading"><div class="spinner"></div><span>Loading reviews...</span></div>'
-
-      const searchQuery = els.globalSearch.value.trim().toLowerCase()
-      const sortBy = els.globalSortBy.value
-      const typeFilter = els.globalTypeFilter.value
-      const genreFilter = els.globalGenreFilter.value
-
-      let query = supabase
-        .from('reviews')
-        .select(`
-          *,
-          profiles:user_id (
-            username,
-            full_name,
-            avatar_url
-          ),
-          review_likes (
-            id,
-            user_id
-          )
-        `)
 
       if (searchQuery) {
         query = query.or(`title.ilike.%${searchQuery}%,artist.ilike.%${searchQuery}%,review_text.ilike.%${searchQuery}%`)
@@ -1542,7 +1467,7 @@
       const fileExt = file.name.split('.').pop()
       const fileName = `${currentUser.id}-${Date.now()}.${fileExt}`
       
-      const { data, error } = await supabase.storage
+      const { _data, error } = await supabase.storage
         .from('avatars')
         .upload(fileName, file, { upsert: true })
 
@@ -1668,7 +1593,7 @@
           els.copySuccess.style.display = 'none'
         }, 3000)
       }
-    } catch (error) {
+    } catch (_error) {
       // Fallback for older browsers
       els.shareLink?.select()
       document.execCommand('copy')
@@ -1724,56 +1649,79 @@
       const url = window.URL.createObjectURL(blob)
       const a = document.createElement('a')
       a.href = url
-      a.download = `my-music-reviews-${new Date().toISOString().split('T')[0]}.csv`
-      a.click()
-      window.URL.revokeObjectURL(url)
+      a.download = `my-music = query.or(`title.ilike.%${searchQuery}%,artist.ilike.%${searchQuery}%,review_text.ilike.%${searchQuery}%`)
+      }
+
+      switch (sortBy) {
+        case 'date-asc':
+          query = query.order('created_at', { ascending: true })
+          break
+        case 'score-desc':
+          query = query.order('score', { ascending: false })
+          break
+        case 'score-asc':
+          query = query.order('score', { ascending: true })
+          break
+        case 'title-asc':
+          query = query.order('title', { ascending: true })
+          break
+        default:
+          query = query.order('created_at', { ascending: false })
+      }
+
+      const { data: reviews, error } = await query
+
+      if (error) throw error
+
+      const processedReviews = reviews.map(review => ({
+        ...review,
+        like_count: review.review_likes?.length || 0,
+        user_liked: review.review_likes?.some(like => like.user_id === currentUser?.id) || false,
+        user: review.profiles || {
+          username: 'Anonymous',
+          full_name: 'Anonymous',
+          avatar_url: generatePlaceholderImage()
+        }
+      }))
+
+      renderReviews(processedReviews, els.myReviewsList, els.myReviewsEmpty, true) // Show actions for my reviews
+      
+      if (els.statsPill) {
+        els.statsPill.textContent = `${processedReviews.length} review${processedReviews.length === 1 ? '' : 's'}`
+      }
 
     } catch (error) {
-      console.error('Error exporting reviews:', error)
-      alert('Failed to export reviews')
+      console.error('Error loading my reviews:', error)
+      els.myReviewsList.innerHTML = ''
+      els.myReviewsEmpty.style.display = 'block'
+      els.myReviewsEmpty.textContent = 'Error loading reviews: ' + error.message
     }
   }
 
-  // Utility Functions
-  function debounce(func, wait) {
-    let timeout
-    return function executedFunction(...args) {
-      const later = () => {
-        clearTimeout(timeout)
-        func(...args)
-      }
-      clearTimeout(timeout)
-      timeout = setTimeout(later, wait)
-    }
-  }
+  async function loadGlobalReviews() {
+    try {
+      els.globalReviewsEmpty.style.display = 'none'
+      els.globalReviewsList.innerHTML = '<div class="loading"><div class="spinner"></div><span>Loading reviews...</span></div>'
 
-  function escapeHtml(text) {
-    if (!text) return ''
-    const map = {
-      '&': '&amp;',
-      '<': '&lt;',
-      '>': '&gt;',
-      '"': '&quot;',
-      "'": '&#039;'
-    }
-    return text.toString().replace(/[&<>"']/g, function(m) { return map[m] })
-  }
+      const searchQuery = els.globalSearch.value.trim().toLowerCase()
+      const sortBy = els.globalSortBy.value
+      const typeFilter = els.globalTypeFilter.value
+      const genreFilter = els.globalGenreFilter.value
 
-  function generatePlaceholderImage() {
-    return 'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMTIwIiBoZWlnaHQ9IjEyMCIgdmlld0JveD0iMCAwIDEyMCAxMjAiIGZpbGw9Im5vbmUiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyI+CjxyZWN0IHdpZHRoPSIxMjAiIGhlaWdodD0iMTIwIiBmaWxsPSIjMEIxMjIwIi8+CjxwYXRoIGQ9Ik02MCA0NUMzNy41IDQ1IDIwIDYyLjUgMjAgODVTMzcuNSAxMjUgNjAgMTI1IDEwMCAxMDcuNSAxMDAgODUgODIuNSA0NSA2MCA0NVpNNjAgNTVDNzIgNTUgODIgNjUgODIgNzdTNzIgOTkgNjAgOTkgMzggODkgMzggNzcgNDggNTUgNjAgNTVaTTQ1IDIwQzQxLjcgMjAgMzkgMjIuNyAzOSAyNlYzOUMzOSA0Mi4zIDQxLjcgNDUgNDUgNDVINzVDNzguMyA0NSA4MSA0Mi4zIDgxIDM5VjI2Qzg1IDIyLjMgNzguMyAyMCA3NSAyMEg0NVoiIGZpbGw9IiM5QkIzRDMiLz4KPC9zdmc+'
-  }
+      let query = supabase
+        .from('reviews')
+        .select(`
+          *,
+          profiles:user_id (
+            username,
+            full_name,
+            avatar_url
+          ),
+          review_likes (
+            id,
+            user_id
+          )
+        `)
 
-  function formatDate(dateString) {
-    const date = new Date(dateString)
-    const now = new Date()
-    const diffInSeconds = Math.floor((now - date) / 1000)
-    
-    if (diffInSeconds < 60) return 'just now'
-    if (diffInSeconds < 3600) return `${Math.floor(diffInSeconds / 60)}m ago`
-    if (diffInSeconds < 86400) return `${Math.floor(diffInSeconds / 3600)}h ago`
-    if (diffInSeconds < 2592000) return `${Math.floor(diffInSeconds / 86400)}d ago`
-    
-    return date.toLocaleDateString()
-  }
-
-})()
+      if (searchQuery) {
+        query
