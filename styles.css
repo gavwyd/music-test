@@ -161,7 +161,7 @@
   color: var(--accent);
 }
 /* Album score and indicator style (matches .album-score) */
-.album-score, .album-score-label, .tag {
+.album-score, .album-score-label {
   display: inline-block;
   font-weight: 800;
   font-size: 13px;
