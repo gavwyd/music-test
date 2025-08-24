@@ -1533,17 +1533,9 @@
         els.copySuccess.style.display = 'none'
       }, 3000)
     } catch (error) {
+      // Clipboard API not available or failed
       els.shareLink.select()
-      // Deprecated: execCommand('copy') is used as a fallback for older browsers
-      try {
-        document.execCommand('copy')
-      } catch (e) {
-        console.warn('execCommand is deprecated and may not work in all browsers.', e)
-      }
-      els.copySuccess.style.display = 'block'
-      setTimeout(() => {
-        els.copySuccess.style.display = 'none'
-      }, 3000)
+      alert('Copy to clipboard is not supported in this browser. Please copy the link manually.')
     }
   }
 
