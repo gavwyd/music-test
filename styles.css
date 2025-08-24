@@ -936,9 +936,10 @@ select:focus {
 
 .r-actions {
   display: flex;
-  flex-direction: column;
+  flex-direction: row;
   align-items: center;
   gap: 8px;
+  justify-content: flex-end;
 }
 
 .toolbar {
