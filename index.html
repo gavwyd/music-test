@@ -29,6 +29,7 @@
             <label for="loginPassword">Password</label>
             <input id="loginPassword" type="password" placeholder="Enter your password" />
           </div>
+          
           <!-- Registration fields -->
           <div id="registerFields" style="display:none;">
             <div class="form-group">
@@ -41,6 +42,7 @@
               <textarea id="registerBio" rows="3" placeholder="Tell us about yourself..."></textarea>
             </div>
           </div>
+          
           <div class="auth-buttons">
             <button id="emailLoginBtn" class="btn primary">
               <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
@@ -48,22 +50,27 @@
               </svg>
               Sign In
             </button>
+            
             <div class="auth-divider">
               <span>or</span>
             </div>
+            
             <button id="emailRegisterBtn" class="btn ghost">
               <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
                 <path d="M19 13H13V19H11V13H5V11H11V5H13V11H19V13Z"/>
               </svg>
               Create Account
             </button>
+            
             <button id="switchToLogin" class="btn ghost small" style="display:none;">Back to Sign In</button>
           </div>
         </div>
+
         <div id="loginError" class="error-msg" style="display:none"></div>
       </div>
     </div>
   </div>
+
   <div class="app">
     <!-- User Bar -->
     <div id="userBar" class="user-bar" style="display:none">
@@ -73,11 +80,13 @@
       </div>
       <button id="logoutBtn" class="btn ghost small">Logout</button>
     </div>
+
     <!-- Loading -->
     <div id="loadingApp" class="loading" style="display:none; justify-content:center; padding:40px;">
       <div class="spinner"></div>
       <span>Loading...</span>
     </div>
+
     <!-- Main App Content -->
     <div id="mainContent" style="display:none">
       <div class="brand">
@@ -87,6 +96,7 @@
           <div class="sub">Search or paste Spotify links for albums and singles. Rate 0-10 and share with the community.</div>
         </div>
       </div>
+
       <div class="tabs">
         <button class="tab" data-tab="add">Add Review</button>
         <button class="tab" data-tab="my-reviews">My Reviews</button>
@@ -95,6 +105,7 @@
         <button class="tab" data-tab="about">About</button>
         <span class="right pill" id="statsPill">0 reviews</span>
       </div>
+
       <!-- Add Review Tab -->
       <section id="tab-add" class="grid" style="display:none">
         <div class="card">
@@ -110,7 +121,9 @@
                 <div class="hint">Search by artist, album, or song name. Or paste any Spotify album/track URL.</div>
               </div>
             </div>
+
             <div class="spacer"></div>
+
             <div id="selectedMusic" style="display:none">
               <div class="r-card" style="margin-bottom:16px;">
                 <img id="selectedCover" class="r-cover" alt="Cover" />
@@ -124,7 +137,9 @@
                 </div>
               </div>
             </div>
+
             <div class="spacer"></div>
+
             <div class="row-1 row">
               <div class="rating">
                 <label for="score">Score</label>
@@ -136,20 +151,25 @@
                 <input id="manualScore" type="number" min="0" max="10" step="0.01" placeholder="e.g., 8.74" />
               </div>
             </div>
+
             <div class="spacer"></div>
+
             <div class="row-1">
               <div>
                 <label for="review">Your review</label>
                 <textarea id="review" rows="5" placeholder="What did you think about this music?"></textarea>
               </div>
             </div>
+
             <div class="spacer"></div>
+
             <div class="toolbar">
               <button id="saveBtn" class="btn primary">Save Review</button>
               <button id="clearFormBtn" class="btn ghost">Clear</button>
             </div>
           </div>
         </div>
+
         <div class="card">
           <div class="hd"><strong>Preview</strong></div>
           <div class="bd" id="previewPane">
@@ -157,6 +177,7 @@
           </div>
         </div>
       </section>
+
       <!-- My Reviews Tab -->
       <section id="tab-my-reviews" style="display:none">
         <div class="card">
@@ -187,6 +208,7 @@
           </div>
         </div>
       </section>
+
       <!-- Global Feed Tab -->
       <section id="tab-global-feed">
         <div class="card">
@@ -225,6 +247,7 @@
           </div>
         </div>
       </section>
+
       <!-- Profile View Tab -->
       <section id="tab-profile-view" style="display:none">
         <div class="card">
@@ -248,6 +271,7 @@
           </div>
         </div>
       </section>
+
       <!-- About Tab -->
       <section id="tab-about" style="display:none">
         <div class="card">
@@ -272,6 +296,7 @@
       </section>
     </div>
   </div>
+
   <!-- Share Profile Modal -->
   <div id="shareModal" class="modal">
     <div class="modal-content">
@@ -289,6 +314,7 @@
       </div>
     </div>
   </div>
+
   <!-- Edit Profile Modal -->
   <div id="editProfileModal" class="modal">
     <div class="modal-content">
@@ -319,6 +345,7 @@
       </div>
     </div>
   </div>
+
   <!-- Comments Modal -->
   <div id="commentsModal" class="modal">
     <div class="modal-content comments-modal">
@@ -336,37 +363,7 @@
       </div>
     </div>
   </div>
-  <!-- Album/Single Details Modal -->
-  <div id="musicDetailsModal" class="modal">
-    <div class="modal-content" style="max-width:600px;">
-      <button id="closeMusicDetailsModal" class="close-btn">&times;</button>
-      <div style="display:flex;gap:20px;align-items:flex-start;">
-        <img id="musicDetailsCover" src="" alt="Cover" style="width:120px;height:120px;border-radius:12px;object-fit:cover;">
-        <div>
-          <div id="musicDetailsTitle" style="font-size:1.3em;font-weight:600;"></div>
-          <div id="musicDetailsArtist" style="color:var(--muted);margin-bottom:4px;"></div>
-          <div>
-            <span id="musicDetailsType" class="tag"></span>
-            <span id="musicDetailsRelease" class="tag"></span>
-          </div>
-          <div id="musicDetailsGenres" style="margin:8px 0;"></div>
-          <div>Average Score: <span id="musicDetailsAvgScore">N/A</span></div>
-        </div>
-      </div>
-      <div style="margin:16px 0;">
-        <strong>Tracklist:</strong>
-        <div id="musicDetailsTracklist" style="margin-top:4px;"></div>
-      </div>
-      <div style="margin:16px 0;">
-        <strong>Reviews:</strong>
-        <div id="musicDetailsReviews"></div>
-      </div>
-      <div style="margin:16px 0;">
-        <input id="musicDetailsSearch" type="text" placeholder="Search for any album or single..." style="width:100%;padding:8px;">
-        <div id="musicDetailsSearchResults" style="margin-top:8px;"></div>
-      </div>
-    </div>
-  </div>
+
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <script src="script.js"></script>
 </body>
