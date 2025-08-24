@@ -1,536 +1,1428 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-  <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>ReviewHub – Rate Spotify albums & singles (0-10)</title>
-  <meta name="description" content="Search or paste Spotify links for albums and singles, rate them 0-10, and share reviews with the community.">
-  <link rel="stylesheet" href="styles.css">
-  <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
-</head>
-<body>
-  <!-- Login Modal -->
-  <div id="loginModal" class="modal show">
-    <div class="modal-content">
-      <div class="modal-header">
-        <div class="logo-small"></div>
-        <h3>Welcome to ReviewHub</h3>
-        <div class="sub">Rate and review your favorite albums & singles</div>
-      </div>
-      <div class="modal-body">
-        <div class="auth-section">
-          <div class="form-group">
-            <label for="loginEmail">Email Address</label>
-            <input id="loginEmail" type="email" placeholder="Enter your email" />
-          </div>
-          <div class="form-group">
-            <label for="loginPassword">Password</label>
-            <input id="loginPassword" type="password" placeholder="Enter your password" />
-          </div>
-          
-          <!-- Registration fields -->
-          <div id="registerFields" style="display:none;">
-            <div class="form-group">
-              <label for="registerUsername">Username</label>
-              <input id="registerUsername" type="text" placeholder="Choose a username" />
-              <div class="hint">This will be your public display name</div>
-            </div>
-            <div class="form-group">
-              <label for="registerBio">Bio (optional)</label>
-              <textarea id="registerBio" rows="3" placeholder="Tell us about yourself..."></textarea>
-            </div>
-          </div>
-          
-          <div class="auth-buttons">
-            <button id="emailLoginBtn" class="btn primary">
-              <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
-                <path d="M20 4H4C2.9 4 2.01 4.9 2.01 6L2 18C2 19.1 2.9 20 4 20H20C21.1 20 22 19.1 22 18V6C22 4.9 21.1 4 20 4ZM20 8L12 13L4 8V6L12 11L20 6V8Z"/>
-              </svg>
-              Sign In
-            </button>
-            
-            <div class="auth-divider">
-              <span>or</span>
-            </div>
-            
-            <button id="emailRegisterBtn" class="btn ghost">
-              <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
-                <path d="M19 13H13V19H11V13H5V11H11V5H13V11H19V13Z"/>
-              </svg>
-              Create Account
-            </button>
-            
-            <button id="switchToLogin" class="btn ghost small" style="display:none;">Back to Sign In</button>
-          </div>
-        </div>
+/* --- Album Search & Details Modal Styles --- */
+.album-search-btn {
+  padding: 10px 18px;
+  border-radius: 12px;
+  background: linear-gradient(180deg, #1a2c4a, #0e1a2d);
+  color: var(--text);
+  border: 1px solid rgba(125, 175, 255, 0.25);
+  font-weight: 600;
+  font-size: 15px;
+  margin: 0 0 18px 0;
+  cursor: pointer;
+  box-shadow: var(--shadow);
+  transition: 0.18s;
+}
+.album-search-btn:hover {
+  background: linear-gradient(180deg, #2a5aa0, #234c88);
+  color: var(--accent-2);
+}
 
-        <div id="loginError" class="error-msg" style="display:none"></div>
-      </div>
-    </div>
-  </div>
-
-  <div class="app">
-    <!-- User Bar -->
-    <div id="userBar" class="user-bar" style="display:none">
-      <div class="user-info">
-        <img id="userAvatar" class="user-avatar clickable" src="" alt="">
-        <span class="user-welcome">Welcome, <strong id="currentUser" class="clickable"></strong>!</span>
-      </div>
-      <button id="logoutBtn" class="btn ghost small">Logout</button>
-    </div>
-
-    <!-- Loading -->
-    <div id="loadingApp" class="loading" style="display:none; justify-content:center; padding:40px;">
-      <div class="spinner"></div>
-      <span>Loading...</span>
-    </div>
-
-    <!-- Main App Content -->
-    <div id="mainContent" style="display:none">
-      <div class="brand">
-        <div class="logo" aria-hidden></div>
-        <div>
-          <h1>ReviewHub</h1>
-          <div class="sub">Search or paste Spotify links for albums and singles. Rate 0-10 and share with the community.</div>
-        </div>
-      </div>
-
-      <div class="tabs">
-        <button class="tab" data-tab="add">Add Review</button>
-        <button class="tab" data-tab="my-reviews">My Reviews</button>
-        <button class="tab active" data-tab="global-feed">Global Feed</button>
-        <button class="tab" data-tab="profile-view" style="display:none">Profile</button>
-        <button class="tab" data-tab="about">About</button>
-        <span class="right pill" id="statsPill">0 reviews</span>
-      </div>
-
-      <!-- Add Review Tab -->
-      <section id="tab-add" class="grid" style="display:none">
-        <div class="card">
-          <div class="hd"><strong>Add a Review</strong></div>
-          <div class="bd">
-            <div class="row-1">
-              <div>
-                <label for="musicSearch">Search for music or paste Spotify link</label>
-                <div class="search-container">
-                  <input id="musicSearch" type="text" placeholder="Search for albums or singles..." />
-                  <div id="searchSuggestions" class="search-suggestions" style="display:none"></div>
-                </div>
-                <div class="hint">Search by artist, album, or song name. Or paste any Spotify album/track URL.</div>
-              </div>
-            </div>
-
-            <div class="spacer"></div>
-
-            <div id="selectedMusic" style="display:none">
-              <div class="r-card" style="margin-bottom:16px;">
-                <img id="selectedCover" class="r-cover" alt="Cover" />
-                <div>
-                  <div id="selectedTitle" class="r-title"></div>
-                  <div id="selectedArtist" class="r-artist"></div>
-                  <div class="r-meta">
-                    <span id="selectedType" class="tag"></span>
-                    <div id="selectedGenres" class="genre-list"></div>
-                  </div>
-                </div>
-              </div>
-            </div>
-
-            <div class="spacer"></div>
-
-            <div class="row-1 row">
-              <div class="rating">
-                <label for="score">Score</label>
-                <input id="score" type="range" min="0" max="10" step="0.01" value="5" />
-                <span class="pill"><span>Current:</span> <strong id="scoreOut">5.00</strong>/10</span>
-              </div>
-              <div class="manual-score">
-                <label for="manualScore">Or type exact score (0.00-10.00)</label>
-                <input id="manualScore" type="number" min="0" max="10" step="0.01" placeholder="e.g., 8.74" />
-              </div>
-            </div>
-
-            <div class="spacer"></div>
-
-            <div class="row-1">
-              <div>
-                <label for="review">Your review</label>
-                <textarea id="review" rows="5" placeholder="What did you think about this music?"></textarea>
-              </div>
-            </div>
-
-            <div class="spacer"></div>
-
-            <div class="toolbar">
-              <button id="saveBtn" class="btn primary">Save Review</button>
-              <button id="clearFormBtn" class="btn ghost">Clear</button>
-            </div>
-          </div>
-        </div>
-
-        <div class="card">
-          <div class="hd"><strong>Preview</strong></div>
-          <div class="bd" id="previewPane">
-            <div class="empty">Select music to see preview</div>
-          </div>
-        </div>
-      </section>
-
-      <!-- My Reviews Tab -->
-      <section id="tab-my-reviews" style="display:none">
-        <div class="card">
-          <div class="hd">
-            <strong>My Reviews</strong>
-            <div class="toolbar">
-              <button id="shareProfileBtn" class="btn small">Share Profile</button>
-              <button id="exportBtn" class="btn small">Export</button>
-            </div>
-          </div>
-          <div class="bd">
-            <div class="filters">
-              <div class="filter-group">
-                <input id="mySearch" type="text" placeholder="Search my reviews...">
-              </div>
-              <div class="filter-group">
-                <select id="mySortBy">
-                  <option value="date-desc">Newest first</option>
-                  <option value="date-asc">Oldest first</option>
-                  <option value="score-desc">Highest rated</option>
-                  <option value="score-asc">Lowest rated</option>
-                  <option value="title-asc">Title A→Z</option>
-                </select>
-              </div>
-            </div>
-            <div id="myReviewsList" class="review-list"></div>
-            <div id="myReviewsEmpty" class="empty" style="display:none">No reviews yet. Add one on the Add Review tab.</div>
-          </div>
-        </div>
-      </section>
-
-      <!-- Global Feed Tab -->
-      <section id="tab-global-feed">
-        <div class="card">
-          <div class="hd">
-            <strong>Global Feed</strong>
-            <span class="pill" id="globalCount">0 reviews</span>
-          </div>
-          <div class="bd">
-            <div class="filters">
-              <div class="filter-group">
-                <input id="globalSearch" type="text" placeholder="Search all reviews...">
-              </div>
-              <div class="filter-group">
-                <select id="globalSortBy">
-                  <option value="likes-desc">Most liked</option>
-                  <option value="date-desc">Newest first</option>
-                  <option value="score-desc">Highest rated</option>
-                  <option value="score-asc">Lowest rated</option>
-                </select>
-              </div>
-              <div class="filter-group">
-                <select id="globalTypeFilter">
-                  <option value="all">All types</option>
-                  <option value="album">Albums only</option>
-                  <option value="track">Singles only</option>
-                </select>
-              </div>
-              <div class="filter-group">
-                <select id="globalGenreFilter">
-                  <option value="all">All genres</option>
-                </select>
-              </div>
-            </div>
-            <div id="globalReviewsList" class="review-list"></div>
-            <div id="globalReviewsEmpty" class="empty" style="display:none">No reviews found.</div>
-          </div>
-        </div>
-      </section>
-
-      <!-- Profile View Tab -->
-      <section id="tab-profile-view" style="display:none">
-        <div class="card">
-          <div class="hd">
-            <div id="profileHeader">
-              <img id="profileAvatar" class="profile-avatar" src="" alt="">
-              <div class="profile-info">
-                <h2 id="profileName">User</h2>
-                <div id="profileBio" class="profile-bio"></div>
-                <div id="profileStats" class="profile-stats"></div>
-              </div>
-            </div>
-            <div id="profileActions" class="toolbar">
-              <button id="editProfileBtn" class="btn small" style="display:none">Edit Profile</button>
-              <button id="shareThisProfileBtn" class="btn small">Share Profile</button>
-            </div>
-          </div>
-          <div class="bd">
-            <div id="profileReviewsList" class="review-list"></div>
-            <div id="profileReviewsEmpty" class="empty" style="display:none">No reviews found.</div>
-          </div>
-        </div>
-      </section>
-
-      <!-- About Tab -->
-      <section id="tab-about" style="display:none">
-        <div class="card">
-          <div class="hd"><strong>About ReviewHub</strong></div>
-          <div class="bd">
-            <p><strong>ReviewHub</strong> is a community-driven platform for rating and reviewing music. Create an account to discover and share your thoughts on albums and singles.</p>
-            <h3>Features:</h3>
-            <ul>
-              <li><strong>Spotify Integration:</strong> Search for music or paste Spotify links</li>
-              <li><strong>Precise Ratings:</strong> Rate music from 0.00 to 10.00 with decimal precision</li>
-              <li><strong>Community Feed:</strong> Discover reviews from other music lovers</li>
-              <li><strong>Comments System:</strong> Engage with reviews through comments</li>
-              <li><strong>User Profiles:</strong> Customize your profile with bio and avatar</li>
-              <li><strong>Like System:</strong> Show appreciation for great reviews</li>
-              <li><strong>Smart Filtering:</strong> Filter by genre, popularity, rating, and more</li>
-              <li><strong>Cloud Sync:</strong> Your reviews are saved and accessible anywhere</li>
-              <li><strong>Share Profile:</strong> Share your review collection with others</li>
-            </ul>
-            <p>Built with Supabase for real-time data and Spotify Web API for music discovery.</p>
-          </div>
-        </div>
-      </section>
-    </div>
-  </div>
-
-  <!-- Album Details Container (for album.js logic) -->
-  <div id="albumDetailsContainer"></div>
-
-  <!-- Share Profile Modal -->
-  <div id="shareModal" class="modal">
-    <div class="modal-content">
-      <div class="modal-header">
-        <h3>Share Profile</h3>
-        <button class="close-btn" id="closeShareModal">&times;</button>
-      </div>
-      <div class="modal-body">
-        <p>Share this link to let others see this profile:</p>
-        <div class="share-link-container">
-          <input id="shareLink" type="text" readonly />
-          <button id="copyLinkBtn" class="btn small">Copy</button>
-        </div>
-        <div id="copySuccess" class="success-msg" style="display:none">Link copied to clipboard!</div>
-      </div>
-    </div>
-  </div>
-
-  <!-- Edit Profile Modal -->
-  <div id="editProfileModal" class="modal">
-    <div class="modal-content">
-      <div class="modal-header">
-        <h3>Edit Profile</h3>
-        <button class="close-btn" id="closeEditProfileModal">&times;</button>
-      </div>
-      <div class="modal-body">
-        <div class="form-group">
-          <label for="editUsername">Username</label>
-          <input id="editUsername" type="text" placeholder="Your username" />
-          <div class="hint" id="usernameHint">You can change your username every 3 days</div>
-        </div>
-        <div class="form-group">
-          <label for="editBio">Bio</label>
-          <textarea id="editBio" rows="4" placeholder="Tell us about yourself..."></textarea>
-        </div>
-        <div class="form-group">
-          <label for="profilePicture">Profile Picture</label>
-          <input id="profilePicture" type="file" accept="image/*" />
-          <div class="hint">Upload an image file (JPG, PNG, GIF)</div>
-        </div>
-        <div class="toolbar">
-          <button id="saveProfileBtn" class="btn primary">Save Changes</button>
-          <button id="cancelEditProfileBtn" class="btn ghost">Cancel</button>
-        </div>
-        <div id="editProfileError" class="error-msg" style="display:none"></div>
-      </div>
-    </div>
-  </div>
-
-  <!-- Comments Modal -->
-  <div id="commentsModal" class="modal">
-    <div class="modal-content comments-modal">
-      <div class="modal-header">
-        <h3>Comments</h3>
-        <button class="close-btn" id="closeCommentsModal">&times;</button>
-      </div>
-      <div class="modal-body">
-        <div id="reviewSummary" class="review-summary"></div>
-        <div id="commentsList" class="comments-list"></div>
-        <div id="addCommentSection" class="add-comment-section">
-          <textarea id="newComment" rows="3" placeholder="Add a comment..."></textarea>
-          <button id="postCommentBtn" class="btn primary small">Post Comment</button>
-        </div>
-      </div>
-    </div>
-  </div>
-
-  <!-- Album/Single Details Modal -->
-  <div id="musicDetailsModal" class="modal">
-    <div class="modal-content" style="max-width:600px;">
-      <button id="closeMusicDetailsModal" class="close-btn">&times;</button>
-      <div style="display:flex;gap:20px;align-items:flex-start;">
-        <img id="musicDetailsCover" src="" alt="Cover" style="width:120px;height:120px;border-radius:12px;object-fit:cover;">
-        <div>
-          <div id="musicDetailsTitle" style="font-size:1.3em;font-weight:600;"></div>
-          <div id="musicDetailsArtist" style="color:var(--muted);margin-bottom:4px;"></div>
-          <div>
-            <span id="musicDetailsType" class="tag"></span>
-            <span id="musicDetailsRelease" class="tag"></span>
-          </div>
-          <div id="musicDetailsGenres" style="margin:8px 0;"></div>
-          <div>Average Score: <span id="musicDetailsAvgScore">N/A</span></div>
-        </div>
-      </div>
-      <div style="margin:16px 0;">
-        <strong>Tracklist:</strong>
-        <div id="musicDetailsTracklist" style="margin-top:4px;"></div>
-      </div>
-      <div style="margin:16px 0;">
-        <strong>Reviews:</strong>
-        <div id="musicDetailsReviews"></div>
-      </div>
-      <div style="margin:16px 0;">
-        <input id="musicDetailsSearch" type="text" placeholder="Search for any album or single..." style="width:100%;padding:8px;">
-        <div id="musicDetailsSearchResults" style="margin-top:8px;"></div>
-      </div>
-    </div>
-  </div>
-
-  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-  <script src="script.js"></script>
-  <script>
-    // album.js - Album Details Page Logic
-
-    // --- CONFIG ---
-    const SUPABASE_URL = 'YOUR_SUPABASE_URL'; // <-- Replace with your Supabase URL
-    const SUPABASE_KEY = 'YOUR_SUPABASE_KEY'; // <-- Replace with your Supabase anon key
-    const SPOTIFY_TOKEN = 'YOUR_SPOTIFY_TOKEN'; // <-- Replace with your Spotify token logic
-
-    // --- Supabase Client ---can
-    const { createClient } = window.supabase;
-    const supabase = createClient(SUPABASE_URL, SUPABASE_KEY);
-
-    // --- Helpers ---
-    function getAlbumIdFromUrl() {
-      const params = new URLSearchParams(window.location.search);
-      return params.get('id');
-    }
-
-    function escapeHtml(text) {
-      if (!text) return '';
-      return text.replace(/[&<>\"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','\"':'&quot;'}[c]));
-    }
-
-    function averageScore(reviews) {
-      if (!reviews.length) return '-';
-      const sum = reviews.reduce((acc, r) => acc + (parseFloat(r.score) || 0), 0);
-      return (sum / reviews.length).toFixed(1);
-    }
-
-    // --- Fetch Album Details from Spotify ---
-    async function fetchSpotifyAlbum(albumId) {
-      const res = await fetch(`https://api.spotify.com/v1/albums/${albumId}`, {
-        headers: { 'Authorization': `Bearer ${SPOTIFY_TOKEN}` }
-      });
-      if (!res.ok) return null;
-      return await res.json();
-    }
-
-    // --- Fetch Reviews for Album from Supabase ---
-    async function fetchReviews(albumId) {
-      // You may need to adjust the table/column names
-      const { data, error } = await supabase
-        .from('reviews')
-        .select('*')
-        .eq('album_id', albumId);
-      return data || [];
-    }
-
-    // --- Render Album Details Page ---
-    async function renderAlbumDetailsPage() {
-      const albumId = getAlbumIdFromUrl();
-      if (!albumId) {
-        document.getElementById('albumDetailsContainer').innerHTML = '<div class="empty">No album selected.</div>';
-        return;
-      }
-      document.getElementById('albumDetailsContainer').innerHTML = '<div class="loading"><div class="spinner"></div> Loading album...</div>';
-
-      // Fetch album and reviews
-      const [album, reviews] = await Promise.all([
-        fetchSpotifyAlbum(albumId),
-        fetchReviews(albumId)
-      ]);
-
-      if (!album) {
-        document.getElementById('albumDetailsContainer').innerHTML = '<div class="empty">Album not found.</div>';
-        return;
-      }
-
-      // Render
-      let avgScore = averageScore(reviews);
-      let reviewSection = reviews.length ? `
-        <div class="album-reviews">
-          <div class="album-score-row">
-            <span class="album-score">${avgScore}</span>
-            <span class="album-score-label">Average Score</span>
-          </div>
-          <div class="album-review-list">
-            ${reviews.map(r => `<div class="album-review-item">${escapeHtml(r.review_text)}</div>`).join('')}
-          </div>
-        </div>
-      ` : '<div class="album-reviews"><div class="album-score-row"><span class="album-score">-</span><span class="album-score-label">No reviews yet</span></div></div>';
-
-      document.getElementById('albumDetailsContainer').innerHTML = `
-        <div class="album-details-header">
-          <img src="${album.images[0]?.url || ''}" alt="${album.name}" class="album-details-thumb" />
-          <div class="album-details-meta">
-            <h3>${album.name}</h3>
-            <div class="album-score-label">${album.album_type.charAt(0).toUpperCase() + album.album_type.slice(1)}</div>
-            <div>${album.artists.map(a => a.name).join(', ')}</div>
-            <div>${album.release_date?.slice(0,4) || ''}</div>
-          </div>
-        </div>
-        <div class="album-tracklist">
-          <h4>Tracklist</h4>
-          <ol>
-            ${album.tracks.items.map(t => `<li>${escapeHtml(t.name)}</li>`).join('')}
-          </ol>
-        </div>
-        ${reviewSection}
-      `;
-    }
-
-    // --- Run on page load ---
-    window.addEventListener('DOMContentLoaded', renderAlbumDetailsPage);
-  </script>
-
-  <style>
-    .r-card {
-  display: grid;
-  grid-template-columns: 120px 1fr 80px;
-  gap: 14px;
-  padding: 14px;
-  border-radius: 16px;
-  align-items: flex-start;
+#album-search-modal .modal-content,
+#album-details-modal .modal-content {
+  background: #181f2a;
+  color: #fff;
+  border-radius: 14px;
+  padding: 28px 28px 18px 28px;
+  box-shadow: 0 8px 32px rgba(0,0,0,0.25);
+  width: 100%;
+  max-width: 480px;
   position: relative;
 }
 
-.r-actions {
+#album-search-modal h2 {
+  margin-top: 0;
+  font-size: 22px;
+  font-weight: 700;
+  color: var(--accent);
+}
+
+#album-search-input {
+  width: 100%;
+  padding: 12px 16px;
+  border-radius: 10px;
+  border: 1px solid rgba(125, 175, 255, 0.18);
+  background: var(--panel-2);
+  color: var(--text);
+  font-size: 15px;
+  margin-bottom: 18px;
+}
+
+#album-search-results {
+  max-height: 320px;
+  overflow-y: auto;
+  margin-top: 6px;
+}
+
+.album-search-result {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 10px 0;
+  border-bottom: 1px solid rgba(255,255,255,0.06);
+  cursor: pointer;
+  transition: background 0.15s;
+}
+.album-search-result:last-child {
+  border-bottom: none;
+}
+.album-search-result:hover {
+  background: var(--panel);
+}
+.album-thumb {
+  width: 54px;
+  height: 54px;
+  border-radius: 8px;
+  object-fit: cover;
+  background: var(--panel-2);
+  border: 1px solid rgba(125,175,255,0.12);
+}
+.album-info {
   display: flex;
   flex-direction: column;
-  align-items: flex-end;
-  gap: 8px;
-  justify-content: flex-start;
-  margin-left: 0;
-  margin-top: 0;
-  grid-column: 3;
-  justify-self: end;
-  width: 100%;
-  height: 100%;
+  gap: 2px;
 }
-  </style>
-</body>
-</html>
+.album-title {
+  font-weight: 600;
+  color: var(--text);
+  font-size: 15px;
+  line-height: 1.2;
+}
+.album-artist {
+  color: var(--muted);
+  font-size: 13px;
+}
+.album-year {
+  color: var(--muted);
+  font-size: 12px;
+}
+
+/* Album Details Modal */
+#album-details-modal .modal-content {
+  max-width: 540px;
+}
+.album-details-header {
+  display: flex;
+  align-items: center;
+  gap: 18px;
+  margin-bottom: 18px;
+}
+.album-details-thumb {
+  width: 90px;
+  height: 90px;
+  border-radius: 10px;
+  object-fit: cover;
+  background: var(--panel-2);
+  border: 1px solid rgba(125,175,255,0.12);
+}
+.album-details-meta h3 {
+  margin: 0 0 4px 0;
+  font-size: 20px;
+  font-weight: 700;
+  color: var(--accent);
+}
+.album-details-meta > div {
+  color: var(--muted);
+  font-size: 14px;
+}
+.album-tracklist {
+  margin-bottom: 18px;
+}
+.album-tracklist h4 {
+  margin: 0 0 8px 0;
+  font-size: 16px;
+  font-weight: 600;
+  color: var(--accent-2);
+}
+.album-tracklist ol {
+  padding-left: 20px;
+  margin: 0;
+  color: var(--text);
+  font-size: 14px;
+}
+.album-tracklist li {
+  margin-bottom: 2px;
+}
+.album-reviews {
+  margin-top: 10px;
+}
+.album-score-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 8px;
+}
+/* Album score and indicator style (matches .album-score) */
+.album-score, .album-score-label, .tag {
+  display: inline-block;
+  font-weight: 800;
+  font-size: 13px;
+  color: var(--accent);
+  background: #0c1526;
+  border: 1px solid rgba(125,175,255,0.35);
+  padding: 6px 10px;
+  border-radius: 12px;
+  margin: 6px 0 6px 8px;
+}
+.album-review-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.album-review-item {
+  background: var(--panel-2);
+  border-radius: 8px;
+  padding: 10px 14px;
+  color: var(--text);
+  font-size: 14px;
+  border: 1px solid rgba(255,255,255,0.06);
+}
+
+/* Modal close button */
+#album-search-modal .close,
+#album-details-modal .close {
+  position: absolute;
+  right: 18px;
+  top: 12px;
+  color: #fff;
+  font-size: 2em;
+  cursor: pointer;
+  z-index: 2;
+  background: none;
+  border: none;
+  line-height: 1;
+}
+#album-search-modal .close:hover,
+#album-details-modal .close:hover {
+  color: var(--accent-2);
+}
+
+@media (max-width: 600px) {
+  #album-search-modal .modal-content,
+  #album-details-modal .modal-content {
+    width: 98%;
+    padding: 14px 6px 8px 6px;
+  }
+  .album-details-header {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 10px;
+  }
+  .album-details-thumb {
+    width: 70px;
+    height: 70px;
+  }
+}
+:root {
+    --bg: #0b0f14;
+    --panel: #0f1520;
+    --panel-2: #0b1220;
+    --text: #e6f0ff;
+    --muted: #9bb3d3;
+    --accent: #4da3ff;
+    --accent-2: #7bd5ff;
+    --danger: #ff5d6c;
+    --ok: #4dff88;
+    --warn: #ffd166;
+    --radius: 18px;
+    --shadow: 0 10px 30px rgba(0, 0, 0, 0.35), inset 0 1px 0 rgba(255, 255, 255, 0.03);
+  }
+
+  *,
+  *::before,
+  *::after {
+    box-sizing: border-box;
+  }
+
+  html, body {
+    height: 100%;
+  }
+
+  body {
+    margin: 0;
+    background: linear-gradient(120deg, #070a0f, var(--bg));
+    color: var(--text);
+    font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+    font-size: 16px;
+    line-height: 1.6;
+    letter-spacing: -0.01em;
+    font-weight: 400;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+  }
+
+  a {
+    color: var(--accent);
+  }
+
+  .app {
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 28px;
+  }
+
+  .brand {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+  }
+
+  .brand .logo {
+    width: 42px;
+    height: 42px;
+    border-radius: 12px;
+    background: radial-gradient(circle at 30% 30%, var(--accent-2), var(--accent));
+    box-shadow: 0 0 20px rgba(77, 163, 255, 0.35);
+  }
+
+  .logo-small {
+    width: 32px;
+    height: 32px;
+    border-radius: 8px;
+    background: radial-gradient(circle at 30% 30%, var(--accent-2), var(--accent));
+    box-shadow: 0 0 15px rgba(77, 163, 255, 0.35);
+    margin: 0 auto 16px;
+  }
+
+  h1 {
+    margin: 0;
+    font-size: 28px;
+    font-weight: 700;
+    letter-spacing: -0.02em;
+  }
+
+  h2 {
+    margin: 0;
+    font-size: 24px;
+    font-weight: 600;
+    letter-spacing: -0.01em;
+  }
+
+  h3 {
+    margin: 0;
+    font-size: 20px;
+    font-weight: 600;
+    letter-spacing: -0.01em;
+  }
+
+  .sub {
+    color: var(--muted);
+    margin-top: 4px;
+    font-weight: 400;
+    font-size: 15px;
+    letter-spacing: 0;
+  }
+
+  /* User Bar */
+  .user-bar {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 12px 18px;
+    margin-bottom: 20px;
+    background: var(--panel);
+    border: 1px solid rgba(255, 255, 255, 0.06);
+    border-radius: var(--radius);
+    box-shadow: var(--shadow);
+  }
+
+  .user-info {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+  }
+
+  .user-welcome {
+    color: var(--text);
+    font-weight: 500;
+  }
+
+  .user-avatar {
+    width: 32px;
+    height: 32px;
+    border-radius: 50%;
+    border: 2px solid var(--accent);
+  }
+
+  .clickable {
+    cursor: pointer;
+    transition: color 0.18s ease;
+  }
+
+  .clickable:hover {
+    color: var(--accent);
+  }
+
+  /* Profile Specific */
+  .profile-avatar {
+    width: 80px;
+    height: 80px;
+    border-radius: 50%;
+    border: 3px solid var(--accent);
+    margin-right: 16px;
+  }
+
+  #profileHeader {
+    display: flex;
+    align-items: center;
+  }
+
+  .profile-info {
+    flex: 1;
+  }
+
+  .profile-bio {
+    color: var(--muted);
+    margin: 8px 0;
+    font-style: italic;
+  }
+
+  .profile-stats {
+    color: var(--muted);
+    font-size: 14px;
+    margin-top: 8px;
+  }
+
+  /* Modals */
+  .modal {
+    display: none;
+    position: fixed;
+    z-index: 1000;
+    left: 0;
+    top: 0;
+    width: 100vw;
+    height: 100vh;
+    background: rgba(0, 0, 0, 0.5);
+    align-items: center;
+    justify-content: center;
+  }
+
+  .modal.show {
+    display: flex;
+  }
+
+  .modal-content {
+    background: #181f2a;
+    color: #fff;
+    border-radius: 14px;
+    padding: 24px 24px 12px 24px;
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.25);
+    position: relative;
+    width: 100%;
+    max-width: 600px;
+  }
+
+  .modal-content.comments-modal {
+    max-width: 600px;
+  }
+
+  .modal-header {
+    padding: 24px 24px 16px;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+    text-align: center;
+    position: relative;
+  }
+
+  .modal-header h3 {
+    font-weight: 700;
+    font-size: 24px;
+    margin-bottom: 8px;
+  }
+
+  .modal-header .sub {
+    font-size: 14px;
+  }
+
+  .modal-body {
+    padding: 24px;
+  }
+
+  .close-btn {
+    position: absolute;
+    right: 18px;
+    top: 12px;
+    background: none;
+    border: none;
+    color: #fff;
+    font-size: 2em;
+    cursor: pointer;
+    z-index: 2;
+  }
+
+  .close-btn:hover {
+    color: var(--text);
+  }
+
+  /* Comments */
+  .review-summary {
+    border: 1px solid rgba(255, 255, 255, 0.06);
+    border-radius: 12px;
+    padding: 16px;
+    margin-bottom: 20px;
+    background: var(--panel-2);
+  }
+
+  .comments-list {
+    max-height: 400px;
+    overflow-y: auto;
+    margin-bottom: 20px;
+  }
+
+  .comment {
+    border: 1px solid rgba(125, 175, 255, 0.18);
+    border-radius: 12px;
+    padding: 14px 16px;
+    margin-bottom: 14px;
+    background: var(--panel-2);
+    box-shadow: 0 1px 2px rgba(0,0,0,0.04);
+  }
+
+  .comment-header {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-bottom: 8px;
+  }
+
+  .comment-avatar {
+    width: 24px;
+    height: 24px;
+    border-radius: 50%;
+    border: 1px solid var(--accent);
+  }
+
+  .comment-author {
+    font-weight: 600;
+    color: var(--accent);
+    cursor: pointer;
+    text-decoration: none;
+  }
+
+  .comment-author:hover {
+    color: var(--accent-2);
+  }
+
+  .comment-date {
+    color: var(--muted);
+    font-size: 12px;
+    margin-left: auto;
+  }
+
+  .comment-text {
+    color: var(--text);
+    font-size: 14px;
+    line-height: 1.5;
+  }
+
+  .add-comment-section {
+    border-top: 1px solid rgba(255, 255, 255, 0.06);
+    padding-top: 20px;
+  }
+
+  .add-comment-section textarea {
+    width: 100%;
+    margin-bottom: 12px;
+    resize: none;
+    border-radius: 10px;
+    border: 1px solid rgba(125, 175, 255, 0.18);
+    background: var(--panel-2);
+    color: var(--text);
+    font-size: 15px;
+    padding: 12px 16px;
+    box-shadow: 0 1px 2px rgba(0,0,0,0.04);
+  }
+
+  /* Loading */
+  .loading {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    color: var(--muted);
+  }
+
+  .spinner {
+    width: 16px;
+    height: 16px;
+    border: 2px solid transparent;
+    border-top: 2px solid var(--accent);
+    border-radius: 50%;
+    animation: spin 1s linear infinite;
+  }
+
+  @keyframes spin {
+    to {
+      transform: rotate(360deg);
+    }
+  }
+
+  /* Forms */
+  .form-group {
+    margin-bottom: 20px;
+  }
+
+  .error-msg {
+    color: var(--danger);
+    font-size: 14px;
+    padding: 12px;
+    background: rgba(255, 93, 108, 0.1);
+    border-radius: 12px;
+    border: 1px solid rgba(255, 93, 108, 0.3);
+    margin-top: 16px;
+  }
+
+  .success-msg {
+    color: var(--ok);
+    font-size: 14px;
+    padding: 12px;
+    background: rgba(77, 255, 136, 0.1);
+    border-radius: 12px;
+    border: 1px solid rgba(77, 255, 136, 0.3);
+    margin-top: 16px;
+  }
+
+  /* Auth specific styles */
+  .auth-section {
+    max-width: 400px;
+    margin: 0 auto;
+  }
+
+  .auth-divider {
+    text-align: center;
+    margin: 20px 0;
+    position: relative;
+    color: var(--muted);
+    font-size: 14px;
+  }
+
+  .auth-divider::before {
+    content: '';
+    position: absolute;
+    top: 50%;
+    left: 0;
+    right: 0;
+    height: 1px;
+    background: rgba(255, 255, 255, 0.06);
+    z-index: 0;
+  }
+
+  .auth-divider span {
+    background: var(--panel);
+    padding: 0 16px;
+    position: relative;
+    z-index: 1;
+  }
+
+  .auth-buttons {
+    display: grid;
+    gap: 12px;
+    margin-top: 24px;
+  }
+
+  /* Tabs */
+  .tabs {
+    display: flex;
+    gap: 10px;
+    margin: 22px 0 18px;
+    overflow-x: auto;
+  }
+
+  .tab {
+    padding: 10px 14px;
+    border-radius: 12px;
+    background: var(--panel);
+    border: 1px solid rgba(255, 255, 255, 0.06);
+    cursor: pointer;
+    user-select: none;
+    box-shadow: var(--shadow);
+    transition: 0.18s ease;
+    color: var(--muted);
+    white-space: nowrap;
+    flex-shrink: 0;
+    font-weight: 500;
+    font-family: inherit;
+  }
+
+  .tab.active {
+    color: var(--text);
+    background: linear-gradient(180deg, #142033, var(--panel));
+    border-color: rgba(125, 175, 255, 0.25);
+  }
+
+  /* Grid */
+  .grid {
+    display: grid;
+    grid-template-columns: 1.1fr 1fr;
+    gap: 22px;
+  }
+
+  @media (max-width: 980px) {
+    .grid {
+      grid-template-columns: 1fr;
+    }
+  }
+
+  /* Cards */
+  .card {
+    background: linear-gradient(180deg, #0e1626, var(--panel));
+    border: 1px solid rgba(255, 255, 255, 0.06);
+    border-radius: var(--radius);
+    box-shadow: var(--shadow);
+  }
+
+  .card .hd {
+    padding: 16px 18px;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    justify-content: space-between;
+    font-weight: 600;
+    font-size: 15px;
+  }
+
+  .card .bd {
+    padding: 18px;
+  }
+
+  /* Rows */
+  .row {
+    display: grid;
+    gap: 10px;
+    grid-template-columns: 1fr 1fr;
+  }
+
+  .row-3 {
+    grid-template-columns: 1fr 1fr 1fr;
+  }
+
+  .row-1 {
+    grid-template-columns: 1fr;
+  }
+
+  @media (max-width: 780px) {
+    .row, .row-3 {
+      grid-template-columns: 1fr;
+    }
+  }
+
+  /* Form Elements */
+  label {
+    font-size: 14px;
+    color: var(--text);
+    display: block;
+    margin-bottom: 8px;
+    font-weight: 600;
+    letter-spacing: -0.01em;
+  }
+
+  input[type="text"], 
+  input[type="email"], 
+  input[type="password"], 
+  input[type="number"], 
+  input[type="tel"],
+  input[type="file"],
+  textarea, 
+  select {
+    width: 100%;
+    padding: 14px 16px;
+    border-radius: 12px;
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    background: var(--panel-2);
+    color: var(--text);
+    outline: none;
+    transition: 0.18s ease;
+    box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.02);
+    font-family: inherit;
+    font-size: 15px;
+    font-weight: 400;
+  }
+
+  input::placeholder, 
+  textarea::placeholder {
+    color: #7e94b1;
+    font-weight: 400;
+  }
+
+  input:focus, 
+  textarea:focus, 
+  select:focus {
+    border-color: rgba(125, 175, 255, 0.35);
+    box-shadow: 0 0 0 4px rgba(77, 163, 255, 0.15);
+  }
+
+  /* Search with suggestions */
+  .search-container {
+    position: relative;
+  }
+
+  .search-suggestions {
+    position: absolute;
+    top: 100%;
+    left: 0;
+    right: 0;
+    z-index: 100;
+    background: var(--panel);
+    border: 1px solid rgba(255, 255, 255, 0.06);
+    border-radius: 12px;
+    box-shadow: var(--shadow);
+    max-height: 300px;
+    overflow-y: auto;
+    margin-top: 4px;
+  }
+
+  .search-suggestion {
+    padding: 12px;
+    cursor: pointer;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+    display: flex;
+    gap: 12px;
+    align-items: center;
+  }
+
+  .search-suggestion:last-child {
+    border-bottom: none;
+  }
+
+  .search-suggestion:hover {
+    background: var(--panel-2);
+  }
+
+  .search-suggestion img {
+    width: 50px;
+    height: 50px;
+    border-radius: 6px;
+    object-fit: cover;
+  }
+
+  .suggestion-info {
+    flex: 1;
+    min-width: 0;
+  }
+
+  .suggestion-title {
+    font-weight: 600;
+    color: var(--text);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    font-size: 14px;
+  }
+
+  .suggestion-artist {
+    color: var(--muted);
+    font-size: 13px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    margin-top: 2px;
+    font-weight: 400;
+  }
+
+  .suggestion-type {
+    color: var(--accent);
+    font-size: 11px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+  }
+
+  /* Rating */
+  .rating {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+  }
+
+  .rating input[type="range"] {
+    flex: 1;
+  }
+
+  .manual-score {
+    margin-top: 10px;
+  }
+
+  .manual-score input {
+    max-width: 120px;
+  }
+
+  /* Buttons */
+  .hint {
+    font-size: 12px;
+    color: var(--muted);
+    margin-top: 4px;
+    font-weight: 400;
+  }
+
+  .btn {
+    padding: 14px 20px;
+    border: none;
+    border-radius: 12px;
+    background: linear-gradient(180deg, #1a2c4a, #0e1a2d);
+    color: var(--text);
+    cursor: pointer;
+    box-shadow: var(--shadow);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    transition: 0.18s ease;
+    font-weight: 600;
+    letter-spacing: -0.01em;
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    text-decoration: none;
+    font-family: inherit;
+    font-size: 15px;
+    width: 100%;
+    justify-content: center;
+  }
+
+  .btn:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 12px 35px rgba(0, 0, 0, 0.4), inset 0 1px 0 rgba(255, 255, 255, 0.05);
+  }
+
+  .btn:active {
+    transform: translateY(0);
+  }
+
+  .btn.primary {
+    background: linear-gradient(180deg, #2a5aa0, #234c88);
+    border-color: rgba(125, 175, 255, 0.35);
+  }
+
+  .btn.secondary {
+    background: linear-gradient(180deg, #4a5a2a, #2d4c23);
+    border-color: rgba(125, 255, 175, 0.35);
+  }
+
+  .btn.ghost {
+    background: transparent;
+    border: 1px solid rgba(255, 255, 255, 0.15);
+    width: auto;
+  }
+
+  .btn.ghost:hover {
+    background: rgba(255, 255, 255, 0.05);
+  }
+
+  .btn.danger {
+    background: linear-gradient(180deg, #4a2030, #2d0e17);
+    border-color: rgba(255, 93, 108, 0.35);
+  }
+
+  .btn.small {
+    padding: 8px 12px;
+    font-size: 13px;
+    width: auto;
+  }
+
+  .btn:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+    transform: none !important;
+  }
+
+  .pill {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    padding: 8px 10px;
+    border-radius: 999px;
+    background: #0b131f;
+    border: 1px solid rgba(255, 255, 255, 0.07);
+    font-size: 12px;
+    color: var(--muted);
+    font-weight: 500;
+  }
+
+  /* Review Cards */
+  .review-list {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 18px;
+    width: 100%;
+    max-width: 700px;
+  }
+
+
+  .r-card {
+    display: grid;
+    grid-template-columns: 120px 1fr auto;
+    gap: 14px;
+    padding: 14px;
+    border-radius: 16px;
+    align-items: flex-start;
+    position: relative;
+  }
+  .r-card > div {
+    display: flex;
+    flex-direction: column;
+  }
+  .r-actions {
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+    gap: 8px;
+    justify-content: flex-end;
+    margin-left: 0;
+    margin-top: 0;
+    grid-column: 3;
+    justify-self: end;
+    width: auto;
+  }
+  @media (max-width: 768px) {
+    .r-card {
+      grid-template-columns: 80px 1fr auto;
+    }
+  }
+  @media (max-width: 480px) {
+    .r-card {
+      grid-template-columns: 1fr;
+      text-align: center;
+    }
+    .r-actions {
+      flex-direction: row;
+      justify-content: center;
+      align-items: center;
+      margin-left: 0;
+      margin-top: 12px;
+      grid-column: 1 / -1;
+    }
+  }
+
+  @media (max-width: 768px) {
+    .r-card {
+      grid-template-columns: 80px 1fr;
+      gap: 10px;
+    }
+    .r-actions {
+      grid-column: 1 / -1;
+      justify-content: stretch;
+      margin-top: 12px;
+      flex-direction: row;
+      width: 100%;
+    }
+  }
+
+  @media (max-width: 480px) {
+    .r-card {
+      grid-template-columns: 1fr;
+      text-align: center;
+    }
+    .r-actions {
+      justify-content: center;
+      margin-top: 12px;
+      width: 100%;
+    }
+  }
+
+  .r-cover {
+    width: 120px;
+    height: 120px;
+    border-radius: 12px;
+    object-fit: cover;
+    background: var(--panel-2);
+    border: 1px solid rgba(255, 255, 255, 0.06);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  .r-title {
+    font-weight: 700;
+    font-size: 16px;
+    letter-spacing: -0.01em;
+    line-height: 1.3;
+  }
+
+  .r-title a {
+    text-decoration: none;
+    color: var(--text);
+  }
+
+  .r-title a:hover {
+    color: var(--accent);
+  }
+
+  .r-artist {
+    color: var(--muted);
+    font-size: 14px;
+    margin-top: 2px;
+    font-weight: 400;
+  }
+
+  .r-meta {
+    display: flex;
+    gap: 8px;
+    flex-wrap: wrap;
+    margin-top: 8px;
+  }
+
+  .score {
+    font-weight: 800;
+    padding: 6px 10px;
+    border-radius: 12px;
+    background: #0c1526;
+    border: 1px solid rgba(125, 175, 255, 0.35);
+    font-size: 13px;
+    letter-spacing: -0.01em;
+  }
+
+  .tag {
+    display: inline-block;
+    background: #2a3a5a;
+    color: #7e94b1;
+    border-radius: 6px;
+    padding: 2px 8px;
+    margin-right: 4px;
+    font-size: 0.95em;
+  }
+
+  .genre-tag {
+    padding: 4px 8px;
+    border-radius: 999px;
+    background: rgba(77, 163, 255, 0.1);
+    border: 1px solid rgba(77, 163, 255, 0.25);
+    color: var(--accent);
+    font-weight: 600;
+    font-size: 11px;
+    margin: 2px;
+  }
+
+  .time {
+    color: var(--muted);
+    font-size: 12px;
+    font-weight: 400;
+  }
+
+  .r-text {
+    margin-top: 10px;
+    color: #d7e6ff;
+    line-height: 1.5;
+    font-weight: 400;
+    font-size: 14px;
+  }
+
+  .r-user {
+    color: var(--muted);
+    font-size: 12px;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    margin-top: 8px;
+    font-weight: 400;
+  }
+
+  .r-user img {
+    width: 20px;
+    height: 20px;
+    border-radius: 50%;
+  }
+
+  .r-user .user-link {
+    color: var(--accent);
+    cursor: pointer;
+    text-decoration: none;
+  }
+
+  .r-user .user-link:hover {
+    color: var(--accent-2);
+  }
+
+  .like-section {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 8px;
+  }
+
+  .like-btn {
+    background: none;
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    border-radius: 12px;
+    padding: 8px 12px;
+    cursor: pointer;
+    color: var(--muted);
+    transition: 0.18s ease;
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    font-family: inherit;
+  }
+
+  .like-btn.liked {
+    color: var(--danger);
+    border-color: rgba(255, 93, 108, 0.35);
+  }
+
+  .like-btn:hover {
+    color: var(--text);
+    border-color: rgba(255, 255, 255, 0.15);
+  }
+
+  .like-count {
+    font-size: 12px;
+    color: var(--muted);
+    font-weight: 500;
+  }
+
+  .comment-btn {
+    background: none;
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    border-radius: 12px;
+    padding: 8px 12px;
+    cursor: pointer;
+    color: var(--muted);
+    transition: 0.18s ease;
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    font-family: inherit;
+    font-size: 12px;
+    margin-left: 4px;
+  }
+
+  .comment-btn:hover {
+    color: var(--text);
+    border-color: rgba(255, 255, 255, 0.15);
+  }
+
+  .r-actions {
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+    gap: 8px;
+    justify-content: flex-end;
+    margin-left: 0;
+    margin-top: 0;
+    grid-column: 3;
+    justify-self: end;
+    width: auto;
+  }
+
+  .toolbar {
+    display: flex;
+    gap: 10px;
+    flex-wrap: wrap;
+    margin-top: 10px;
+  }
+
+  .empty {
+    padding: 30px;
+    text-align: center;
+    color: var(--muted);
+    font-weight: 400;
+  }
+
+  .spacer {
+    height: 10px;
+  }
+
+  .right {
+    margin-left: auto;
+  }
+
+  /* Filters */
+  .filters {
+    display: flex;
+    gap: 10px;
+    flex-wrap: wrap;
+    align-items: center;
+    margin-bottom: 16px;
+  }
+
+  .filter-group {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+
+  .filter-group select, 
+  .filter-group input {
+    max-width: 200px;
+  }
+
+  /* Genre pills */
+  .genre-list {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 4px;
+    margin-top: 6px;
+  }
+
+  /* Share Link */
+  .share-link-container {
+    display: flex;
+    gap: 8px;
+    align-items: center;
+    margin-bottom: 12px;
+  }
+
+  .share-link-container input {
+    flex: 1;
+  }
+
+  /* Mobile Responsive Styles */
+  @media (max-width: 768px) {
+    .app {
+      padding: 16px;
+    }
+    
+    .brand {
+      flex-direction: column;
+      text-align: center;
+      gap: 8px;
+    }
+    
+    h1 {
+      font-size: 24px;
+    }
+    
+    .user-bar {
+      flex-direction: column;
+      gap: 12px;
+      text-align: center;
+    }
+    
+    .tabs {
+      flex-wrap: wrap;
+      gap: 8px;
+    }
+    
+    .tab {
+      font-size: 14px;
+      padding: 8px 12px;
+    }
+    
+    .r-card {
+      grid-template-columns: 80px 1fr;
+      gap: 10px;
+    }
+    
+    .r-card .r-actions {
+      grid-column: 1/-1;
+      justify-self: start;
+      flex-direction: row;
+      margin-top: 12px;
+    }
+    
+    .r-cover {
+      width: 80px;
+      height: 80px;
+    }
+    
+    .filters {
+      flex-direction: column;
+      align-items: stretch;
+      gap: 8px;
+    }
+    
+    .filter-group {
+      justify-content: space-between;
+    }
+    
+    .filter-group select,
+    .filter-group input {
+      max-width: none;
+      flex: 1;
+    }
+    
+    .modal-content {
+      width: 95%;
+      margin: 20px;
+    }
+    
+    .modal-body {
+      padding: 16px;
+    }
+    
+    .toolbar {
+      flex-direction: column;
+      gap: 8px;
+    }
+    
+    .btn {
+      width: 100%;
+    }
+    
+    .btn.small {
+      width: auto;
+    }
+    
+    .grid {
+      gap: 16px;
+    }
+    
+    .card .hd {
+      flex-direction: column;
+      align-items: stretch;
+      gap: 12px;
+    }
+    
+    .card .hd .toolbar {
+      flex-direction: row;
+      justify-content: center;
+    }
+    
+    #profileHeader {
+      flex-direction: column;
+      text-align: center;
+      gap: 16px;
+    }
+    
+    .profile-avatar {
+      margin: 0;
+    }
+    
+    .share-link-container {
+      flex-direction: column;
+      gap: 8px;
+      width: 100%;      gap: 12px;
+    }
+  }
+
+  @media (max-width: 480px) {
+    .app {
+      padding: 12px;
+    }
+    
+    h1 {
+      font-size: 20px;
+    }
+    
+    .sub {
+      font-size: 14px;
+    }
+    
+    .r-card {
+      grid-template-columns: 1fr;
+      text-align: center;
+    }
+    
+    .r-cover {
+      width: 100px;
+      height: 100px;
+      justify-self: center;
+    }
+    
+    .modal-content {
+      width: 98%;
+      margin: 10px;
+    }
+    
+    .modal-header {
+      padding: 16px;
+    }
+    
+    .modal-body {
+      padding: 12px;
+    }
+    
+    .tabs {
+      justify-content: center;
+    }
+    
+    .pill {
+      font-size: 11px;
+      padding: 6px 8px;
+    }
+  }
