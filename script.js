@@ -576,20 +576,21 @@
 
       // Handle profile picture upload
       if (profilePicture) {
-        const fileExt = profilePicture.name.split('.').pop()
-        const fileName = `${currentUser.id}-${Date.now()}.${fileExt}`
+        const fileExt = profilePicture.name.split('.').pop();
+        const fileName = `${currentUser.id}-${Date.now()}.${fileExt}`;
+        const filePath = fileName;
 
+        // Upload the file
         const { error: uploadError } = await supabase.storage
           .from('avatars')
-          .upload(fileName, profilePicture)
+          .upload(filePath, profilePicture, { upsert: true });
 
         if (uploadError) {
-          console.error('Upload error:', uploadError)
+          console.error('Upload error:', uploadError);
         } else {
-          const { data: { publicUrl } } = supabase.storage
-            .from('avatars')
-            .getPublicUrl(fileName)
-          avatarUrl = publicUrl
+          // Get the public URL
+          const { data } = supabase.storage.from('avatars').getPublicUrl(filePath);
+          avatarUrl = data.publicUrl;
         }
       }
 
@@ -1359,47 +1360,46 @@
         </div>
       `
 
-
-      // Load review (with comment_text)
-      const { data: reviewWithComment, error: reviewCommentError } = await supabase
-        .from('reviews')
+      // Load comments from review_comments table
+      const { data: comments, error: commentsError } = await supabase
+        .from('review_comments')
         .select(`
-          comment_text,
-          created_at,
-          user_id,
+          *,
           profiles:user_id (
             full_name,
             username,
             avatar_url
           )
         `)
-        .eq('id', reviewId)
-        .single()
+        .eq('review_id', reviewId)
+        .order('created_at', { ascending: true })
 
-      if (reviewCommentError) throw reviewCommentError
+      if (commentsError) throw commentsError
 
       els.commentsList.innerHTML = ''
-      if (!reviewWithComment || !reviewWithComment.comment_text) {
+      if (!comments || comments.length === 0) {
         els.commentsList.innerHTML = '<div class="empty">No comments yet. Be the first to comment!</div>'
       } else {
-        const userProfile = reviewWithComment.profiles || { username: 'Anonymous', full_name: 'Anonymous', avatar_url: generatePlaceholderImage() }
-        const commentDiv = document.createElement('div')
-        commentDiv.className = 'comment'
-        commentDiv.innerHTML = `
-          <div class="comment-header">
-            <img src="${userProfile.avatar_url || generatePlaceholderImage()}" alt="User" class="comment-avatar" onerror="this.src='${generatePlaceholderImage()}'">
-            <a href="#" class="comment-author" data-user-id="${reviewWithComment.user_id}">${escapeHtml(userProfile.username || userProfile.full_name)}</a>
-            <span class="comment-date">${new Date(reviewWithComment.created_at).toLocaleDateString()}</span>
-          </div>
-          <div class="comment-text">${escapeHtml(reviewWithComment.comment_text)}</div>
-        `
-        const authorLink = commentDiv.querySelector('.comment-author')
-        authorLink.addEventListener('click', (e) => {
-          e.preventDefault()
-          hideCommentsModal()
-          viewUserProfile(reviewWithComment.user_id)
+        comments.forEach(comment => {
+          const userProfile = comment.profiles || { username: 'Anonymous', full_name: 'Anonymous', avatar_url: generatePlaceholderImage() }
+          const commentDiv = document.createElement('div')
+          commentDiv.className = 'comment'
+          commentDiv.innerHTML = `
+            <div class="comment-header">
+              <img src="${userProfile.avatar_url || generatePlaceholderImage()}" alt="User" class="comment-avatar" onerror="this.src='${generatePlaceholderImage()}'">
+              <a href="#" class="comment-author" data-user-id="${comment.user_id}">${escapeHtml(userProfile.username || userProfile.full_name)}</a>
+              <span class="comment-date">${new Date(comment.created_at).toLocaleDateString()}</span>
+            </div>
+            <div class="comment-text">${escapeHtml(comment.comment_text)}</div>
+          `
+          const authorLink = commentDiv.querySelector('.comment-author')
+          authorLink.addEventListener('click', (e) => {
+            e.preventDefault()
+            hideCommentsModal()
+            viewUserProfile(comment.user_id)
+          })
+          els.commentsList.appendChild(commentDiv)
         })
-        els.commentsList.appendChild(commentDiv)
       }
 
       // Show/hide comment section based on login status
@@ -1424,11 +1424,14 @@
       els.postCommentBtn.disabled = true
       els.postCommentBtn.textContent = 'Posting...'
 
-      // Update the comment_text column in the reviews table
+      // Insert new comment into review_comments table
       const { error } = await supabase
-        .from('reviews')
-        .update({ comment_text: commentText })
-        .eq('id', currentReviewId)
+        .from('review_comments')
+        .insert({
+          review_id: currentReviewId,
+          user_id: currentUser.id,
+          comment_text: commentText
+        })
 
       if (error) throw error
 
