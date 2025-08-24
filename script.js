@@ -1,38 +1,44 @@
 (function(){
   // Configuration
-  const SUPABASE_URL = 'https://qfvhzaxuocbtpinrjyqp.supabase.co';
-  const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InFmdmh6YXh1b2NidHBpbnJqeXFwIiwicm9zZSI6ImFub24iLCJpYXQiOjE3NTU5NzEzMjAsImV4cCI6MjA3MTU0NzMyMH0.Xn9_ZY6OM59xgUnb_Rc29go5sO1OdK4DIiFvpqQatDE';
-  const SPOTIFY_CLIENT_ID = 'cf9a6e9189294eb4bfaa374f5481326d';
-  const SPOTIFY_CLIENT_SECRET = '8c58098d229c4a4dafacbadcabe687f8';
-
-  // Supabase client
-  const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
-
+  const SUPABASE_URL = 'https://qfvhzaxuocbtpinrjyqp.supabase.co'
+  const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InFmdmh6YXh1b2NidHBpbnJqeXFwIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTU5NzEzMjAsImV4cCI6MjA3MTU0NzMyMH0.Xn9_ZY6OM59xgUnb_Rc29go5sO1OdK4DIiFvpqQatDE'
+  const SPOTIFY_CLIENT_ID = 'cf9a6e9189294eb4bfaa374f5481326d'
+  const SPOTIFY_CLIENT_SECRET = '8c58098d229c4a4dafacbadcabe687f8'
+  
+  const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY)
+  
   // Utility functions
+  const $ = (sel, root=document) => root.querySelector(sel)
+  const $$ = (sel, root=document) => Array.from(root.querySelectorAll(sel))
+
+  // Elements
   const els = {
     // Auth
     loginModal: $('#loginModal'),
     loadingApp: $('#loadingApp'),
+    
+    // Email auth
     loginEmail: $('#loginEmail'),
     loginPassword: $('#loginPassword'),
-    loginUsername: $('#loginUsername'),
-    usernameGroup: $('#usernameGroup'),
     emailLoginBtn: $('#emailLoginBtn'),
     emailRegisterBtn: $('#emailRegisterBtn'),
+    
+    // User interface
     userBar: $('#userBar'),
     currentUser: $('#currentUser'),
     userAvatar: $('#userAvatar'),
     logoutBtn: $('#logoutBtn'),
     mainContent: $('#mainContent'),
     loginError: $('#loginError'),
+
+    // Tabs
     tabs: $$('.tab'),
     tabAdd: $('#tab-add'),
     tabMyReviews: $('#tab-my-reviews'),
     tabGlobalFeed: $('#tab-global-feed'),
-    tabProfile: $('#tab-profile'),
-    tabUserProfile: $('#tab-user-profile'),
-    tabAlbumDetail: $('#tab-album-detail'),
     tabAbout: $('#tab-about'),
+
+    // Add Review
     musicSearch: $('#musicSearch'),
     searchSuggestions: $('#searchSuggestions'),
     selectedMusic: $('#selectedMusic'),
@@ -49,12 +55,16 @@
     saveBtn: $('#saveBtn'),
     clearFormBtn: $('#clearFormBtn'),
     statsPill: $('#statsPill'),
+
+    // My Reviews
     mySearch: $('#mySearch'),
     mySortBy: $('#mySortBy'),
     myReviewsList: $('#myReviewsList'),
     myReviewsEmpty: $('#myReviewsEmpty'),
     exportBtn: $('#exportBtn'),
     shareProfileBtn: $('#shareProfileBtn'),
+
+    // Global Feed
     globalSearch: $('#globalSearch'),
     globalSortBy: $('#globalSortBy'),
     globalTypeFilter: $('#globalTypeFilter'),
@@ -62,50 +72,19 @@
     globalReviewsList: $('#globalReviewsList'),
     globalReviewsEmpty: $('#globalReviewsEmpty'),
     globalCount: $('#globalCount'),
-    profileAvatar: $('#profileAvatar'),
-    avatarUpload: $('#avatarUpload'),
-    changeAvatarBtn: $('#changeAvatarBtn'),
-    profileUsername: $('#profileUsername'),
-    saveUsernameBtn: $('#saveUsernameBtn'),
-    usernameHint: $('#usernameHint'),
-    profileBio: $('#profileBio'),
-    saveBioBtn: $('#saveBioBtn'),
-    userProfileName: $('#userProfileName'),
-    backToFeed: $('#backToFeed'),
-    userProfileContent: $('#userProfileContent'),
-    albumDetailTitle: $('#albumDetailTitle'),
-    backFromAlbum: $('#backFromAlbum'),
-    albumDetailContent: $('#albumDetailContent'),
+
+    // Share Modal
     shareModal: $('#shareModal'),
     closeShareModal: $('#closeShareModal'),
     shareLink: $('#shareLink'),
     copyLinkBtn: $('#copyLinkBtn'),
-    copySuccess: $('#copySuccess'),
-    commentsModal: $('#commentsModal'),
-    closeCommentsModal: $('#closeCommentsModal'),
-    reviewDetails: $('#reviewDetails'),
-    newComment: $('#newComment'),
-    submitComment: $('#submitComment'),
-    commentsList: $('#commentsList'),
-    editModal: $('#editModal'),
-    closeEditModal: $('#closeEditModal'),
-    editScore: $('#editScore'),
-    editReview: $('#editReview'),
-    saveEditBtn: $('#saveEditBtn'),
-    cancelEditBtn: $('#cancelEditBtn')
-    }
-  })();
+    copySuccess: $('#copySuccess')
+  }
 
-  // Global variables
   let currentUser = null
-  let currentUserProfile = null
   let selectedMusicData = null
   let spotifyToken = null
   let searchTimeout = null
-  let currentReviewForComments = null
-  let currentEditingReview = null
-  let isRegisterMode = false
-  let lastTab = 'global-feed'
 
   // Initialize
   init()
@@ -122,76 +101,46 @@
 
   function setupEventListeners() {
     // Auth
-    els.emailLoginBtn?.addEventListener('click', handleEmailLogin)
-    els.emailRegisterBtn?.addEventListener('click', handleEmailRegister)
-    els.logoutBtn?.addEventListener('click', handleLogout)
+    els.emailLoginBtn.addEventListener('click', handleEmailLogin)
+    els.emailRegisterBtn.addEventListener('click', handleEmailRegister)
+    els.logoutBtn.addEventListener('click', handleLogout)
 
     // Main tabs
     els.tabs.forEach(t => t.addEventListener('click', () => switchTab(t.dataset.tab)))
 
     // Search
-    els.musicSearch?.addEventListener('input', handleSearchInput)
+    els.musicSearch.addEventListener('input', handleSearchInput)
     document.addEventListener('click', (e) => {
-      if (els.searchSuggestions && !els.searchSuggestions.contains(e.target) && e.target !== els.musicSearch) {
+      if (!els.searchSuggestions.contains(e.target) && e.target !== els.musicSearch) {
         els.searchSuggestions.style.display = 'none'
       }
     })
 
     // Form
-    els.score?.addEventListener('input', updateScoreDisplay)
-    els.manualScore?.addEventListener('input', handleManualScoreInput)
-    els.review?.addEventListener('input', updatePreview)
-    els.saveBtn?.addEventListener('click', handleSaveReview)
-    els.clearFormBtn?.addEventListener('click', clearForm)
+    els.score.addEventListener('input', updateScoreDisplay)
+    els.manualScore.addEventListener('input', handleManualScoreInput)
+    els.review.addEventListener('input', updatePreview)
+    els.saveBtn.addEventListener('click', handleSaveReview)
+    els.clearFormBtn.addEventListener('click', clearForm)
 
     // My Reviews
-    els.mySearch?.addEventListener('input', debounce(loadMyReviews, 300))
-    els.mySortBy?.addEventListener('change', loadMyReviews)
-    els.exportBtn?.addEventListener('click', exportReviews)
-    els.shareProfileBtn?.addEventListener('click', showShareModal)
+    els.mySearch.addEventListener('input', debounce(loadMyReviews, 300))
+    els.mySortBy.addEventListener('change', loadMyReviews)
+    els.exportBtn.addEventListener('click', exportReviews)
+    els.shareProfileBtn.addEventListener('click', showShareModal)
 
     // Global Feed
-    els.globalSearch?.addEventListener('input', debounce(loadGlobalReviews, 300))
-    els.globalSortBy?.addEventListener('change', loadGlobalReviews)
-    els.globalTypeFilter?.addEventListener('change', loadGlobalReviews)
-    els.globalGenreFilter?.addEventListener('change', loadGlobalReviews)
-
-    // Profile
-    els.changeAvatarBtn?.addEventListener('click', () => els.avatarUpload.click())
-    els.avatarUpload?.addEventListener('change', handleAvatarUpload)
-    els.profileUsername?.addEventListener('input', handleUsernameChange)
-    els.saveUsernameBtn?.addEventListener('click', saveUsername)
-    els.saveBioBtn?.addEventListener('click', saveBio)
-
-    // User Profile View
-    els.backToFeed?.addEventListener('click', () => switchTab(lastTab))
-    els.backFromAlbum?.addEventListener('click', () => switchTab(lastTab))
-
-    // User avatar/name clicks
-    els.userAvatar?.addEventListener('click', () => switchTab('profile'))
-    els.currentUser?.addEventListener('click', () => switchTab('profile'))
+    els.globalSearch.addEventListener('input', debounce(loadGlobalReviews, 300))
+    els.globalSortBy.addEventListener('change', loadGlobalReviews)
+    els.globalTypeFilter.addEventListener('change', loadGlobalReviews)
+    els.globalGenreFilter.addEventListener('change', loadGlobalReviews)
 
     // Share Modal
-    els.closeShareModal?.addEventListener('click', hideShareModal)
-    els.shareModal?.addEventListener('click', (e) => {
+    els.closeShareModal.addEventListener('click', hideShareModal)
+    els.shareModal.addEventListener('click', (e) => {
       if (e.target === els.shareModal) hideShareModal()
     })
-    els.copyLinkBtn?.addEventListener('click', copyShareLink)
-
-    // Comments Modal
-    els.closeCommentsModal?.addEventListener('click', hideCommentsModal)
-    els.commentsModal?.addEventListener('click', (e) => {
-      if (e.target === els.commentsModal) hideCommentsModal()
-    })
-    els.submitComment?.addEventListener('click', submitComment)
-
-    // Edit Modal
-    els.closeEditModal?.addEventListener('click', hideEditModal)
-    els.editModal?.addEventListener('click', (e) => {
-      if (e.target === els.editModal) hideEditModal()
-    })
-    els.saveEditBtn?.addEventListener('click', saveEditedReview)
-    els.cancelEditBtn?.addEventListener('click', hideEditModal)
+    els.copyLinkBtn.addEventListener('click', copyShareLink)
 
     // Auth state changes
     supabase.auth.onAuthStateChange((event, session) => {
@@ -204,34 +153,6 @@
 
     // Check for shared profile URL
     checkForSharedProfile()
-
-    // Register mode toggle
-    els.emailRegisterBtn?.addEventListener('click', (e) => {
-      e.preventDefault()
-      if (!isRegisterMode) {
-        toggleRegisterMode(true)
-      } else {
-        handleEmailRegister()
-      }
-    })
-  }
-
-  function toggleRegisterMode(enabled) {
-    isRegisterMode = enabled
-    if (enabled) {
-      els.usernameGroup.style.display = 'block'
-      els.emailRegisterBtn.textContent = 'Create Account'
-      els.emailLoginBtn.style.display = 'none'
-    } else {
-      els.usernameGroup.style.display = 'none'
-      els.emailRegisterBtn.innerHTML = `
-        <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
-          <path d="M19 13H13V19H11V13H5V11H11V5H13V11H19V13Z"/>
-        </svg>
-        Create Account
-      `
-      els.emailLoginBtn.style.display = 'block'
-    }
   }
 
   // Authentication
@@ -267,15 +188,9 @@
   async function handleEmailRegister() {
     const email = els.loginEmail.value.trim()
     const password = els.loginPassword.value.trim()
-    const username = els.loginUsername.value.trim()
 
     if (!email || !password) {
       showError('Please enter both email and password')
-      return
-    }
-
-    if (!username) {
-      showError('Please enter a username')
       return
     }
 
@@ -284,375 +199,405 @@
       return
     }
 
-    // Validate username
-    if (username.length < 3 || username.length > 20) {
-      showError('Username must be between 3 and 20 characters')
-      return
-    }
-
-    if (!/^[a-zA-Z0-9_]+$/.test(username)) {
-      showError('Username can only contain letters, numbers, and underscores')
-      return
-    }
-
     try {
       els.emailRegisterBtn.disabled = true
       els.emailRegisterBtn.textContent = 'Creating account...'
-
-      // Check if username exists
-      const { data: existingUser } = await supabase
-        .from('profiles')
-        .select('username')
-        .eq('username', username)
-        .single()
-
-      if (existingUser) {
-        showError('Username already taken')
-        return
-      }
-
-      const { error } = await supabase.auth.signUp({
-        email,
+      
+      const { error } = await supabase.auth.signUp({ 
+        email, 
         password,
         options: {
           data: {
-            username: username
+            full_name: email.split('@')[0]
           }
         }
       })
-
       if (error) throw error
-
-      alert('Account created successfully! Please check your email to verify your account.')
-      toggleRegisterMode(false)
-
+      showError('Check your email to confirm your account!', 'success')
     } catch (error) {
       showError(error.message)
     } finally {
       els.emailRegisterBtn.disabled = false
-      els.emailRegisterBtn.textContent = 'Create Account'
+      els.emailRegisterBtn.innerHTML = `
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
+          <path d="M19 13H13V19H11V13H5V11H11V5H13V11H19V13Z"/>
+        </svg>
+        Create Account
+      `
     }
   }
 
   async function handleAuthSuccess(user) {
     currentUser = user
+    
+    // Create or update profile with proper user_id
+    const { error: profileError } = await supabase
+      .from('profiles')
+      .upsert({
+        id: user.id,  // This is crucial - user.id becomes the primary key
+        username: user.user_metadata?.full_name || user.email?.split('@')[0] || 'User',
+        full_name: user.user_metadata?.full_name || user.email?.split('@')[0] || 'User',
+        avatar_url: user.user_metadata?.avatar_url || `https://ui-avatars.com/api/?name=${encodeURIComponent(user.email || 'User')}&background=4da3ff&color=fff`
+      }, {
+        onConflict: 'id'
+      })
+
+    if (profileError) {
+      console.error('Profile creation error:', profileError)
+    } else {
+      console.log('Profile created/updated successfully for user:', user.id)
+    }
+
+    // Update UI
+    const displayName = user.user_metadata?.full_name || user.email?.split('@')[0] || 'User'
+    const avatarUrl = user.user_metadata?.avatar_url || `https://ui-avatars.com/api/?name=${encodeURIComponent(user.email || 'User')}&background=4da3ff&color=fff`
+    
+    els.currentUser.textContent = displayName
+    els.userAvatar.src = avatarUrl
+    
+    showMainApp()
     await getSpotifyToken()
-    await loadUserProfile()
-    hideLoginModal()
-    switchTab('global-feed')
+    await loadMyReviews()
+    await loadGlobalReviews()
   }
 
   async function handleLogout() {
-    const { error } = await supabase.auth.signOut()
-    if (error) console.error('Logout error:', error)
+    if (confirm('Are you sure you want to logout?')) {
+      await supabase.auth.signOut()
+    }
+  }
+
+  function showError(message, type = 'error') {
+    els.loginError.textContent = message
+    els.loginError.style.display = 'block'
+    els.loginError.className = type === 'success' ? 'success-msg' : 'error-msg'
     
-    currentUser = null
-    currentUserProfile = null
-    showLoginModal()
-  }
-
-  function showLoginModal() {
-    els.loginModal?.classList.add('show')
-    els.loadingApp?.style.setProperty('display', 'none')
-    els.mainContent?.style.setProperty('display', 'none')
-    els.userBar?.style.setProperty('display', 'none')
-  }
-
-  function hideLoginModal() {
-    els.loginModal?.classList.remove('show')
-    els.loadingApp?.style.setProperty('display', 'none')
-    els.mainContent?.style.setProperty('display', 'block')
-    els.userBar?.style.setProperty('display', 'flex')
-  }
-
-  function showError(message) {
-    if (els.loginError) {
-      els.loginError.textContent = message
-      els.loginError.style.display = 'block'
+    if (type === 'success') {
       setTimeout(() => {
         els.loginError.style.display = 'none'
       }, 5000)
     }
   }
 
-  // Spotify Authentication
+  // UI State Management
+  function showLoginModal() {
+    els.loginModal.classList.add('show')
+    els.mainContent.style.display = 'none'
+    els.userBar.style.display = 'none'
+    els.loadingApp.style.display = 'none'
+    currentUser = null
+    selectedMusicData = null
+    spotifyToken = null
+  }
+
+  function showMainApp() {
+    els.loginModal.classList.remove('show')
+    els.mainContent.style.display = ''
+    els.userBar.style.display = ''
+    els.loadingApp.style.display = 'none'
+  }
+
+  function switchTab(tab) {
+    els.tabs.forEach(t => t.classList.remove('active'))
+    els.tabs.find(t => t.dataset.tab === tab).classList.add('active')
+    
+    els.tabAdd.style.display = 'none'
+    els.tabMyReviews.style.display = 'none'
+    els.tabGlobalFeed.style.display = 'none'
+    els.tabAbout.style.display = 'none'
+    
+    switch(tab) {
+      case 'add':
+        els.tabAdd.style.display = ''
+        break
+      case 'my-reviews':
+        els.tabMyReviews.style.display = ''
+        loadMyReviews()
+        break
+      case 'global-feed':
+        els.tabGlobalFeed.style.display = ''
+        loadGlobalReviews()
+        break
+      case 'about':
+        els.tabAbout.style.display = ''
+        break
+    }
+  }
+
+  // Spotify Integration
   async function getSpotifyToken() {
     try {
       const response = await fetch('https://accounts.spotify.com/api/token', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/x-www-form-urlencoded',
-          'Authorization': `Basic ${btoa(`${SPOTIFY_CLIENT_ID}:${SPOTIFY_CLIENT_SECRET}`)}`
         },
-        body: 'grant_type=client_credentials'
+        body: `grant_type=client_credentials&client_id=${SPOTIFY_CLIENT_ID}&client_secret=${SPOTIFY_CLIENT_SECRET}`
       })
-
+      
       const data = await response.json()
       spotifyToken = data.access_token
+      console.log('Spotify token obtained successfully')
     } catch (error) {
-      console.error('Spotify token error:', error)
+      console.error('Failed to get Spotify token:', error)
     }
-  }
-
-  // User Profile
-  async function loadUserProfile() {
-    if (!currentUser) return
-
-    try {
-      const { data: profile, error } = await supabase
-        .from('profiles')
-        .select('*')
-        .eq('id', currentUser.id)
-        .single()
-
-      if (error && error.code !== 'PGRST116') {
-        console.error('Profile load error:', error)
-        return
-      }
-
-      if (profile) {
-        currentUserProfile = profile
-        updateUserInterface()
-      } else {
-        await createUserProfile()
-      }
-    } catch (error) {
-      console.error('Load profile error:', error)
-    }
-  }
-
-  async function createUserProfile() {
-    try {
-      const profileData = {
-        id: currentUser.id,
-        username: currentUser.user_metadata?.username || currentUser.email?.split('@')[0] || 'User',
-        full_name: currentUser.user_metadata?.username || currentUser.email?.split('@')[0] || 'User',
-        avatar_url: generatePlaceholderImage(),
-        bio: null
-      }
-
-      const { data, error } = await supabase
-        .from('profiles')
-        .insert(profileData)
-        .select()
-        .single()
-
-      if (error) throw error
-
-      currentUserProfile = data
-      updateUserInterface()
-    } catch (error) {
-      console.error('Create profile error:', error)
-    }
-  }
-
-  function updateUserInterface() {
-    if (currentUserProfile && els.currentUser && els.userAvatar) {
-      els.currentUser.textContent = currentUserProfile.username || 'User'
-      els.userAvatar.src = currentUserProfile.avatar_url || generatePlaceholderImage()
-      
-      if (els.profileAvatar) {
-        els.profileAvatar.src = currentUserProfile.avatar_url || generatePlaceholderImage()
-      }
-      if (els.profileUsername) {
-        els.profileUsername.value = currentUserProfile.username || ''
-      }
-      if (els.profileBio) {
-        els.profileBio.value = currentUserProfile.bio || ''
-      }
-    }
-  }
-
-  // Tab System
-  function switchTab(tabName) {
-    // Hide all tabs
-    els.tabs.forEach(tab => {
-      const tabElement = $(`#tab-${tab.dataset.tab}`)
-      if (tabElement) tabElement.style.display = 'none'
-    })
-    
-    // Show selected tab
-    const targetTab = $(`#tab-${tabName}`)
-    if (targetTab) {
-      targetTab.style.display = 'block'
-      
-      // Update last tab for navigation
-      if (!['user-profile', 'album-detail'].includes(tabName)) {
-        lastTab = tabName
-      }
-      
-      // Load tab-specific data
-      switch (tabName) {
-        case 'my-reviews':
-          loadMyReviews()
-          break
-        case 'global-feed':
-          loadGlobalReviews()
-          break
-        case 'add':
-          updatePreview()
-          break
-      }
-    }
-  }
-
-  // Spotify Search - FIXED: Removed async keyword since no await is used
-  function handleSearchInput() {
-    const query = els.musicSearch.value.trim()
-    
-    clearTimeout(searchTimeout)
-    
-    if (query.length < 2) {
-      els.searchSuggestions.style.display = 'none'
-      return
-    }
-    
-    searchTimeout = setTimeout(async () => {
-      await searchSpotify(query)
-    }, 300)
   }
 
   async function searchSpotify(query) {
-    if (!spotifyToken) {
-      await getSpotifyToken()
-      if (!spotifyToken) return
-    }
-
+    if (!spotifyToken || !query.trim()) return []
+    
     try {
-      const response = await fetch(`https://api.spotify.com/v1/search?q=${encodeURIComponent(query)}&type=album,track&limit=10`, {
+      const response = await fetch(
+        `https://api.spotify.com/v1/search?q=${encodeURIComponent(query)}&type=album,track&limit=10`,
+        {
+          headers: {
+            'Authorization': `Bearer ${spotifyToken}`
+          }
+        }
+      )
+      
+      const data = await response.json()
+      const results = []
+      
+      // Add albums
+      if (data.albums?.items) {
+        data.albums.items.forEach(item => {
+          results.push({
+            id: item.id,
+            type: 'album',
+            title: item.name,
+            artist: item.artists.map(a => a.name).join(', '),
+            cover: item.images[0]?.url || '',
+            spotify_url: item.external_urls.spotify,
+            release_date: item.release_date,
+            genres: item.genres || []
+          })
+        })
+      }
+      
+      // Add tracks
+      if (data.tracks?.items) {
+        data.tracks.items.forEach(item => {
+          results.push({
+            id: item.id,
+            type: 'track',
+            title: item.name,
+            artist: item.artists.map(a => a.name).join(', '),
+            album_title: item.album.name,
+            cover: item.album.images[0]?.url || '',
+            spotify_url: item.external_urls.spotify,
+            release_date: item.album.release_date,
+            genres: []
+          })
+        })
+      }
+      
+      return results
+    } catch (error) {
+      console.error('Spotify search error:', error)
+      return []
+    }
+  }
+
+  function isSpotifyUrl(url) {
+    try {
+      const urlObj = new URL(url)
+      return urlObj.hostname === 'open.spotify.com' && 
+             (urlObj.pathname.startsWith('/album/') || urlObj.pathname.startsWith('/track/'))
+    } catch {
+      return false
+    }
+  }
+
+  async function getSpotifyInfoFromUrl(url) {
+    if (!spotifyToken) return null
+    
+    try {
+      const urlObj = new URL(url)
+      const pathParts = urlObj.pathname.split('/')
+      const type = pathParts[1] // 'album' or 'track'
+      const id = pathParts[2]
+      
+      const endpoint = type === 'album' 
+        ? `https://api.spotify.com/v1/albums/${id}`
+        : `https://api.spotify.com/v1/tracks/${id}`
+      
+      const response = await fetch(endpoint, {
         headers: {
           'Authorization': `Bearer ${spotifyToken}`
         }
       })
-
+      
       const data = await response.json()
-      displaySearchSuggestions(data)
+      
+      if (type === 'album') {
+        return {
+          id: data.id,
+          type: 'album',
+          title: data.name,
+          artist: data.artists.map(a => a.name).join(', '),
+          cover: data.images[0]?.url || '',
+          spotify_url: data.external_urls.spotify,
+          release_date: data.release_date,
+          genres: data.genres || []
+        }
+      } else {
+        return {
+          id: data.id,
+          type: 'track',
+          title: data.name,
+          artist: data.artists.map(a => a.name).join(', '),
+          album_title: data.album.name,
+          cover: data.album.images[0]?.url || '',
+          spotify_url: data.external_urls.spotify,
+          release_date: data.album.release_date,
+          genres: []
+        }
+      }
     } catch (error) {
-      console.error('Spotify search error:', error)
+      console.error('Error getting Spotify info:', error)
+      return null
     }
   }
 
-  function displaySearchSuggestions(data) {
-    const suggestions = []
+  // Search Handling
+  async function handleSearchInput(e) {
+    const query = e.target.value.trim()
     
-    // Add albums
-    if (data.albums?.items) {
-      data.albums.items.forEach(album => {
-        suggestions.push({
-          id: album.id,
-          title: album.name,
-          artist: album.artists.map(a => a.name).join(', '),
-          album_title: album.name,
-          cover: album.images[0]?.url,
-          spotify_url: album.external_urls.spotify,
-          type: 'album',
-          genres: album.genres || [],
-          release_date: album.release_date
-        })
-      })
-    }
-    
-    // Add tracks
-    if (data.tracks?.items) {
-      data.tracks.items.forEach(track => {
-        suggestions.push({
-          id: track.id,
-          title: track.name,
-          artist: track.artists.map(a => a.name).join(', '),
-          album_title: track.album?.name,
-          cover: track.album?.images[0]?.url,
-          spotify_url: track.external_urls.spotify,
-          type: 'track',
-          genres: [],
-          release_date: track.album?.release_date
-        })
-      })
-    }
-    
-    if (suggestions.length === 0) {
+    if (!query) {
       els.searchSuggestions.style.display = 'none'
       return
     }
-    
+
+    // Check if it's a Spotify URL
+    if (isSpotifyUrl(query)) {
+      const musicData = await getSpotifyInfoFromUrl(query)
+      if (musicData) {
+        selectMusic(musicData)
+        els.musicSearch.value = ''
+        els.searchSuggestions.style.display = 'none'
+        return
+      }
+    }
+
+    // Clear previous timeout
+    if (searchTimeout) {
+      clearTimeout(searchTimeout)
+    }
+
+    // Debounce search
+    searchTimeout = setTimeout(async () => {
+      const results = await searchSpotify(query)
+      showSearchSuggestions(results)
+    }, 300)
+  }
+
+  function showSearchSuggestions(results) {
+    if (results.length === 0) {
+      els.searchSuggestions.style.display = 'none'
+      return
+    }
+
     els.searchSuggestions.innerHTML = ''
-    suggestions.forEach(item => {
+    results.forEach(item => {
       const div = document.createElement('div')
       div.className = 'search-suggestion'
+      
+      const imgSrc = item.cover && item.cover !== '' ? item.cover : generatePlaceholderImage()
+      
       div.innerHTML = `
-        <img src="${item.cover || generatePlaceholderImage()}" alt="Cover" onerror="this.src='${generatePlaceholderImage()}'">
+        <img src="${imgSrc}" alt="Cover" onerror="this.src='${generatePlaceholderImage()}'">
         <div class="suggestion-info">
           <div class="suggestion-title">${escapeHtml(item.title)}</div>
           <div class="suggestion-artist">${escapeHtml(item.artist)}</div>
-          <div class="suggestion-type">${item.type === 'album' ? 'Album' : 'Single'}</div>
+          ${item.album_title ? `<div class="suggestion-artist">${escapeHtml(item.album_title)}</div>` : ''}
         </div>
+        <div class="suggestion-type">${item.type}</div>
       `
-      div.addEventListener('click', () => selectMusic(item))
+      div.addEventListener('click', () => {
+        selectMusic(item)
+        els.musicSearch.value = ''
+        els.searchSuggestions.style.display = 'none'
+      })
       els.searchSuggestions.appendChild(div)
     })
-    
+
     els.searchSuggestions.style.display = 'block'
   }
 
   function selectMusic(musicData) {
     selectedMusicData = musicData
-    els.searchSuggestions.style.display = 'none'
-    els.musicSearch.value = `${musicData.title} - ${musicData.artist}`
     
-    // Update selected music display
-    els.selectedCover.src = musicData.cover || generatePlaceholderImage()
+    // Handle cover image with fallback
+    const coverSrc = musicData.cover && musicData.cover !== '' ? musicData.cover : generatePlaceholderImage()
+    els.selectedCover.src = coverSrc
+    els.selectedCover.onerror = function() {
+      this.src = generatePlaceholderImage()
+    }
+    
     els.selectedTitle.textContent = musicData.title
     els.selectedArtist.textContent = musicData.artist
     els.selectedType.textContent = musicData.type === 'album' ? 'Album' : 'Single'
-    els.selectedGenres.textContent = musicData.genres.join(', ') || 'No genres available'
     
-    els.selectedMusic.style.display = 'block'
+    // Show genres if available
+    els.selectedGenres.innerHTML = ''
+    if (musicData.genres && musicData.genres.length > 0) {
+      musicData.genres.forEach(genre => {
+        const span = document.createElement('span')
+        span.className = 'genre-tag'
+        span.textContent = genre
+        els.selectedGenres.appendChild(span)
+      })
+    }
+    
+    els.selectedMusic.style.display = ''
     updatePreview()
   }
 
-  // Score handling - FIXED: Slider only does whole and half numbers
+  // Form Handling
   function updateScoreDisplay() {
-    const score = parseFloat(els.score.value)
-    els.scoreOut.textContent = score.toFixed(1)
+    const value = parseFloat(els.score.value)
+    els.scoreOut.textContent = value.toFixed(1)
     els.manualScore.value = ''
     updatePreview()
   }
 
   function handleManualScoreInput() {
-    const manualScore = parseFloat(els.manualScore.value)
-    if (!isNaN(manualScore) && manualScore >= 0 && manualScore <= 10) {
-      els.scoreOut.textContent = manualScore.toFixed(2)
+    const value = parseFloat(els.manualScore.value)
+    if (!isNaN(value) && value >= 0.5 && value <= 10) {
+      els.score.value = value
+      els.scoreOut.textContent = value.toFixed(1)
+      updatePreview()
     }
-    updatePreview()
   }
 
-  // Preview - FIXED: Now shows actual cover image
   function updatePreview() {
     if (!selectedMusicData) {
       els.previewPane.innerHTML = '<div class="empty">Select music to see preview</div>'
       return
     }
-    
-    const score = els.manualScore.value && !isNaN(parseFloat(els.manualScore.value)) ? 
+
+    const score = els.manualScore.value ? 
       parseFloat(els.manualScore.value) : 
       parseFloat(els.score.value)
     
-    const previewReview = {
+    const reviewText = els.review.value.trim()
+
+    const previewData = {
       ...selectedMusicData,
-      score: score,
-      review_text: els.review.value.trim() || null,
+      score: Math.round(score * 10) / 10,
+      review_text: reviewText,
       created_at: new Date().toISOString(),
-      user: currentUserProfile || {
-        username: 'You',
-        avatar_url: generatePlaceholderImage()
+      user: { 
+        full_name: currentUser?.user_metadata?.full_name || currentUser?.email?.split('@')[0] || 'User',
+        avatar_url: currentUser?.user_metadata?.avatar_url || els.userAvatar?.src
       }
     }
-    
-    const previewCard = createReviewCard(previewReview, false, true)
+
     els.previewPane.innerHTML = ''
-    els.previewPane.appendChild(previewCard)
+    els.previewPane.appendChild(createReviewCard(previewData, false, true))
   }
 
-  // Save Review
   async function handleSaveReview() {
     if (!selectedMusicData) {
       alert('Please select music to review')
@@ -664,14 +609,14 @@
       return
     }
 
-    const score = els.manualScore.value && !isNaN(parseFloat(els.manualScore.value)) ? 
+    const score = els.manualScore.value ? 
       parseFloat(els.manualScore.value) : 
       parseFloat(els.score.value)
     
     const reviewText = els.review.value.trim()
 
-    if (score < 0 || score > 10) {
-      alert('Score must be between 0 and 10.00')
+    if (score < 0.5 || score > 10) {
+      alert('Score must be between 0.5 and 10.0')
       return
     }
 
@@ -679,8 +624,9 @@
     els.saveBtn.textContent = 'Saving...'
 
     try {
+      // Ensure user_id is explicitly set
       const reviewData = {
-        user_id: currentUser.id,
+        user_id: currentUser.id, // This is critical for the foreign key relationship
         title: selectedMusicData.title,
         artist: selectedMusicData.artist,
         album_title: selectedMusicData.album_title || null,
@@ -688,23 +634,29 @@
         spotify_id: selectedMusicData.id,
         spotify_url: selectedMusicData.spotify_url,
         type: selectedMusicData.type,
-        score: Math.round(score * 100) / 100,
+        score: Math.round(score * 10) / 10,
         review_text: reviewText || null,
         genres: selectedMusicData.genres || [],
         release_date: selectedMusicData.release_date || null
       }
 
-      const { _data, error } = await supabase
+      console.log('Saving review with user_id:', currentUser.id, reviewData)
+
+      const { data, error } = await supabase
         .from('reviews')
         .insert(reviewData)
         .select()
 
-      if (error) throw error
+      if (error) {
+        console.error('Supabase error:', error)
+        throw error
+      }
 
+      console.log('Review saved successfully:', data)
       alert('Review saved successfully!')
       clearForm()
       
-      // Reload reviews
+      // Reload reviews immediately
       setTimeout(async () => {
         await loadMyReviews()
         await loadGlobalReviews()
@@ -731,7 +683,7 @@
     updatePreview()
   }
 
-  // Load Reviews - FIXED: Better like counting and My Reviews functionality
+  // Reviews Loading - Fixed Supabase queries
   async function loadMyReviews() {
     if (!currentUser) return
 
@@ -742,12 +694,88 @@
       const searchQuery = els.mySearch.value.trim().toLowerCase()
       const sortBy = els.mySortBy.value
 
+      // Use explicit join with profiles table
       let query = supabase
         .from('reviews')
         .select(`
           *,
           profiles:user_id (
-            username,
+            full_name,
+            avatar_url
+          )
+        `)
+        .eq('user_id', currentUser.id)
+
+      // Apply search filter
+      if (searchQuery) {
+        query = query.or(`title.ilike.%${searchQuery}%,artist.ilike.%${searchQuery}%,review_text.ilike.%${searchQuery}%`)
+      }
+
+      // Apply sorting
+      switch (sortBy) {
+        case 'date-asc':
+          query = query.order('created_at', { ascending: true })
+          break
+        case 'score-desc':
+          query = query.order('score', { ascending: false })
+          break
+        case 'score-asc':
+          query = query.order('score', { ascending: true })
+          break
+        case 'title-asc':
+          query = query.order('title', { ascending: true })
+          break
+        default:
+          query = query.order('created_at', { ascending: false })
+      }
+
+      const { data: reviews, error } = await query
+
+      if (error) {
+        console.error('My reviews error:', error)
+        throw error
+      }
+
+      console.log('My reviews loaded:', reviews?.length || 0)
+
+      // Process reviews data
+      const processedReviews = reviews.map(review => ({
+        ...review,
+        user: review.profiles || {
+          full_name: currentUser.user_metadata?.full_name || currentUser.email?.split('@')[0] || 'User',
+          avatar_url: currentUser.user_metadata?.avatar_url || `https://ui-avatars.com/api/?name=${encodeURIComponent(currentUser.email || 'User')}&background=4da3ff&color=fff`
+        }
+      }))
+
+      renderReviews(processedReviews, els.myReviewsList, els.myReviewsEmpty, true)
+      
+      // Update stats
+      els.statsPill.textContent = `${reviews.length} review${reviews.length === 1 ? '' : 's'}`
+
+    } catch (error) {
+      console.error('Error loading my reviews:', error)
+      els.myReviewsList.innerHTML = ''
+      els.myReviewsEmpty.style.display = ''
+      els.myReviewsEmpty.textContent = 'Error loading reviews: ' + error.message
+    }
+  }
+
+  async function loadGlobalReviews() {
+    try {
+      els.globalReviewsEmpty.style.display = 'none'
+      els.globalReviewsList.innerHTML = '<div class="loading"><div class="spinner"></div><span>Loading reviews...</span></div>'
+
+      const searchQuery = els.globalSearch.value.trim().toLowerCase()
+      const sortBy = els.globalSortBy.value
+      const typeFilter = els.globalTypeFilter.value
+      const genreFilter = els.globalGenreFilter.value
+
+      // Use explicit join syntax
+      let query = supabase
+        .from('reviews')
+        .select(`
+          *,
+          profiles:user_id (
             full_name,
             avatar_url
           ),
@@ -756,8 +784,8 @@
             user_id
           )
         `)
-        .eq('user_id', currentUser.id)
 
+      // Apply filters
       if (searchQuery) {
         query = query.or(`title.ilike.%${searchQuery}%,artist.ilike.%${searchQuery}%,review_text.ilike.%${searchQuery}%`)
       }
@@ -770,57 +798,58 @@
         query = query.contains('genres', [genreFilter])
       }
 
-      switch (sortBy) {
-        case 'date-asc':
-          query = query.order('created_at', { ascending: true })
-          break
-        case 'score-desc':
-          query = query.order('score', { ascending: false })
-          break
-        case 'score-asc':
-          query = query.order('score', { ascending: true })
-          break
-        default:
-          query = query.order('created_at', { ascending: false })
-      }
-
       const { data: reviews, error } = await query
 
-      if (error) throw error
+      if (error) {
+        console.error('Global reviews error:', error)
+        throw error
+      }
 
+      console.log('Global reviews loaded:', reviews?.length || 0)
+
+      // Process likes and sorting
       const processedReviews = reviews.map(review => ({
         ...review,
         like_count: review.review_likes?.length || 0,
         user_liked: review.review_likes?.some(like => like.user_id === currentUser?.id) || false,
         user: review.profiles || {
-          username: 'Anonymous',
           full_name: 'Anonymous',
           avatar_url: generatePlaceholderImage()
         }
       }))
 
-      // Apply sorting for likes (can't do in SQL easily)
-      if (sortBy === 'likes-desc') {
-        processedReviews.sort((a, b) => b.like_count - a.like_count)
+      // Apply sorting
+      switch (sortBy) {
+        case 'likes-desc':
+          processedReviews.sort((a, b) => b.like_count - a.like_count)
+          break
+        case 'score-desc':
+          processedReviews.sort((a, b) => b.score - a.score)
+          break
+        case 'score-asc':
+          processedReviews.sort((a, b) => a.score - b.score)
+          break
+        default:
+          processedReviews.sort((a, b) => new Date(b.created_at) - new Date(a.created_at))
       }
 
       renderReviews(processedReviews, els.globalReviewsList, els.globalReviewsEmpty, false)
       
-      if (els.statsPill) {
-        els.statsPill.textContent = `${processedReviews.length} review${processedReviews.length === 1 ? '' : 's'}`
-      }
+      // Update count
+      els.globalCount.textContent = `${processedReviews.length} review${processedReviews.length === 1 ? '' : 's'}`
+
+      // Update genre filter options
+      updateGenreFilter(processedReviews)
 
     } catch (error) {
-      console.error('Error loading my reviews:', error)
-      els.myReviewsList.innerHTML = ''
-      els.myReviewsEmpty.style.display = 'block'
-      els.myReviewsEmpty.textContent = 'Error loading reviews: ' + error.message
+      console.error('Error loading global reviews:', error)
+      els.globalReviewsList.innerHTML = ''
+      els.globalReviewsEmpty.style.display = ''
+      els.globalReviewsEmpty.textContent = 'Error loading reviews: ' + error.message
     }
   }
 
   function updateGenreFilter(reviews) {
-    if (!els.globalGenreFilter) return
-    
     const genres = new Set()
     reviews.forEach(review => {
       if (review.genres && Array.isArray(review.genres)) {
@@ -843,12 +872,10 @@
 
   // Review Rendering
   function renderReviews(reviews, listEl, emptyEl, showActions) {
-    if (!listEl || !emptyEl) return
-    
     listEl.innerHTML = ''
     
     if (reviews.length === 0) {
-      emptyEl.style.display = 'block'
+      emptyEl.style.display = ''
       return
     }
     
@@ -868,713 +895,221 @@
     
     const likeSection = !isPreview ? `
       <div class="like-section">
-        <button class="like-btn ${review.user_liked ? 'liked' : ''}" onclick="toggleLike(${review.id})">
-          ❤️
+        <button class="like-btn ${review.user_liked ? 'liked' : ''}" data-review-id="${review.id}" ${!currentUser ? 'disabled' : ''}>
+          ${review.user_liked ? '❤️' : '🤍'}
         </button>
         <div class="like-count">${review.like_count || 0}</div>
-        <button class="comment-btn" onclick="showComments(${review.id})">
-          💬
-        </button>
       </div>
-    ` : ''
+    ` : '<div></div>'
     
-    const actionButtons = showActions && !isPreview ? `
-      <div class="review-actions" style="margin-top: 8px;">
-        <button class="btn small ghost" onclick="editReview(${review.id})" style="margin-right: 8px;">
-          ✏️ Edit
-        </button>
-        <button class="btn danger small" onclick="deleteReview(${review.id})">
-          🗑️ Delete
-        </button>
-      </div>
-    ` : ''
-    
-    const coverSrc = review.cover_url && review.cover_url !== '' ? review.cover_url : generatePlaceholderImage()
-    
-    const genreTags = review.genres && review.genres.length > 0 
-      ? review.genres.map(genre => `<span class="genre-tag">${escapeHtml(genre)}</span>`).join('')
-      : ''
-    
-    const titleClickable = !isPreview ? `onclick="showAlbumDetail('${review.spotify_id}', '${review.type}')" style="cursor: pointer;"` : ''
+    // Handle cover image with proper fallback
+    const coverUrl = review.cover_url || review.cover
+    const coverSrc = coverUrl && coverUrl !== '' ? coverUrl : generatePlaceholderImage()
     
     div.innerHTML = `
-      <img class="r-cover" src="${coverSrc}" alt="Cover" onerror="this.src='${generatePlaceholderImage()}'">
+      <img src="${coverSrc}" alt="Cover" class="r-cover" onerror="this.src='${generatePlaceholderImage()}'">
       <div>
         <div class="r-title">
-          <span ${titleClickable}>${escapeHtml(review.title)}</span>
-          <a href="${review.spotify_url}" target="_blank" rel="noopener" style="margin-left: 8px; font-size: 12px;">🎵</a>
+          ${review.spotify_url ? `<a href="${review.spotify_url}" target="_blank" rel="noopener">${escapeHtml(review.title)}</a>` : escapeHtml(review.title)}
         </div>
         <div class="r-artist">${escapeHtml(review.artist)}</div>
+        ${review.album_title && review.type === 'track' ? `<div class="r-artist">from ${escapeHtml(review.album_title)}</div>` : ''}
         <div class="r-meta">
           <span class="score">${review.score}/10</span>
           <span class="tag">${review.type === 'album' ? 'Album' : 'Single'}</span>
-          ${genreTags}
+          <span class="time">${new Date(review.created_at).toLocaleDateString()}</span>
         </div>
-        ${review.review_text ? `<div class="r-text">${escapeHtml(review.review_text)}</div>` : ''}
-        ${!isPreview ? `
-          <div class="r-user">
-            <img src="${review.user.avatar_url || generatePlaceholderImage()}" alt="Avatar" onerror="this.src='${generatePlaceholderImage()}'">
-            <span onclick="showUserProfile('${review.user_id}')">${escapeHtml(review.user.username || review.user.full_name || 'User')}</span>
-            <span class="time">${formatDate(review.created_at)}</span>
+        ${review.genres && review.genres.length > 0 ? `
+          <div class="genre-list">
+            ${review.genres.map(genre => `<span class="genre-tag">${escapeHtml(genre)}</span>`).join('')}
           </div>
         ` : ''}
-        ${actionButtons}
+        ${review.review_text ? `<div class="r-text">${escapeHtml(review.review_text)}</div>` : ''}
+        ${!isPreview && review.user ? `
+          <div class="r-user">
+            <img src="${review.user.avatar_url || generatePlaceholderImage()}" alt="User" onerror="this.src='${generatePlaceholderImage()}'">
+            <span>by ${escapeHtml(review.user.full_name || 'Anonymous')}</span>
+          </div>
+        ` : ''}
+        ${showActions ? `
+          <div class="toolbar">
+            <button class="btn ghost small edit-btn" data-review-id="${review.id}">✏️ Edit</button>
+            <button class="btn danger small delete-btn" data-review-id="${review.id}">🗑️ Delete</button>
+          </div>
+        ` : ''}
       </div>
       ${likeSection}
     `
-    
+
+    // Add event listeners
+    if (!isPreview) {
+      const likeBtn = div.querySelector('.like-btn')
+      if (likeBtn && currentUser) {
+        likeBtn.addEventListener('click', () => toggleLike(review.id, likeBtn))
+      }
+    }
+
+    if (showActions) {
+      const editBtn = div.querySelector('.edit-btn')
+      const deleteBtn = div.querySelector('.delete-btn')
+      
+      if (editBtn) {
+        editBtn.addEventListener('click', () => editReview(review.id))
+      }
+      
+      if (deleteBtn) {
+        deleteBtn.addEventListener('click', () => deleteReview(review.id))
+      }
+    }
+
     return div
   }
 
-  // Like System - FIXED: Now works properly
-  globalThis.toggleLike = async function(reviewId) {
-    if (!currentUser) {
-      alert('Please log in to like reviews')
-      return
-    }
+  // Like System
+  async function toggleLike(reviewId, likeBtn) {
+    if (!currentUser) return
 
     try {
-      // Check if already liked
-      const { data: existingLike } = await supabase
-        .from('review_likes')
-        .select('id')
-        .eq('review_id', reviewId)
-        .eq('user_id', currentUser.id)
-        .single()
-
-      if (existingLike) {
-        // Remove like
+      const isLiked = likeBtn.classList.contains('liked')
+      
+      if (isLiked) {
+        // Unlike
         const { error } = await supabase
           .from('review_likes')
           .delete()
-          .eq('id', existingLike.id)
-
+          .eq('review_id', reviewId)
+          .eq('user_id', currentUser.id)
+        
         if (error) throw error
+        
+        likeBtn.classList.remove('liked')
+        likeBtn.textContent = '🤍'
+        
+        const countEl = likeBtn.parentNode.querySelector('.like-count')
+        const currentCount = parseInt(countEl.textContent)
+        countEl.textContent = Math.max(0, currentCount - 1)
+        
       } else {
-        // Add like
+        // Like
         const { error } = await supabase
           .from('review_likes')
           .insert({
             review_id: reviewId,
             user_id: currentUser.id
           })
-
+        
         if (error) throw error
+        
+        likeBtn.classList.add('liked')
+        likeBtn.textContent = '❤️'
+        
+        const countEl = likeBtn.parentNode.querySelector('.like-count')
+        const currentCount = parseInt(countEl.textContent)
+        countEl.textContent = currentCount + 1
       }
-
-      // Reload current reviews
-      if (els.tabGlobalFeed && els.tabGlobalFeed.style.display !== 'none') {
-        await loadGlobalReviews()
-      }
-      if (els.tabMyReviews && els.tabMyReviews.style.display !== 'none') {
-        await loadMyReviews()
-      }
-
+      
     } catch (error) {
       console.error('Error toggling like:', error)
-      alert('Failed to toggle like: ' + error.message)
     }
   }
 
-  // Edit Review - FIXED: Now works properly
-  globalThis.editReview = async function(reviewId) {
-    if (!currentUser) {
-      alert('Please log in to edit reviews')
-      return
-    }
-
+  // Review Actions
+  async function editReview(reviewId) {
     try {
-      // Load review data
       const { data: review, error } = await supabase
         .from('reviews')
         .select('*')
         .eq('id', reviewId)
-        .eq('user_id', currentUser.id)
         .single()
 
       if (error) throw error
-      if (!review) {
-        alert('Review not found or you do not have permission to edit it')
-        return
+
+      // Switch to add tab
+      switchTab('add')
+
+      // Populate form with review data
+      const musicData = {
+        id: review.spotify_id,
+        type: review.type,
+        title: review.title,
+        artist: review.artist,
+        album_title: review.album_title,
+        cover: review.cover_url,
+        spotify_url: review.spotify_url,
+        genres: review.genres || []
       }
 
-      currentEditingReview = review
-      els.editScore.value = review.score
-      els.editReview.value = review.review_text || ''
-      els.editModal.classList.add('show')
+      selectMusic(musicData)
+      els.score.value = review.score
+      els.scoreOut.textContent = review.score.toFixed(1)
+      els.review.value = review.review_text || ''
+      updatePreview()
 
-    } catch (error) {
-      console.error('Error loading review for edit:', error)
-      alert('Failed to load review: ' + error.message)
-    }
-  }
-
-  function hideEditModal() {
-    els.editModal?.classList.remove('show')
-    currentEditingReview = null
-  }
-
-  async function saveEditedReview() {
-    if (!currentEditingReview) return
-
-    const newScore = parseFloat(els.editScore.value)
-    const newReviewText = els.editReview.value.trim()
-
-    if (newScore < 0 || newScore > 10) {
-      alert('Score must be between 0 and 10')
-      return
-    }
-
-    try {
-      els.saveEditBtn.disabled = true
-      els.saveEditBtn.textContent = 'Saving...'
-
-      const { error } = await supabase
+      // Delete the original review
+      await supabase
         .from('reviews')
-        .update({
-          score: Math.round(newScore * 100) / 100,
-          review_text: newReviewText || null
-        })
-        .eq('id', currentEditingReview.id)
-        .eq('user_id', currentUser.id)
+        .delete()
+        .eq('id', reviewId)
 
-      if (error) throw error
-
-      alert('Review updated successfully!')
-      hideEditModal()
-      
-      // Reload reviews
       await loadMyReviews()
       await loadGlobalReviews()
 
     } catch (error) {
-      console.error('Error updating review:', error)
-      alert('Failed to update review: ' + error.message)
-    } finally {
-      els.saveEditBtn.disabled = false
-      els.saveEditBtn.textContent = 'Save Changes'
+      console.error('Error editing review:', error)
+      alert('Failed to edit review. Please try again.')
     }
   }
 
-  // Delete Review - FIXED: Now works properly
-  globalThis.deleteReview = async function(reviewId) {
-    if (!currentUser) {
-      alert('Please log in to delete reviews')
-      return
-    }
-
-    if (!confirm('Are you sure you want to delete this review?')) {
-      return
-    }
+  async function deleteReview(reviewId) {
+    if (!confirm('Are you sure you want to delete this review?')) return
 
     try {
-      // First delete associated likes and comments
-      await supabase.from('review_likes').delete().eq('review_id', reviewId)
-      await supabase.from('comments').delete().eq('review_id', reviewId)
-      
-      // Then delete the review
       const { error } = await supabase
         .from('reviews')
         .delete()
         .eq('id', reviewId)
-        .eq('user_id', currentUser.id)
 
       if (error) throw error
 
-      alert('Review deleted successfully!')
-      
-      // Reload reviews
       await loadMyReviews()
       await loadGlobalReviews()
-
+      
     } catch (error) {
       console.error('Error deleting review:', error)
-      alert('Failed to delete review: ' + error.message)
+      alert('Failed to delete review. Please try again.')
     }
   }
 
-  // Comments System - FIXED: Now works properly
-  globalThis.showComments = async function(reviewId) {
-    currentReviewForComments = reviewId
-    await loadComments(reviewId)
-    els.commentsModal?.classList.add('show')
-  }
-
-  function hideCommentsModal() {
-    els.commentsModal?.classList.remove('show')
-    currentReviewForComments = null
-  }
-
-  async function loadComments(reviewId) {
-    try {
-      // Load review details
-      const { data: review } = await supabase
-        .from('reviews')
-        .select(`
-          *,
-          profiles:user_id (
-            username,
-            full_name,
-            avatar_url
-          )
-        `)
-        .eq('id', reviewId)
-        .single()
-
-      if (review && els.reviewDetails) {
-        els.reviewDetails.innerHTML = `
-          <div class="r-card" style="margin-bottom: 16px;">
-            <img class="r-cover" src="${review.cover_url || generatePlaceholderImage()}" alt="Cover" onerror="this.src='${generatePlaceholderImage()}'">
-            <div>
-              <div class="r-title">${escapeHtml(review.title)}</div>
-              <div class="r-artist">${escapeHtml(review.artist)}</div>
-              <div class="r-meta">
-                <span class="score">${review.score}/10</span>
-                <span class="tag">${review.type === 'album' ? 'Album' : 'Single'}</span>
-              </div>
-              ${review.review_text ? `<div class="r-text">${escapeHtml(review.review_text)}</div>` : ''}
-            </div>
-          </div>
-        `
-      }
-
-      // Load comments
-      const { data: comments, error } = await supabase
-        .from('comments')
-        .select(`
-          *,
-          profiles:user_id (
-            username,
-            full_name,
-            avatar_url
-          )
-        `)
-        .eq('review_id', reviewId)
-        .order('created_at', { ascending: true })
-
-      if (error) throw error
-
-      renderComments(comments || [])
-
-    } catch (error) {
-      console.error('Error loading comments:', error)
-      if (els.reviewDetails) els.reviewDetails.innerHTML = '<div class="error">Error loading review details</div>'
-      if (els.commentsList) els.commentsList.innerHTML = '<div class="error">Error loading comments</div>'
-    }
-  }
-
-  function renderComments(comments) {
-    if (!els.commentsList) return
-    
-    if (comments.length === 0) {
-      els.commentsList.innerHTML = '<div class="empty">No comments yet. Be the first to comment!</div>'
-      return
-    }
-
-    els.commentsList.innerHTML = ''
-    comments.forEach(comment => {
-      const div = document.createElement('div')
-      div.className = 'comment'
-      div.innerHTML = `
-        <div class="comment-header">
-          <img class="comment-avatar" src="${comment.profiles?.avatar_url || generatePlaceholderImage()}" alt="Avatar" onerror="this.src='${generatePlaceholderImage()}'">
-          <span class="comment-author" onclick="showUserProfile('${comment.user_id}')">${escapeHtml(comment.profiles?.username || 'User')}</span>
-          <span class="comment-time">${formatDate(comment.created_at)}</span>
-        </div>
-        <div class="comment-text">${escapeHtml(comment.comment_text)}</div>
-      `
-      els.commentsList.appendChild(div)
-    })
-  }
-
-  async function submitComment() {
-    if (!currentUser) {
-      alert('Please log in to comment')
-      return
-    }
-
-    const commentText = els.newComment?.value.trim()
-    if (!commentText) {
-      alert('Please enter a comment')
-      return
-    }
-
-    try {
-      els.submitComment.disabled = true
-      els.submitComment.textContent = 'Posting...'
-
-      const { error } = await supabase
-        .from('comments')
-        .insert({
-          review_id: currentReviewForComments,
-          user_id: currentUser.id,
-          comment_text: commentText
-        })
-
-      if (error) throw error
-
-      els.newComment.value = ''
-      await loadComments(currentReviewForComments)
-
-    } catch (error) {
-      console.error('Error submitting comment:', error)
-      alert('Failed to post comment: ' + error.message)
-    } finally {
-      els.submitComment.disabled = false
-      els.submitComment.textContent = 'Post Comment'
-    }
-  }
-
-  // Album/Track Detail System - FIXED: Now shows tracklist and reviews properly
-  globalThis.showAlbumDetail = async function(spotifyId, type) {
-    try {
-      els.albumDetailContent.innerHTML = '<div class="loading"><div class="spinner"></div><span>Loading details...</span></div>'
-      
-      // Get album/track details from Spotify
-      const endpoint = type === 'album' 
-        ? `https://api.spotify.com/v1/albums/${spotifyId}`
-        : `https://api.spotify.com/v1/tracks/${spotifyId}`
-      
-      const response = await fetch(endpoint, {
-        headers: {
-          'Authorization': `Bearer ${spotifyToken}`
-        }
-      })
-      
-      const spotifyData = await response.json()
-      
-      // Get all reviews for this album/track
-      const { data: reviews, error } = await supabase
-        .from('reviews')
-        .select(`
-          *,
-          profiles:user_id (
-            username,
-            full_name,
-            avatar_url
-          ),
-          review_likes (
-            id,
-            user_id
-          )
-        `)
-        .eq('spotify_id', spotifyId)
-        .order('created_at', { ascending: false })
-
-      if (error) throw error
-
-      const processedReviews = reviews.map(review => ({
-        ...review,
-        like_count: review.review_likes?.length || 0,
-        user_liked: review.review_likes?.some(like => like.user_id === currentUser?.id) || false,
-        user: review.profiles || {
-          username: 'Anonymous',
-          full_name: 'Anonymous',
-          avatar_url: generatePlaceholderImage()
-        }
-      }))
-
-      // Calculate average score
-      const avgScore = reviews.length > 0 
-        ? (reviews.reduce((sum, r) => sum + r.score, 0) / reviews.length).toFixed(2)
-        : 'N/A'
-
-      // Build tracklist for albums
-      let tracklistHtml = ''
-      if (type === 'album' && spotifyData.tracks?.items) {
-        tracklistHtml = `
-          <div class="tracklist">
-            <h4>Tracklist</h4>
-            <div class="tracks">
-              ${spotifyData.tracks.items.map((track, index) => `
-                <div class="track-item">
-                  <span class="track-number">${index + 1}.</span>
-                  <span class="track-name">${escapeHtml(track.name)}</span>
-                  <span class="track-duration">${formatDuration(track.duration_ms)}</span>
-                </div>
-              `).join('')}
-            </div>
-          </div>
-        `
-      }
-
-      if (els.albumDetailTitle) {
-        els.albumDetailTitle.textContent = `${spotifyData.name} - Details`
-      }
-      
-      els.albumDetailContent.innerHTML = `
-        <div class="album-header">
-          <img class="album-cover" src="${spotifyData.images?.[0]?.url || generatePlaceholderImage()}" alt="Cover" onerror="this.src='${generatePlaceholderImage()}'">
-          <div class="album-info">
-            <h2>${escapeHtml(spotifyData.name)}</h2>
-            <h3>${escapeHtml(spotifyData.artists.map(a => a.name).join(', '))}</h3>
-            <div class="album-meta">
-              <span class="album-type">${type === 'album' ? 'Album' : 'Single'}</span>
-              <span class="release-date">${new Date(spotifyData.release_date).getFullYear()}</span>
-              ${type === 'album' ? `<span class="track-count">${spotifyData.total_tracks} tracks</span>` : ''}
-            </div>
-            <div class="album-stats">
-              <div class="stat-item">
-                <div class="stat-number">${avgScore}</div>
-                <div class="stat-label">Average Score</div>
-              </div>
-              <div class="stat-item">
-                <div class="stat-number">${reviews.length}</div>
-                <div class="stat-label">Reviews</div>
-              </div>
-            </div>
-            <a href="${spotifyData.external_urls.spotify}" target="_blank" class="btn small">🎵 Open in Spotify</a>
-          </div>
-        </div>
-
-        ${tracklistHtml}
-
-        <div class="album-reviews">
-          <h4>Reviews (${reviews.length})</h4>
-          ${reviews.length > 0 
-            ? `<div class="review-list">${processedReviews.map(review => createReviewCard(review, false).outerHTML).join('')}</div>`
-            : '<div class="empty">No reviews yet. Be the first to review this!</div>'
-          }
-        </div>
-      `
-      
-      switchTab('album-detail')
-
-    } catch (error) {
-      console.error('Error loading album details:', error)
-      els.albumDetailContent.innerHTML = '<div class="error">Error loading details</div>'
-    }
-  }
-
-  function formatDuration(ms) {
-    const minutes = Math.floor(ms / 60000)
-    const seconds = ((ms % 60000) / 1000).toFixed(0)
-    return `${minutes}:${seconds.padStart(2, '0')}`
-  }
-
-  // User Profile System - FIXED: Changed "Share Profile" to "Share Reviews"
-  globalThis.showUserProfile = async function(userId) {
-    if (userId === currentUser?.id) {
-      switchTab('profile')
-      return
-    }
-
-    try {
-      // Load user profile
-      const { data: profile } = await supabase
-        .from('profiles')
-        .select('*')
-        .eq('id', userId)
-        .single()
-
-      // Load user's reviews
-      const { data: reviews } = await supabase
-        .from('reviews')
-        .select('*')
-        .eq('user_id', userId)
-        .order('created_at', { ascending: false })
-
-      if (profile && els.userProfileName && els.userProfileContent) {
-        els.userProfileName.textContent = `${profile.username || 'User'}'s Reviews`
-        
-        const reviewCount = reviews?.length || 0
-        const avgScore = reviewCount > 0 
-          ? (reviews.reduce((sum, r) => sum + r.score, 0) / reviewCount).toFixed(2)
-          : '0.00'
-
-        els.userProfileContent.innerHTML = `
-          <div class="user-profile-header">
-            <img class="user-profile-avatar" src="${profile.avatar_url || generatePlaceholderImage()}" alt="Avatar" onerror="this.src='${generatePlaceholderImage()}'">
-            <div class="user-profile-info">
-              <h3>${escapeHtml(profile.username || 'User')}</h3>
-              ${profile.bio ? `<div class="user-profile-bio">${escapeHtml(profile.bio)}</div>` : ''}
-              <div class="user-profile-stats">
-                <div class="stat-item">
-                  <div class="stat-number">${reviewCount}</div>
-                  <div class="stat-label">Reviews</div>
-                </div>
-                <div class="stat-item">
-                  <div class="stat-number">${avgScore}</div>
-                  <div class="stat-label">Avg Score</div>
-                </div>
-              </div>
-            </div>
-          </div>
-          <div class="review-list">
-            ${reviews && reviews.length > 0 
-              ? reviews.map(review => {
-                  const processedReview = {
-                    ...review,
-                    user: profile,
-                    like_count: 0,
-                    user_liked: false
-                  }
-                  return createReviewCard(processedReview, false).outerHTML
-                }).join('')
-              : '<div class="empty">No reviews yet</div>'
-            }
-          </div>
-        `
-        
-        switchTab('user-profile')
-      }
-
-    } catch (error) {
-      console.error('Error loading user profile:', error)
-      alert('Failed to load user profile')
-    }
-  }
-
-  // Profile Management - FIXED: Avatar upload and bio/username saving
-  async function handleAvatarUpload() {
-    const file = els.avatarUpload?.files[0]
-    if (!file) return
-
-    if (file.size > 2 * 1024 * 1024) {
-      alert('Avatar must be smaller than 2MB')
-      return
-    }
-
-    try {
-      const fileExt = file.name.split('.').pop()
-      const fileName = `${currentUser.id}-${Date.now()}.${fileExt}`
-      
-      const { _data, error } = await supabase.storage
-        .from('avatars')
-        .upload(fileName, file, { upsert: true })
-
-      if (error) throw error
-
-      const { data: { publicUrl } } = supabase.storage
-        .from('avatars')
-        .getPublicUrl(fileName)
-
-      const { error: updateError } = await supabase
-        .from('profiles')
-        .update({ avatar_url: publicUrl })
-        .eq('id', currentUser.id)
-
-      if (updateError) throw updateError
-
-      currentUserProfile.avatar_url = publicUrl
-      updateUserInterface()
-      alert('Avatar updated successfully!')
-      
-    } catch (error) {
-      console.error('Avatar upload error:', error)
-      alert('Failed to upload avatar: ' + error.message)
-    }
-  }
-
-  function handleUsernameChange() {
-    const username = els.profileUsername?.value || ''
-    const isValid = /^[a-zA-Z0-9_]+$/.test(username) && username.length >= 3 && username.length <= 20
-    
-    if (els.saveUsernameBtn) {
-      els.saveUsernameBtn.disabled = !isValid
-    }
-    
-    if (els.usernameHint) {
-      if (username && !isValid) {
-        els.usernameHint.textContent = 'Username must be 3-20 characters, letters, numbers, and underscores only'
-        els.usernameHint.style.color = '#ef4444'
-      } else {
-        els.usernameHint.textContent = 'You can change your username every 3 days'
-        els.usernameHint.style.color = 'var(--muted)'
-      }
-    }
-  }
-
-  async function saveUsername() {
-    const newUsername = els.profileUsername?.value.trim()
-    if (!newUsername) return
-
-    try {
-      // Check if username exists
-      const { data: existing } = await supabase
-        .from('profiles')
-        .select('username')
-        .eq('username', newUsername)
-        .neq('id', currentUser.id)
-        .single()
-
-      if (existing) {
-        alert('Username already taken')
-        return
-      }
-
-      const { error } = await supabase
-        .from('profiles')
-        .update({ username: newUsername })
-        .eq('id', currentUser.id)
-
-      if (error) throw error
-
-      currentUserProfile.username = newUsername
-      updateUserInterface()
-      alert('Username updated successfully!')
-      
-    } catch (error) {
-      console.error('Username update error:', error)
-      alert('Failed to update username: ' + error.message)
-    }
-  }
-
-  async function saveBio() {
-    const newBio = els.profileBio?.value.trim() || null
-
-    try {
-      const { error } = await supabase
-        .from('profiles')
-        .update({ bio: newBio })
-        .eq('id', currentUser.id)
-
-      if (error) throw error
-
-      currentUserProfile.bio = newBio
-      alert('Bio updated successfully!')
-      
-    } catch (error) {
-      console.error('Bio update error:', error)
-      alert('Failed to update bio: ' + error.message)
-    }
-  }
-
-  // Share Profile - FIXED: Changed to "Share Reviews"
+  // Share Profile
   function showShareModal() {
-    const profileUrl = `${window.location.origin}/?user=${currentUser.id}`
-    if (els.shareLink) {
-      els.shareLink.value = profileUrl
-    }
-    els.shareModal?.classList.add('show')
+    if (!currentUser) return
+    
+    const profileUrl = `${window.location.origin}${window.location.pathname}?user=${currentUser.id}`
+    els.shareLink.value = profileUrl
+    els.shareModal.classList.add('show')
+    els.copySuccess.style.display = 'none'
   }
 
   function hideShareModal() {
-    els.shareModal?.classList.remove('show')
-    if (els.copySuccess) {
-      els.copySuccess.style.display = 'none'
-    }
+    els.shareModal.classList.remove('show')
   }
 
   async function copyShareLink() {
     try {
       await navigator.clipboard.writeText(els.shareLink.value)
-      if (els.copySuccess) {
-        els.copySuccess.style.display = 'block'
-        setTimeout(() => {
-          els.copySuccess.style.display = 'none'
-        }, 3000)
-      }
-    } catch (_error) {
+      els.copySuccess.style.display = 'block'
+      setTimeout(() => {
+        els.copySuccess.style.display = 'none'
+      }, 3000)
+    } catch (error) {
+      console.error('Failed to copy link:', error)
       // Fallback for older browsers
-      els.shareLink?.select()
+      els.shareLink.select()
       document.execCommand('copy')
-      if (els.copySuccess) {
-        els.copySuccess.style.display = 'block'
-        setTimeout(() => {
-          els.copySuccess.style.display = 'none'
-        }, 3000)
-      }
+      els.copySuccess.style.display = 'block'
+      setTimeout(() => {
+        els.copySuccess.style.display = 'none'
+      }, 3000)
     }
   }
 
@@ -1584,14 +1119,87 @@
     const userId = urlParams.get('user')
     
     if (userId) {
-      // Wait for authentication to complete
-      setTimeout(() => {
-        showUserProfile(userId)
-      }, 1000)
+      // Load shared user's reviews
+      loadSharedUserReviews(userId)
     }
   }
 
-  // Export Reviews
+  async function loadSharedUserReviews(userId) {
+    try {
+      // Get user profile
+      const { data: profile, error: profileError } = await supabase
+        .from('profiles')
+        .select('full_name, avatar_url')
+        .eq('id', userId)
+        .single()
+
+      if (profileError) throw profileError
+
+      // Get user's reviews with proper joins
+      const { data: reviews, error: reviewsError } = await supabase
+        .from('reviews')
+        .select(`
+          *,
+          profiles:user_id (
+            full_name,
+            avatar_url
+          ),
+          review_likes (
+            id,
+            user_id
+          )
+        `)
+        .eq('user_id', userId)
+        .order('created_at', { ascending: false })
+
+      if (reviewsError) throw reviewsError
+
+      // Process reviews
+      const processedReviews = reviews.map(review => ({
+        ...review,
+        like_count: review.review_likes?.length || 0,
+        user_liked: review.review_likes?.some(like => like.user_id === currentUser?.id) || false,
+        user: review.profiles || profile
+      }))
+
+      // Switch to global feed and show shared reviews
+      switchTab('global-feed')
+      
+      // Add header showing whose profile we're viewing
+      const headerDiv = document.createElement('div')
+      headerDiv.className = 'card'
+      headerDiv.style.marginBottom = '20px'
+      headerDiv.innerHTML = `
+        <div class="hd">
+          <strong>Reviews by ${escapeHtml(profile.full_name || 'User')}</strong>
+          <span class="pill">${reviews.length} review${reviews.length === 1 ? '' : 's'}</span>
+        </div>
+      `
+      
+      els.globalReviewsList.innerHTML = ''
+      els.globalReviewsList.appendChild(headerDiv)
+      
+      const reviewsContainer = document.createElement('div')
+      reviewsContainer.className = 'review-list'
+      
+      if (processedReviews.length > 0) {
+        processedReviews.forEach(review => {
+          reviewsContainer.appendChild(createReviewCard(review, false))
+        })
+      } else {
+        reviewsContainer.innerHTML = '<div class="empty">This user hasn\'t posted any reviews yet.</div>'
+      }
+      
+      els.globalReviewsList.appendChild(reviewsContainer)
+      els.globalReviewsEmpty.style.display = 'none'
+
+    } catch (error) {
+      console.error('Error loading shared profile:', error)
+      alert('Error loading shared profile. The user might not exist or their profile might be private.')
+    }
+  }
+
+  // Export
   async function exportReviews() {
     if (!currentUser) return
 
@@ -1604,149 +1212,53 @@
 
       if (error) throw error
 
-      const csvContent = [
-        ['Title', 'Artist', 'Type', 'Score', 'Review', 'Date', 'Spotify URL'].join(','),
-        ...reviews.map(review => [
-          `"${review.title}"`,
-          `"${review.artist}"`,
-          review.type,
-          review.score,
-          `"${review.review_text || ''}"`,
-          new Date(review.created_at).toLocaleDateString(),
-          review.spotify_url
-        ].join(','))
-      ].join('\n')
-
-      const blob = new Blob([csvContent], { type: 'text/csv' })
-      const url = window.URL.createObjectURL(blob)
-      const a = document.createElement('a')
-      a.href = url
-     a.download = "my-music.txt";
-a.click();
-window.URL.revokeObjectURL(url);
-
-      switch (sortBy) {
-        case 'date-asc':
-          query = query.order('created_at', { ascending: true })
-          break
-        case 'score-desc':
-          query = query.order('score', { ascending: false })
-          break
-        case 'score-asc':
-          query = query.order('score', { ascending: true })
-          break
-        case 'title-asc':
-          query = query.order('title', { ascending: true })
-          break
-        default:
-          query = query.order('created_at', { ascending: false })
-      }
-
-      const { data: myReviews, error: myError } = await query
-
-      if (myError) throw myError
-
-      const processedReviews = myReviews.map(review => ({
-        ...review,
-        like_count: review.review_likes?.length || 0,
-        user_liked: review.review_likes?.some(like => like.user_id === currentUser?.id) || false,
-        user: review.profiles || {
-          username: 'Anonymous',
-          full_name: 'Anonymous',
-          avatar_url: generatePlaceholderImage()
-        }
-      }))
-
-      renderReviews(processedReviews, els.myReviewsList, els.myReviewsEmpty, true) // Show actions for my reviews
+      const dataStr = JSON.stringify(reviews, null, 2)
+      const dataBlob = new Blob([dataStr], { type: 'application/json' })
       
-      if (els.statsPill) {
-        els.statsPill.textContent = `${processedReviews.length} review${processedReviews.length === 1 ? '' : 's'}`
-      }
-
+      const link = document.createElement('a')
+      link.href = URL.createObjectURL(dataBlob)
+      link.download = `reviewhub-export-${new Date().toISOString().split('T')[0]}.json`
+      link.click()
+      
+      URL.revokeObjectURL(link.href)
+      
     } catch (error) {
-      console.error('Error loading my reviews:', error)
-      els.myReviewsList.innerHTML = ''
-      els.myReviewsEmpty.style.display = 'block'
-      els.myReviewsEmpty.textContent = 'Error loading reviews: ' + error.message
+      console.error('Export error:', error)
+      alert('Failed to export reviews. Please try again.')
     }
   }
 
-  async function loadGlobalReviews() {
-    try {
-      els.globalReviewsEmpty.style.display = 'none'
-      els.globalReviewsList.innerHTML = '<div class="loading"><div class="spinner"></div><span>Loading reviews...</span></div>'
-
-      const searchQuery = els.globalSearch.value.trim().toLowerCase()
-      const sortBy = els.globalSortBy.value
-      const typeFilter = els.globalTypeFilter.value
-      const genreFilter = els.globalGenreFilter.value
-
-      let query = supabase
-        .from('reviews')
-        .select('*');
-
-if (searchQuery) {
-  query = query.or(`title.ilike.%${searchQuery}%,artist.ilike.%${searchQuery}%,review_text.ilike.%${searchQuery}%`);
-}
-
-  if (typeFilter !== 'all') {
-    query = query.eq('type', typeFilter);
-  }
-
-  if (genreFilter !== 'all') {
-    query = query.contains('genres', [genreFilter]);
-  }
-
-  switch (sortBy) {
-    case 'date-asc':
-      query = query.order('created_at', { ascending: true });
-      break;
-    case 'score-desc':
-      query = query.order('score', { ascending: false });
-      break;
-    case 'score-asc':
-      query = query.order('score', { ascending: true });
-      break;
-    case 'likes-desc':
-      // Will sort after fetching
-      break;
-    default:
-      query = query.order('created_at', { ascending: false });
-  }
-
-  const { data: reviews, error } = await query;
-
-  if (error) throw error;
-
-  const processedReviews = reviews.map(review => ({
-    ...review,
-    like_count: review.review_likes?.length || 0,
-    user_liked: review.review_likes?.some(like => like.user_id === currentUser?.id) || false,
-    user: review.profiles || {
-      username: 'Anonymous',
-      full_name: 'Anonymous',
-      avatar_url: generatePlaceholderImage()
-    }
-  }));
-
-  // Apply sorting for likes (can't do in SQL easily)
-  if (sortBy === 'likes-desc') {
-    processedReviews.sort((a, b) => b.like_count - a.like_count);
-  }
-
-  renderReviews(processedReviews, els.globalReviewsList, els.globalReviewsEmpty, false);
-
-  if (els.globalCount) {
-    els.globalCount.textContent = `${processedReviews.length} review${processedReviews.length === 1 ? '' : 's'}`;
-  }
-
-      updateGenreFilter(processedReviews);
-    
-    }
-    catch (error) {
-      console.error('Error loading global reviews:', error)
-      els.globalReviewsList.innerHTML = ''
-      els.globalReviewsEmpty.style.display = 'block'
-      els.globalReviewsEmpty.textContent = 'Error loading reviews: ' + error.message
+  // Utility Functions
+  function debounce(func, wait) {
+    let timeout
+    return function executedFunction(...args) {
+      const later = () => {
+        clearTimeout(timeout)
+        func(...args)
+      }
+      clearTimeout(timeout)
+      timeout = setTimeout(later, wait)
     }
   }
+
+  function generatePlaceholderImage() {
+    return 'data:image/svg+xml;utf8,' + encodeURIComponent(`
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 120 120">
+        <rect width="120" height="120" fill="#0f1520"/>
+        <rect x="10" y="10" width="100" height="100" fill="#0b1220" rx="6"/>
+        <text x="60" y="60" dominant-baseline="central" text-anchor="middle" 
+              font-family="Inter, sans-serif" font-size="10" fill="#7e94b1" font-weight="500">
+          No Image
+        </text>
+      </svg>
+    `)
+  }
+
+  function escapeHtml(text) {
+    if (typeof text !== 'string') return ''
+    const div = document.createElement('div')
+    div.textContent = text
+    return div.innerHTML
+  }
+
+})();
