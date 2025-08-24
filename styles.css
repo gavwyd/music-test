@@ -1,3 +1,219 @@
+/* --- Album Search & Details Modal Styles --- */
+.album-search-btn {
+  padding: 10px 18px;
+  border-radius: 12px;
+  background: linear-gradient(180deg, #1a2c4a, #0e1a2d);
+  color: var(--text);
+  border: 1px solid rgba(125, 175, 255, 0.25);
+  font-weight: 600;
+  font-size: 15px;
+  margin: 0 0 18px 0;
+  cursor: pointer;
+  box-shadow: var(--shadow);
+  transition: 0.18s;
+}
+.album-search-btn:hover {
+  background: linear-gradient(180deg, #2a5aa0, #234c88);
+  color: var(--accent-2);
+}
+
+#album-search-modal .modal-content,
+#album-details-modal .modal-content {
+  background: #181f2a;
+  color: #fff;
+  border-radius: 14px;
+  padding: 28px 28px 18px 28px;
+  box-shadow: 0 8px 32px rgba(0,0,0,0.25);
+  width: 100%;
+  max-width: 480px;
+  position: relative;
+}
+
+#album-search-modal h2 {
+  margin-top: 0;
+  font-size: 22px;
+  font-weight: 700;
+  color: var(--accent);
+}
+
+#album-search-input {
+  width: 100%;
+  padding: 12px 16px;
+  border-radius: 10px;
+  border: 1px solid rgba(125, 175, 255, 0.18);
+  background: var(--panel-2);
+  color: var(--text);
+  font-size: 15px;
+  margin-bottom: 18px;
+}
+
+#album-search-results {
+  max-height: 320px;
+  overflow-y: auto;
+  margin-top: 6px;
+}
+
+.album-search-result {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 10px 0;
+  border-bottom: 1px solid rgba(255,255,255,0.06);
+  cursor: pointer;
+  transition: background 0.15s;
+}
+.album-search-result:last-child {
+  border-bottom: none;
+}
+.album-search-result:hover {
+  background: var(--panel);
+}
+.album-thumb {
+  width: 54px;
+  height: 54px;
+  border-radius: 8px;
+  object-fit: cover;
+  background: var(--panel-2);
+  border: 1px solid rgba(125,175,255,0.12);
+}
+.album-info {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+.album-title {
+  font-weight: 600;
+  color: var(--text);
+  font-size: 15px;
+  line-height: 1.2;
+}
+.album-artist {
+  color: var(--muted);
+  font-size: 13px;
+}
+.album-year {
+  color: var(--muted);
+  font-size: 12px;
+}
+
+/* Album Details Modal */
+#album-details-modal .modal-content {
+  max-width: 540px;
+}
+.album-details-header {
+  display: flex;
+  align-items: center;
+  gap: 18px;
+  margin-bottom: 18px;
+}
+.album-details-thumb {
+  width: 90px;
+  height: 90px;
+  border-radius: 10px;
+  object-fit: cover;
+  background: var(--panel-2);
+  border: 1px solid rgba(125,175,255,0.12);
+}
+.album-details-meta h3 {
+  margin: 0 0 4px 0;
+  font-size: 20px;
+  font-weight: 700;
+  color: var(--accent);
+}
+.album-details-meta > div {
+  color: var(--muted);
+  font-size: 14px;
+}
+.album-tracklist {
+  margin-bottom: 18px;
+}
+.album-tracklist h4 {
+  margin: 0 0 8px 0;
+  font-size: 16px;
+  font-weight: 600;
+  color: var(--accent-2);
+}
+.album-tracklist ol {
+  padding-left: 20px;
+  margin: 0;
+  color: var(--text);
+  font-size: 14px;
+}
+.album-tracklist li {
+  margin-bottom: 2px;
+}
+.album-reviews {
+  margin-top: 10px;
+}
+.album-score-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 8px;
+}
+.album-score {
+  font-weight: 800;
+  padding: 6px 12px;
+  border-radius: 12px;
+  background: #0c1526;
+  border: 1px solid rgba(125, 175, 255, 0.35);
+  font-size: 15px;
+  color: var(--accent);
+}
+.album-score-label {
+  font-weight: 700;
+  font-size: 15px;
+  color: var(--accent-2);
+}
+.album-review-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.album-review-item {
+  background: var(--panel-2);
+  border-radius: 8px;
+  padding: 10px 14px;
+  color: var(--text);
+  font-size: 14px;
+  border: 1px solid rgba(255,255,255,0.06);
+}
+
+/* Modal close button */
+#album-search-modal .close,
+#album-details-modal .close {
+  position: absolute;
+  right: 18px;
+  top: 12px;
+  color: #fff;
+  font-size: 2em;
+  cursor: pointer;
+  z-index: 2;
+  background: none;
+  border: none;
+  line-height: 1;
+}
+#album-search-modal .close:hover,
+#album-details-modal .close:hover {
+  color: var(--accent-2);
+}
+
+@media (max-width: 600px) {
+  #album-search-modal .modal-content,
+  #album-details-modal .modal-content {
+    width: 98%;
+    padding: 14px 6px 8px 6px;
+  }
+  .album-details-header {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 10px;
+  }
+  .album-details-thumb {
+    width: 70px;
+    height: 70px;
+  }
+}
 :root {
     --bg: #0b0f14;
     --panel: #0f1520;
