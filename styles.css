@@ -151,26 +151,18 @@
   gap: 10px;
   margin-bottom: 8px;
 }
-.album-score {
-  font-weight: 800;
-  padding: 6px 12px;
-  border-radius: 12px;
-  background: #0c1526;
-  border: 1px solid rgba(125, 175, 255, 0.35);
-  font-size: 15px;
-  color: var(--accent);
-}
 /* Album score and indicator style (matches .album-score) */
 .album-score, .album-score-label {
   display: inline-block;
   font-weight: 800;
-  font-size: 13px;
   color: var(--accent);
   background: #0c1526;
   border: 1px solid rgba(125,175,255,0.35);
-  padding: 6px 10px;
   border-radius: 12px;
   margin: 6px 0 6px 8px;
+  /* Use font-size and padding for .album-score and .album-score-label separately if needed */
+  font-size: 15px;
+  padding: 6px 12px;
 }
 .album-review-list {
   display: flex;
