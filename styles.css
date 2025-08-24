@@ -127,25 +127,27 @@ h3 {
   border: 2px solid var(--accent);
 }
 
-.user-actions {
-  display: flex;
-  align-items: center;
-  gap: 8px;
+.clickable {
+  cursor: pointer;
+  transition: color 0.18s ease;
 }
 
-/* Profile Components */
-.profile-header {
-  display: flex;
-  align-items: center;
-  gap: 16px;
+.clickable:hover {
+  color: var(--accent);
 }
 
+/* Profile Specific */
 .profile-avatar {
-  width: 64px;
-  height: 64px;
+  width: 80px;
+  height: 80px;
   border-radius: 50%;
   border: 3px solid var(--accent);
-  object-fit: cover;
+  margin-right: 16px;
+}
+
+#profileHeader {
+  display: flex;
+  align-items: center;
 }
 
 .profile-info {
@@ -154,116 +156,14 @@ h3 {
 
 .profile-bio {
   color: var(--muted);
-  margin-top: 4px;
-  font-size: 14px;
-  line-height: 1.4;
+  margin: 8px 0;
+  font-style: italic;
 }
 
 .profile-stats {
-  display: flex;
-  gap: 16px;
+  color: var(--muted);
+  font-size: 14px;
   margin-top: 8px;
-  font-size: 14px;
-}
-
-.profile-stat {
-  color: var(--accent);
-  font-weight: 600;
-}
-
-/* Comments */
-.comments-list {
-  max-height: 400px;
-  overflow-y: auto;
-  margin-bottom: 16px;
-}
-
-.comment {
-  padding: 12px;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.06);
-  display: flex;
-  gap: 10px;
-}
-
-.comment:last-child {
-  border-bottom: none;
-}
-
-.comment-avatar {
-  width: 32px;
-  height: 32px;
-  border-radius: 50%;
-  border: 1px solid var(--accent);
-  object-fit: cover;
-  cursor: pointer;
-}
-
-.comment-content {
-  flex: 1;
-  min-width: 0;
-}
-
-.comment-header {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  margin-bottom: 4px;
-}
-
-.comment-username {
-  font-weight: 600;
-  color: var(--text);
-  font-size: 14px;
-  cursor: pointer;
-}
-
-.comment-username:hover {
-  color: var(--accent);
-}
-
-.comment-date {
-  color: var(--muted);
-  font-size: 12px;
-  font-weight: 400;
-}
-
-.comment-text {
-  color: var(--text);
-  font-size: 14px;
-  line-height: 1.4;
-  word-wrap: break-word;
-}
-
-.add-comment {
-  border-top: 1px solid rgba(255, 255, 255, 0.06);
-  padding-top: 16px;
-}
-
-.add-comment textarea {
-  width: 100%;
-  margin-bottom: 12px;
-  min-height: 80px;
-  resize: vertical;
-}
-
-.comments-btn {
-  background: none;
-  border: 1px solid rgba(255, 255, 255, 0.08);
-  border-radius: 12px;
-  padding: 6px 10px;
-  cursor: pointer;
-  color: var(--muted);
-  transition: 0.18s ease;
-  display: flex;
-  align-items: center;
-  gap: 4px;
-  font-family: inherit;
-  font-size: 12px;
-}
-
-.comments-btn:hover {
-  color: var(--text);
-  border-color: rgba(255, 255, 255, 0.15);
 }
 
 /* Modals */
@@ -292,10 +192,11 @@ h3 {
   box-shadow: var(--shadow);
   width: 90%;
   max-width: 480px;
-  position: relative;
+  max-height: 90vh;
+  overflow-y: auto;
 }
 
-.modal-large {
+.modal-content.comments-modal {
   max-width: 600px;
 }
 
@@ -303,6 +204,7 @@ h3 {
   padding: 24px 24px 16px;
   border-bottom: 1px solid rgba(255, 255, 255, 0.06);
   text-align: center;
+  position: relative;
 }
 
 .modal-header h3 {
@@ -334,6 +236,76 @@ h3 {
 
 .close-btn:hover {
   color: var(--text);
+}
+
+/* Comments */
+.review-summary {
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  border-radius: 12px;
+  padding: 16px;
+  margin-bottom: 20px;
+  background: var(--panel-2);
+}
+
+.comments-list {
+  max-height: 400px;
+  overflow-y: auto;
+  margin-bottom: 20px;
+}
+
+.comment {
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  border-radius: 12px;
+  padding: 12px;
+  margin-bottom: 12px;
+  background: var(--panel-2);
+}
+
+.comment-header {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 8px;
+}
+
+.comment-avatar {
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  border: 1px solid var(--accent);
+}
+
+.comment-author {
+  font-weight: 600;
+  color: var(--accent);
+  cursor: pointer;
+  text-decoration: none;
+}
+
+.comment-author:hover {
+  color: var(--accent-2);
+}
+
+.comment-date {
+  color: var(--muted);
+  font-size: 12px;
+  margin-left: auto;
+}
+
+.comment-text {
+  color: var(--text);
+  font-size: 14px;
+  line-height: 1.5;
+}
+
+.add-comment-section {
+  border-top: 1px solid rgba(255, 255, 255, 0.06);
+  padding-top: 20px;
+}
+
+.add-comment-section textarea {
+  width: 100%;
+  margin-bottom: 12px;
 }
 
 /* Loading */
@@ -459,6 +431,12 @@ h3 {
   gap: 22px;
 }
 
+@media (max-width: 980px) {
+  .grid {
+    grid-template-columns: 1fr;
+  }
+}
+
 /* Cards */
 .card {
   background: linear-gradient(180deg, #0e1626, var(--panel));
@@ -495,6 +473,12 @@ h3 {
 
 .row-1 {
   grid-template-columns: 1fr;
+}
+
+@media (max-width: 780px) {
+  .row, .row-3 {
+    grid-template-columns: 1fr;
+  }
 }
 
 /* Form Elements */
@@ -843,15 +827,16 @@ select:focus {
   width: 20px;
   height: 20px;
   border-radius: 50%;
-  cursor: pointer;
 }
 
-.r-username {
-  cursor: pointer;
-}
-
-.r-username:hover {
+.r-user .user-link {
   color: var(--accent);
+  cursor: pointer;
+  text-decoration: none;
+}
+
+.r-user .user-link:hover {
+  color: var(--accent-2);
 }
 
 .like-section {
@@ -891,10 +876,31 @@ select:focus {
   font-weight: 500;
 }
 
+.comment-btn {
+  background: none;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 12px;
+  padding: 8px 12px;
+  cursor: pointer;
+  color: var(--muted);
+  transition: 0.18s ease;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  font-family: inherit;
+  font-size: 12px;
+}
+
+.comment-btn:hover {
+  color: var(--text);
+  border-color: rgba(255, 255, 255, 0.15);
+}
+
 .r-actions {
   display: flex;
+  flex-direction: column;
+  align-items: center;
   gap: 8px;
-  margin-top: 8px;
 }
 
 .toolbar {
@@ -960,16 +966,6 @@ select:focus {
 }
 
 /* Mobile Responsive Styles */
-@media (max-width: 1024px) {
-  .grid {
-    grid-template-columns: 1fr;
-  }
-  
-  .app {
-    padding: 20px;
-  }
-}
-
 @media (max-width: 768px) {
   .app {
     padding: 16px;
@@ -985,34 +981,53 @@ select:focus {
     font-size: 24px;
   }
   
-  .tabs {
-    padding: 0 4px;
-    gap: 6px;
-  }
-  
-  .tab {
-    padding: 8px 10px;
-    font-size: 13px;
-  }
-  
   .user-bar {
     flex-direction: column;
     gap: 12px;
-    align-items: stretch;
     text-align: center;
   }
   
-  .user-actions {
-    justify-content: center;
+  .tabs {
+    flex-wrap: wrap;
+    gap: 8px;
   }
   
-  .profile-header {
+  .tab {
+    font-size: 14px;
+    padding: 8px 12px;
+  }
+  
+  .r-card {
+    grid-template-columns: 80px 1fr;
+    gap: 10px;
+  }
+  
+  .r-card .r-actions {
+    grid-column: 1/-1;
+    justify-self: start;
+    flex-direction: row;
+    margin-top: 12px;
+  }
+  
+  .r-cover {
+    width: 80px;
+    height: 80px;
+  }
+  
+  .filters {
     flex-direction: column;
-    text-align: center;
+    align-items: stretch;
+    gap: 8px;
   }
   
-  .profile-stats {
-    justify-content: center;
+  .filter-group {
+    justify-content: space-between;
+  }
+  
+  .filter-group select,
+  .filter-group input {
+    max-width: none;
+    flex: 1;
   }
   
   .modal-content {
@@ -1024,71 +1039,9 @@ select:focus {
     padding: 16px;
   }
   
-  .filters {
-    flex-direction: column;
-    align-items: stretch;
-  }
-  
-  .filter-group {
-    justify-content: space-between;
-  }
-  
-  .filter-group input,
-  .filter-group select {
-    max-width: none;
-  }
-}
-
-@media (max-width: 640px) {
-  .r-card {
-    grid-template-columns: 80px 1fr;
-    gap: 10px;
-  }
-  
-  .r-card .like-section {
-    grid-column: 1/-1;
-    justify-self: start;
-    flex-direction: row;
-    margin-top: 8px;
-  }
-  
-  .r-cover {
-    width: 80px;
-    height: 80px;
-  }
-  
-  .r-title {
-    font-size: 14px;
-  }
-  
-  .r-artist {
-    font-size: 13px;
-  }
-  
-  .r-text {
-    font-size: 13px;
-  }
-  
-  .r-actions {
-    grid-column: 1/-1;
-    margin-top: 8px;
-  }
-  
-  .comment {
-    padding: 8px;
-  }
-  
-  .comment-avatar {
-    width: 28px;
-    height: 28px;
-  }
-  
-  .auth-buttons {
-    gap: 8px;
-  }
-  
   .toolbar {
     flex-direction: column;
+    gap: 8px;
   }
   
   .btn {
@@ -1097,6 +1050,36 @@ select:focus {
   
   .btn.small {
     width: auto;
+  }
+  
+  .grid {
+    gap: 16px;
+  }
+  
+  .card .hd {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 12px;
+  }
+  
+  .card .hd .toolbar {
+    flex-direction: row;
+    justify-content: center;
+  }
+  
+  #profileHeader {
+    flex-direction: column;
+    text-align: center;
+    gap: 16px;
+  }
+  
+  .profile-avatar {
+    margin: 0;
+  }
+  
+  .share-link-container {
+    flex-direction: column;
+    gap: 12px;
   }
 }
 
@@ -1109,23 +1092,8 @@ select:focus {
     font-size: 20px;
   }
   
-  .brand .logo {
-    width: 36px;
-    height: 36px;
-  }
-  
-  .tabs {
-    gap: 4px;
-  }
-  
-  .tab {
-    padding: 6px 8px;
-    font-size: 12px;
-  }
-  
-  .pill {
-    font-size: 11px;
-    padding: 6px 8px;
+  .sub {
+    font-size: 14px;
   }
   
   .r-card {
@@ -1134,14 +1102,30 @@ select:focus {
   }
   
   .r-cover {
-    width: 100%;
-    height: 120px;
-    margin: 0 auto;
+    width: 100px;
+    height: 100px;
+    justify-self: center;
   }
   
-  .like-section,
-  .r-actions {
-    grid-column: 1;
-    justify-self: center;
+  .modal-content {
+    width: 98%;
+    margin: 10px;
+  }
+  
+  .modal-header {
+    padding: 16px;
+  }
+  
+  .modal-body {
+    padding: 12px;
+  }
+  
+  .tabs {
+    justify-content: center;
+  }
+  
+  .pill {
+    font-size: 11px;
+    padding: 6px 8px;
   }
 }
