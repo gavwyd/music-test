@@ -236,7 +236,7 @@
     isRegistering = false
     els.registerFields.style.display = 'none'
     els.emailLoginBtn.style.display = ''
-    els.emailRegisterBtn.style.display = ''
+    els.emailRegisterBtn.style.display = 'none'
     els.switchToLogin.style.display = 'none'
     els.loginError.style.display = 'none'
   }
@@ -1364,7 +1364,7 @@
         .from('review_comments')
         .select(`
           *,
-          profiles:user_id (
+          profiles:id (
             full_name,
             username,
             avatar_url
@@ -1378,16 +1378,17 @@
       // Render comments
       els.commentsList.innerHTML = ''
       
-      if (comments.length === 0) {
+      if (!comments || comments.length === 0) {
         els.commentsList.innerHTML = '<div class="empty">No comments yet. Be the first to comment!</div>'
       } else {
         comments.forEach(comment => {
+          const userProfile = comment.profiles || { username: 'Anonymous', full_name: 'Anonymous', avatar_url: generatePlaceholderImage() }
           const commentDiv = document.createElement('div')
           commentDiv.className = 'comment'
           commentDiv.innerHTML = `
             <div class="comment-header">
-              <img src="${comment.profiles.avatar_url || generatePlaceholderImage()}" alt="User" class="comment-avatar" onerror="this.src='${generatePlaceholderImage()}'">
-              <a href="#" class="comment-author" data-user-id="${comment.user_id}">${escapeHtml(comment.profiles.username || comment.profiles.full_name)}</a>
+              <img src="${userProfile.avatar_url || generatePlaceholderImage()}" alt="User" class="comment-avatar" onerror="this.src='${generatePlaceholderImage()}'">
+              <a href="#" class="comment-author" data-user-id="${comment.user_id}">${escapeHtml(userProfile.username || userProfile.full_name)}</a>
               <span class="comment-date">${new Date(comment.created_at).toLocaleDateString()}</span>
             </div>
             <div class="comment-text">${escapeHtml(comment.comment_text)}</div>
