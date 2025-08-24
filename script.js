@@ -1706,22 +1706,11 @@ window.URL.revokeObjectURL(url);
 
       let query = supabase
         .from('reviews')
-        .select(`
-          *,
-          profiles:user_id (
-            username,
-            full_name,
-            avatar_url
-          ),
-          review_likes (
-            id,
-            user_id
-          )
-        `)
+        .select('*');
 
-  if (searchQuery) {
-    query = query.or(`title.ilike.%${searchQuery}%,artist.ilike.%${searchQuery}%,review_text.ilike.%${searchQuery}%`);
-  }
+if (searchQuery) {
+  query = query.or(`title.ilike.%${searchQuery}%,artist.ilike.%${searchQuery}%,review_text.ilike.%${searchQuery}%`);
+}
 
   if (typeFilter !== 'all') {
     query = query.eq('type', typeFilter);
