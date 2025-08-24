@@ -16,6 +16,8 @@ function addAlbumSearchInputToTabs() {
   tabs.appendChild(searchContainer);
   const input = document.getElementById('album-search-tab-input');
   const suggestions = document.getElementById('album-search-suggestions');
+  // Use the same logic as the add reviews search for suggestions
+  let searchTimeout;
   input.addEventListener('input', async (e) => {
     const query = e.target.value.trim();
     if (!query) {
@@ -23,30 +25,37 @@ function addAlbumSearchInputToTabs() {
       suggestions.innerHTML = '';
       return;
     }
-    const results = await searchSpotifyAlbums(query);
-    if (!results.length) {
-      suggestions.innerHTML = '<div class="search-suggestion">No results found.</div>';
+    if (searchTimeout) clearTimeout(searchTimeout);
+    searchTimeout = setTimeout(async () => {
+      const results = await searchSpotify(query); // use the same function as add reviews search
+      if (!results.length) {
+        suggestions.innerHTML = '<div class="search-suggestion">No results found.</div>';
+        suggestions.style.display = 'block';
+        return;
+      }
+      suggestions.innerHTML = '';
+      results.forEach(item => {
+        const div = document.createElement('div');
+        div.className = 'search-suggestion';
+        const imgSrc = item.cover && item.cover !== '' ? item.cover : (typeof generatePlaceholderImage === 'function' ? generatePlaceholderImage() : '');
+        div.innerHTML = `
+          <img src="${imgSrc}" alt="Cover" onerror="this.src='${typeof generatePlaceholderImage === 'function' ? generatePlaceholderImage() : ''}'">
+          <div class="suggestion-info">
+            <div class="suggestion-title">${escapeHtml(item.title)}</div>
+            <div class="suggestion-artist">${escapeHtml(item.artist)}</div>
+            ${item.album_title ? `<div class="suggestion-artist">${escapeHtml(item.album_title)}</div>` : ''}
+          </div>
+          <div class="suggestion-type">${item.type === 'album' ? 'Album' : 'Single'}</div>
+        `;
+        div.addEventListener('click', () => {
+          openAlbumDetailsModal(item.id);
+          input.value = '';
+          suggestions.style.display = 'none';
+        });
+        suggestions.appendChild(div);
+      });
       suggestions.style.display = 'block';
-      return;
-    }
-    suggestions.innerHTML = results.map(album => `
-      <div class="search-suggestion" data-album-id="${album.id}">
-        <img src="${album.images[0]?.url || ''}" alt="${album.name}" />
-        <div class="suggestion-info">
-          <div class="suggestion-title">${album.name}</div>
-          <div class="suggestion-artist">${album.artists.map(a => a.name).join(', ')}</div>
-          <div class="suggestion-type">${album.album_type.charAt(0).toUpperCase() + album.album_type.slice(1)}</div>
-        </div>
-      </div>
-    `).join('');
-    suggestions.style.display = 'block';
-    Array.from(suggestions.getElementsByClassName('search-suggestion')).forEach(el => {
-      el.onclick = () => {
-        openAlbumDetailsModal(el.getAttribute('data-album-id'));
-        suggestions.style.display = 'none';
-        input.value = '';
-      };
-    });
+    }, 300);
   });
   // Hide suggestions on blur
   input.addEventListener('blur', () => {
@@ -1482,8 +1491,22 @@ window.addEventListener('DOMContentLoaded', () => {
     
     const fragment = document.createDocumentFragment()
     reviews.forEach(review => {
-      fragment.appendChild(createReviewCard(review, showActions))
-    })
+      const card = createReviewCard(review, showActions);
+      // Add click handler to album cover to open album details modal
+      const coverImg = card.querySelector('.r-cover');
+      if (coverImg && review.spotify_url && review.type === 'album' && review.spotify_url.includes('/album/')) {
+        // Extract album id from spotify_url
+        const match = review.spotify_url.match(/\/album\/([a-zA-Z0-9]+)/);
+        if (match && match[1]) {
+          coverImg.style.cursor = 'pointer';
+          coverImg.addEventListener('click', (e) => {
+            e.preventDefault();
+            openAlbumDetailsModal(match[1]);
+          });
+        }
+      }
+      fragment.appendChild(card);
+    });
     
     listEl.appendChild(fragment)
   }
