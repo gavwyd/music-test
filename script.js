@@ -48,9 +48,7 @@ function addAlbumSearchInputToTabs() {
           <div class="suggestion-type">${item.type === 'album' ? 'Album' : 'Single'}</div>
         `;
         div.addEventListener('click', () => {
-          openAlbumDetailsModal(item.id);
-          input.value = '';
-          suggestions.style.display = 'none';
+          window.location.href = `album.html?id=${item.id}`;
         });
         suggestions.appendChild(div);
       });
@@ -1501,7 +1499,7 @@ window.addEventListener('DOMContentLoaded', () => {
           coverImg.style.cursor = 'pointer';
           coverImg.addEventListener('click', (e) => {
             e.preventDefault();
-            openAlbumDetailsModal(match[1]);
+            window.location.href = `album.html?id=${match[1]}`;
           });
         }
       }
