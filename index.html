@@ -29,7 +29,6 @@
             <label for="loginPassword">Password</label>
             <input id="loginPassword" type="password" placeholder="Enter your password" />
           </div>
-          
           <!-- Registration fields -->
           <div id="registerFields" style="display:none;">
             <div class="form-group">
@@ -42,7 +41,6 @@
               <textarea id="registerBio" rows="3" placeholder="Tell us about yourself..."></textarea>
             </div>
           </div>
-          
           <div class="auth-buttons">
             <button id="emailLoginBtn" class="btn primary">
               <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
@@ -50,27 +48,22 @@
               </svg>
               Sign In
             </button>
-            
             <div class="auth-divider">
               <span>or</span>
             </div>
-            
             <button id="emailRegisterBtn" class="btn ghost">
               <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
                 <path d="M19 13H13V19H11V13H5V11H11V5H13V11H19V13Z"/>
               </svg>
               Create Account
             </button>
-            
             <button id="switchToLogin" class="btn ghost small" style="display:none;">Back to Sign In</button>
           </div>
         </div>
-
         <div id="loginError" class="error-msg" style="display:none"></div>
       </div>
     </div>
   </div>
-
   <div class="app">
     <!-- User Bar -->
     <div id="userBar" class="user-bar" style="display:none">
@@ -80,13 +73,11 @@
       </div>
       <button id="logoutBtn" class="btn ghost small">Logout</button>
     </div>
-
     <!-- Loading -->
     <div id="loadingApp" class="loading" style="display:none; justify-content:center; padding:40px;">
       <div class="spinner"></div>
       <span>Loading...</span>
     </div>
-
     <!-- Main App Content -->
     <div id="mainContent" style="display:none">
       <div class="brand">
@@ -96,7 +87,6 @@
           <div class="sub">Search or paste Spotify links for albums and singles. Rate 0-10 and share with the community.</div>
         </div>
       </div>
-
       <div class="tabs">
         <button class="tab" data-tab="add">Add Review</button>
         <button class="tab" data-tab="my-reviews">My Reviews</button>
@@ -105,7 +95,6 @@
         <button class="tab" data-tab="about">About</button>
         <span class="right pill" id="statsPill">0 reviews</span>
       </div>
-
       <!-- Add Review Tab -->
       <section id="tab-add" class="grid" style="display:none">
         <div class="card">
@@ -121,9 +110,7 @@
                 <div class="hint">Search by artist, album, or song name. Or paste any Spotify album/track URL.</div>
               </div>
             </div>
-
             <div class="spacer"></div>
-
             <div id="selectedMusic" style="display:none">
               <div class="r-card" style="margin-bottom:16px;">
                 <img id="selectedCover" class="r-cover" alt="Cover" />
@@ -137,9 +124,7 @@
                 </div>
               </div>
             </div>
-
             <div class="spacer"></div>
-
             <div class="row-1 row">
               <div class="rating">
                 <label for="score">Score</label>
@@ -151,25 +136,20 @@
                 <input id="manualScore" type="number" min="0" max="10" step="0.01" placeholder="e.g., 8.74" />
               </div>
             </div>
-
             <div class="spacer"></div>
-
             <div class="row-1">
               <div>
                 <label for="review">Your review</label>
                 <textarea id="review" rows="5" placeholder="What did you think about this music?"></textarea>
               </div>
             </div>
-
             <div class="spacer"></div>
-
             <div class="toolbar">
               <button id="saveBtn" class="btn primary">Save Review</button>
               <button id="clearFormBtn" class="btn ghost">Clear</button>
             </div>
           </div>
         </div>
-
         <div class="card">
           <div class="hd"><strong>Preview</strong></div>
           <div class="bd" id="previewPane">
@@ -177,7 +157,6 @@
           </div>
         </div>
       </section>
-
       <!-- My Reviews Tab -->
       <section id="tab-my-reviews" style="display:none">
         <div class="card">
@@ -208,7 +187,6 @@
           </div>
         </div>
       </section>
-
       <!-- Global Feed Tab -->
       <section id="tab-global-feed">
         <div class="card">
@@ -247,7 +225,6 @@
           </div>
         </div>
       </section>
-
       <!-- Profile View Tab -->
       <section id="tab-profile-view" style="display:none">
         <div class="card">
@@ -271,7 +248,6 @@
           </div>
         </div>
       </section>
-
       <!-- About Tab -->
       <section id="tab-about" style="display:none">
         <div class="card">
@@ -296,10 +272,6 @@
       </section>
     </div>
   </div>
-
-  <!-- Album Details Container (for album.js logic) -->
-  <div id="albumDetailsContainer"></div>
-
   <!-- Share Profile Modal -->
   <div id="shareModal" class="modal">
     <div class="modal-content">
@@ -317,7 +289,6 @@
       </div>
     </div>
   </div>
-
   <!-- Edit Profile Modal -->
   <div id="editProfileModal" class="modal">
     <div class="modal-content">
@@ -348,7 +319,6 @@
       </div>
     </div>
   </div>
-
   <!-- Comments Modal -->
   <div id="commentsModal" class="modal">
     <div class="modal-content comments-modal">
@@ -366,7 +336,6 @@
       </div>
     </div>
   </div>
-
   <!-- Album/Single Details Modal -->
   <div id="musicDetailsModal" class="modal">
     <div class="modal-content" style="max-width:600px;">
@@ -398,113 +367,7 @@
       </div>
     </div>
   </div>
-
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <script src="script.js"></script>
-  <script>
-    // album.js - Album Details Page Logic
-
-    // --- CONFIG ---
-    const SUPABASE_URL = 'YOUR_SUPABASE_URL'; // <-- Replace with your Supabase URL
-    const SUPABASE_KEY = 'YOUR_SUPABASE_KEY'; // <-- Replace with your Supabase anon key
-    const SPOTIFY_TOKEN = 'YOUR_SPOTIFY_TOKEN'; // <-- Replace with your Spotify token logic
-
-    // --- Supabase Client ---can
-    const { createClient } = window.supabase;
-    const supabase = createClient(SUPABASE_URL, SUPABASE_KEY);
-
-    // --- Helpers ---
-    function getAlbumIdFromUrl() {
-      const params = new URLSearchParams(window.location.search);
-      return params.get('id');
-    }
-
-    function escapeHtml(text) {
-      if (!text) return '';
-      return text.replace(/[&<>\"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','\"':'&quot;'}[c]));
-    }
-
-    function averageScore(reviews) {
-      if (!reviews.length) return '-';
-      const sum = reviews.reduce((acc, r) => acc + (parseFloat(r.score) || 0), 0);
-      return (sum / reviews.length).toFixed(1);
-    }
-
-    // --- Fetch Album Details from Spotify ---
-    async function fetchSpotifyAlbum(albumId) {
-      const res = await fetch(`https://api.spotify.com/v1/albums/${albumId}`, {
-        headers: { 'Authorization': `Bearer ${SPOTIFY_TOKEN}` }
-      });
-      if (!res.ok) return null;
-      return await res.json();
-    }
-
-    // --- Fetch Reviews for Album from Supabase ---
-    async function fetchReviews(albumId) {
-      // You may need to adjust the table/column names
-      const { data, error } = await supabase
-        .from('reviews')
-        .select('*')
-        .eq('album_id', albumId);
-      return data || [];
-    }
-
-    // --- Render Album Details Page ---
-    async function renderAlbumDetailsPage() {
-      const albumId = getAlbumIdFromUrl();
-      if (!albumId) {
-        document.getElementById('albumDetailsContainer').innerHTML = '<div class="empty">No album selected.</div>';
-        return;
-      }
-      document.getElementById('albumDetailsContainer').innerHTML = '<div class="loading"><div class="spinner"></div> Loading album...</div>';
-
-      // Fetch album and reviews
-      const [album, reviews] = await Promise.all([
-        fetchSpotifyAlbum(albumId),
-        fetchReviews(albumId)
-      ]);
-
-      if (!album) {
-        document.getElementById('albumDetailsContainer').innerHTML = '<div class="empty">Album not found.</div>';
-        return;
-      }
-
-      // Render
-      let avgScore = averageScore(reviews);
-      let reviewSection = reviews.length ? `
-        <div class="album-reviews">
-          <div class="album-score-row">
-            <span class="album-score">${avgScore}</span>
-            <span class="album-score-label">Average Score</span>
-          </div>
-          <div class="album-review-list">
-            ${reviews.map(r => `<div class="album-review-item">${escapeHtml(r.review_text)}</div>`).join('')}
-          </div>
-        </div>
-      ` : '<div class="album-reviews"><div class="album-score-row"><span class="album-score">-</span><span class="album-score-label">No reviews yet</span></div></div>';
-
-      document.getElementById('albumDetailsContainer').innerHTML = `
-        <div class="album-details-header">
-          <img src="${album.images[0]?.url || ''}" alt="${album.name}" class="album-details-thumb" />
-          <div class="album-details-meta">
-            <h3>${album.name}</h3>
-            <div class="album-score-label">${album.album_type.charAt(0).toUpperCase() + album.album_type.slice(1)}</div>
-            <div>${album.artists.map(a => a.name).join(', ')}</div>
-            <div>${album.release_date?.slice(0,4) || ''}</div>
-          </div>
-        </div>
-        <div class="album-tracklist">
-          <h4>Tracklist</h4>
-          <ol>
-            ${album.tracks.items.map(t => `<li>${escapeHtml(t.name)}</li>`).join('')}
-          </ol>
-        </div>
-        ${reviewSection}
-      `;
-    }
-
-    // --- Run on page load ---
-    window.addEventListener('DOMContentLoaded', renderAlbumDetailsPage);
-  </script>
 </body>
 </html>
