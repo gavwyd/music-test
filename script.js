@@ -958,7 +958,7 @@
         release_date: selectedMusicData.release_date || null
       }
 
-      const { data, error } = await supabase
+      const { error } = await supabase
         .from('reviews')
         .insert(reviewData)
         .select()
@@ -1534,7 +1534,12 @@
       }, 3000)
     } catch (error) {
       els.shareLink.select()
-      document.execCommand('copy')
+      // Deprecated: execCommand('copy') is used as a fallback for older browsers
+      try {
+        document.execCommand('copy')
+      } catch (e) {
+        console.warn('execCommand is deprecated and may not work in all browsers.', e)
+      }
       els.copySuccess.style.display = 'block'
       setTimeout(() => {
         els.copySuccess.style.display = 'none'
@@ -1615,5 +1620,3 @@
   }
 
 })();
-
-
