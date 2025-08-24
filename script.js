@@ -829,17 +829,15 @@
 
       renderReviews(processedReviews, els.globalReviewsList, els.globalReviewsEmpty, false)
       
-      if (els.globalCount) {
-        els.globalCount.textContent = `${processedReviews.length} review${processedReviews.length === 1 ? '' : 's'}`
+      if (els.statsPill) {
+        els.statsPill.textContent = `${processedReviews.length} review${processedReviews.length === 1 ? '' : 's'}`
       }
 
-      updateGenreFilter(processedReviews)
-
     } catch (error) {
-      console.error('Error loading global reviews:', error)
-      els.globalReviewsList.innerHTML = ''
-      els.globalReviewsEmpty.style.display = 'block'
-      els.globalReviewsEmpty.textContent = 'Error loading reviews: ' + error.message
+      console.error('Error loading my reviews:', error)
+      els.myReviewsList.innerHTML = ''
+      els.myReviewsEmpty.style.display = 'block'
+      els.myReviewsEmpty.textContent = 'Error loading reviews: ' + error.message
     }
   }
 
