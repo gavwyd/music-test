@@ -1,3 +1,16 @@
+// --- DOM Observer for UI Consistency ---
+window.addEventListener('DOMContentLoaded', () => {
+  addAlbumSearchButton();
+  createAlbumSearchModal();
+  createAlbumDetailsModal();
+  fixScoreAndReviewStyles();
+  // Also re-run style fixes after any AJAX/page update
+  const observer = new MutationObserver(() => {
+    fixScoreAndReviewStyles();
+    if (!document.getElementById('open-album-search-btn')) addAlbumSearchButton();
+  });
+  observer.observe(document.body, { childList: true, subtree: true });
+});
 // --- Album Search Modal Logic ---
 let albumSearchModal = null;
 let albumSearchInput = null;
@@ -133,18 +146,19 @@ function renderAlbumDetails(album, reviews) {
     <div class="album-reviews">
       <div class="album-score-row">
         <span class="album-score">${avgScore}</span>
-        <span class="album-score-label">Average Score</span>
+        <span class="album-score-label" style="font-weight:800;font-size:13px;color:var(--accent);background:#0c1526;border:1px solid rgba(125,175,255,0.35);padding:6px 10px;border-radius:12px;margin-left:8px;">Average Score</span>
       </div>
       <div class="album-review-list">
         ${reviews.map(r => `<div class="album-review-item">${escapeHtml(r.text)}</div>`).join('')}
       </div>
     </div>
-  ` : '<div class="album-reviews"><div class="album-score-row"><span class="album-score">-</span><span class="album-score-label">No reviews yet</span></div></div>';
+  ` : '<div class="album-reviews"><div class="album-score-row"><span class="album-score">-</span><span class="album-score-label" style="font-weight:800;font-size:13px;color:var(--accent);background:#0c1526;border:1px solid rgba(125,175,255,0.35);padding:6px 10px;border-radius:12px;margin-left:8px;">No reviews yet</span></div></div>';
   document.getElementById('album-details-body').innerHTML = `
     <div class="album-details-header">
       <img src="${album.images[0]?.url || ''}" alt="${album.name}" class="album-details-thumb" />
       <div class="album-details-meta">
         <h3>${album.name}</h3>
+        <div class="album-score-label" style="display:inline-block;font-weight:800;font-size:13px;color:var(--accent);background:#0c1526;border:1px solid rgba(125,175,255,0.35);padding:6px 10px;border-radius:12px;margin:6px 0;">${album.album_type.charAt(0).toUpperCase() + album.album_type.slice(1)}</div>
         <div>${album.artists.map(a => a.name).join(', ')}</div>
         <div>${album.release_date?.slice(0,4) || ''}</div>
       </div>
