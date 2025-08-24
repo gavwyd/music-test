@@ -785,8 +785,9 @@
         .eq('user_id', currentUser.id)
 
       if (searchQuery) {
-  query = query.or(`title.ilike.%${searchQuery}%,artist.ilike.%${searchQuery}%,review_text.ilike.%${searchQuery}%`)
-}
+        query = query.or(`title.ilike.%${searchQuery}%,artist.ilike.%${searchQuery}%,review_text.ilike.%${searchQuery}%`)
+      }
+
       if (typeFilter !== 'all') {
         query = query.eq('type', typeFilter)
       }
@@ -1648,7 +1649,7 @@
       const url = window.URL.createObjectURL(blob)
       const a = document.createElement('a')
       a.href = url
-     a.download = "my-music.txt"
+      a.download = "my-music.txt"title.ilike.%${searchQuery}%,artist.ilike.%${searchQuery}%,review_text.ilike.%${searchQuery}%`)
       }
 
       switch (sortBy) {
@@ -1724,4 +1725,3 @@
 
       if (searchQuery) {
         query
-
