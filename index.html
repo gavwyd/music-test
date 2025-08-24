@@ -3,8 +3,8 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>ReviewHub — Rate Spotify albums & singles (0.5—10)</title>
-  <meta name="description" content="Search or paste Spotify links for albums and singles, rate them 0.5—10, and share reviews with the community.">
+  <title>ReviewHub — Rate Spotify albums & singles (0-10)</title>
+  <meta name="description" content="Search or paste Spotify links for albums and singles, rate them 0-10, and share reviews with the community.">
   <link rel="stylesheet" href="styles.css">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -28,6 +28,17 @@
           <div class="form-group">
             <label for="loginPassword">Password</label>
             <input id="loginPassword" type="password" placeholder="Enter your password" />
+          </div>
+          <div id="signupFields" style="display:none;">
+            <div class="form-group">
+              <label for="signupUsername">Username</label>
+              <input id="signupUsername" type="text" placeholder="Choose a username" maxlength="30" />
+              <div class="hint">3-30 characters, letters, numbers, and underscores only</div>
+            </div>
+            <div class="form-group">
+              <label for="signupBio">Bio (Optional)</label>
+              <textarea id="signupBio" rows="2" placeholder="Tell us about yourself..." maxlength="200"></textarea>
+            </div>
           </div>
           
           <div class="auth-buttons">
@@ -63,7 +74,10 @@
         <img id="userAvatar" class="user-avatar" src="" alt="">
         <span class="user-welcome">Welcome, <strong id="currentUser"></strong>!</span>
       </div>
-      <button id="logoutBtn" class="btn ghost small">Logout</button>
+      <div class="user-actions">
+        <button id="myProfileBtn" class="btn ghost small">My Profile</button>
+        <button id="logoutBtn" class="btn ghost small">Logout</button>
+      </div>
     </div>
 
     <!-- Loading -->
@@ -78,20 +92,59 @@
         <div class="logo" aria-hidden></div>
         <div>
           <h1>ReviewHub</h1>
-          <div class="sub">Search or paste Spotify links for albums and singles. Rate 0.5—10 and share with the community.</div>
+          <div class="sub">Search or paste Spotify links for albums and singles. Rate 0-10 and share with the community.</div>
         </div>
       </div>
 
       <div class="tabs">
-        <button class="tab active" data-tab="add">➕ Add Review</button>
+        <button class="tab active" data-tab="global-feed">🌐 Global Feed</button>
+        <button class="tab" data-tab="add">➕ Add Review</button>
         <button class="tab" data-tab="my-reviews">📝 My Reviews</button>
-        <button class="tab" data-tab="global-feed">🌍 Global Feed</button>
         <button class="tab" data-tab="about">ℹ️ About</button>
         <span class="right pill" id="statsPill">0 reviews</span>
       </div>
 
+      <!-- Global Feed Tab (Now Default) -->
+      <section id="tab-global-feed" style="">
+        <div class="card">
+          <div class="hd">
+            <strong>Global Feed</strong>
+            <span class="pill" id="globalCount">0 reviews</span>
+          </div>
+          <div class="bd">
+            <div class="filters">
+              <div class="filter-group">
+                <input id="globalSearch" type="text" placeholder="Search all reviews..." style="max-width:200px">
+              </div>
+              <div class="filter-group">
+                <select id="globalSortBy">
+                  <option value="likes-desc">Most liked</option>
+                  <option value="date-desc">Newest first</option>
+                  <option value="score-desc">Highest rated</option>
+                  <option value="score-asc">Lowest rated</option>
+                </select>
+              </div>
+              <div class="filter-group">
+                <select id="globalTypeFilter">
+                  <option value="all">All types</option>
+                  <option value="album">Albums only</option>
+                  <option value="track">Singles only</option>
+                </select>
+              </div>
+              <div class="filter-group">
+                <select id="globalGenreFilter">
+                  <option value="all">All genres</option>
+                </select>
+              </div>
+            </div>
+            <div id="globalReviewsList" class="review-list"></div>
+            <div id="globalReviewsEmpty" class="empty" style="display:none">No reviews found.</div>
+          </div>
+        </div>
+      </section>
+
       <!-- Add Review Tab -->
-      <section id="tab-add" class="grid">
+      <section id="tab-add" class="grid" style="display:none">
         <div class="card">
           <div class="hd"><strong>Add a Review</strong></div>
           <div class="bd">
@@ -127,12 +180,13 @@
             <div class="row-1 row">
               <div class="rating">
                 <label for="score">Score</label>
-                <input id="score" type="range" min="0.5" max="10" step="0.5" value="7" />
+                <input id="score" type="range" min="0" max="10" step="0.1" value="7" />
                 <span class="pill"><span>Current:</span> <strong id="scoreOut">7.0</strong>/10</span>
               </div>
               <div class="manual-score">
-                <label for="manualScore">Or type exact score (0.5-10.0)</label>
-                <input id="manualScore" type="number" min="0.5" max="10" step="0.1" placeholder="e.g., 8.7" />
+                <label for="manualScore">Or type exact score (0-10.00)</label>
+                <input id="manualScore" type="number" min="0" max="10" step="0.01" placeholder="e.g., 8.73" />
+                <div class="hint">Up to 2 decimal places (e.g., 7.24, 9.87)</div>
               </div>
             </div>
 
@@ -193,41 +247,23 @@
         </div>
       </section>
 
-      <!-- Global Feed Tab -->
-      <section id="tab-global-feed" style="display:none">
+      <!-- Profile View Tab -->
+      <section id="tab-profile" style="display:none">
         <div class="card">
           <div class="hd">
-            <strong>Global Feed</strong>
-            <span class="pill" id="globalCount">0 reviews</span>
-          </div>
-          <div class="bd">
-            <div class="filters">
-              <div class="filter-group">
-                <input id="globalSearch" type="text" placeholder="Search all reviews..." style="max-width:200px">
-              </div>
-              <div class="filter-group">
-                <select id="globalSortBy">
-                  <option value="likes-desc">Most liked</option>
-                  <option value="date-desc">Newest first</option>
-                  <option value="score-desc">Highest rated</option>
-                  <option value="score-asc">Lowest rated</option>
-                </select>
-              </div>
-              <div class="filter-group">
-                <select id="globalTypeFilter">
-                  <option value="all">All types</option>
-                  <option value="album">Albums only</option>
-                  <option value="track">Singles only</option>
-                </select>
-              </div>
-              <div class="filter-group">
-                <select id="globalGenreFilter">
-                  <option value="all">All genres</option>
-                </select>
+            <div class="profile-header">
+              <img id="profileAvatar" class="profile-avatar" src="" alt="">
+              <div class="profile-info">
+                <h2 id="profileName"></h2>
+                <div id="profileBio" class="profile-bio"></div>
+                <div id="profileStats" class="profile-stats"></div>
               </div>
             </div>
-            <div id="globalReviewsList" class="review-list"></div>
-            <div id="globalReviewsEmpty" class="empty" style="display:none">No reviews found.</div>
+            <button id="editProfileBtn" class="btn small" style="display:none">✏️ Edit Profile</button>
+          </div>
+          <div class="bd">
+            <div id="profileReviewsList" class="review-list"></div>
+            <div id="profileReviewsEmpty" class="empty" style="display:none">No reviews yet.</div>
           </div>
         </div>
       </section>
@@ -241,17 +277,63 @@
             <h3>Features:</h3>
             <ul>
               <li><strong>Spotify Integration:</strong> Search for music or paste Spotify links</li>
-              <li><strong>Precise Ratings:</strong> Rate music from 0.5 to 10.0 with decimal precision</li>
+              <li><strong>Precise Ratings:</strong> Rate music from 0 to 10.00 with decimal precision</li>
               <li><strong>Community Feed:</strong> Discover reviews from other music lovers</li>
-              <li><strong>Like System:</strong> Show appreciation for great reviews</li>
+              <li><strong>Comments System:</strong> Engage with other users through comments</li>
+              <li><strong>Profile Pages:</strong> View profiles and review collections</li>
               <li><strong>Smart Filtering:</strong> Filter by genre, popularity, rating, and more</li>
               <li><strong>Cloud Sync:</strong> Your reviews are saved and accessible anywhere</li>
-              <li><strong>Share Profile:</strong> Share your review collection with others</li>
             </ul>
             <p>Built with Supabase for real-time data and Spotify Web API for music discovery.</p>
           </div>
         </div>
       </section>
+    </div>
+  </div>
+
+  <!-- Comments Modal -->
+  <div id="commentsModal" class="modal">
+    <div class="modal-content modal-large">
+      <div class="modal-header">
+        <h3>Comments</h3>
+        <button class="close-btn" id="closeCommentsModal">&times;</button>
+      </div>
+      <div class="modal-body">
+        <div id="commentsList" class="comments-list"></div>
+        <div id="addCommentSection" class="add-comment" style="display:none;">
+          <textarea id="newComment" placeholder="Add a comment..." rows="3"></textarea>
+          <button id="postCommentBtn" class="btn primary small">Post Comment</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Edit Profile Modal -->
+  <div id="editProfileModal" class="modal">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h3>Edit Profile</h3>
+        <button class="close-btn" id="closeEditProfileModal">&times;</button>
+      </div>
+      <div class="modal-body">
+        <div class="form-group">
+          <label for="editUsername">Username</label>
+          <input id="editUsername" type="text" maxlength="30" />
+          <div class="hint" id="usernameHint">Can be changed once every 3 days</div>
+        </div>
+        <div class="form-group">
+          <label for="editBio">Bio</label>
+          <textarea id="editBio" rows="3" maxlength="200"></textarea>
+        </div>
+        <div class="form-group">
+          <label for="editAvatar">Profile Picture</label>
+          <input id="editAvatar" type="file" accept="image/*" />
+          <div class="hint">Max 2MB, JPG/PNG/GIF</div>
+        </div>
+        <button id="saveProfileBtn" class="btn primary">Save Changes</button>
+        <div id="profileEditError" class="error-msg" style="display:none"></div>
+        <div id="profileEditSuccess" class="success-msg" style="display:none"></div>
+      </div>
     </div>
   </div>
 
