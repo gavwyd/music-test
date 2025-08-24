@@ -935,8 +935,12 @@
 
   /* Review Cards */
   .review-list {
-    display: grid;
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
     gap: 18px;
+    width: 100%;
+    max-width: 700px;
   }
 
   .r-card {
