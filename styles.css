@@ -943,55 +943,47 @@
     max-width: 700px;
   }
 
+
   .r-card {
     display: grid;
-    grid-template-columns: 120px 1fr;
+    grid-template-columns: 120px 1fr auto;
     gap: 14px;
     padding: 14px;
     border-radius: 16px;
-/* Review card layout: review text under score/indicator */
-.r-meta {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  flex-wrap: wrap;
-}
-.r-text {
-  margin-top: 8px;
-  font-size: 1em;
-  color: var(--text);
-  line-height: 1.5;
-}
-
-.r-card > div {
-  display: flex;
-  flex-direction: column;
-}
-
-.r-title, .r-artist, .r-meta, .genre-list, .r-user, .toolbar {
-  margin-bottom: 2px;
-}
-
-.r-meta + .r-text {
-  margin-top: 8px;
-}
-
-/* Ensure .tag matches .album-score style */
-.tag {
-  font-weight: 800;
-  font-size: 13px;
-  color: var(--accent);
-  background: #0c1526;
-  border: 1px solid rgba(125,175,255,0.35);
-  padding: 6px 10px;
-  border-radius: 12px;
-  margin-left: 8px;
-}
-    gap: 10px;
-    align-items: center;
-    justify-content: flex-end;
-    grid-column: 2;
-    margin-top: 16px;
+    align-items: flex-start;
+  }
+  .r-card > div {
+    display: flex;
+    flex-direction: column;
+  }
+  .r-actions {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-end;
+    gap: 8px;
+    justify-content: flex-start;
+    margin-left: 10px;
+    margin-top: 0;
+    grid-column: 3;
+  }
+  @media (max-width: 768px) {
+    .r-card {
+      grid-template-columns: 80px 1fr auto;
+    }
+  }
+  @media (max-width: 480px) {
+    .r-card {
+      grid-template-columns: 1fr;
+      text-align: center;
+    }
+    .r-actions {
+      flex-direction: row;
+      justify-content: center;
+      align-items: center;
+      margin-left: 0;
+      margin-top: 12px;
+      grid-column: 1 / -1;
+    }
   }
 
   @media (max-width: 768px) {
