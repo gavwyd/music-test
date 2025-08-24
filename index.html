@@ -410,7 +410,8 @@
     const SPOTIFY_TOKEN = 'YOUR_SPOTIFY_TOKEN'; // <-- Replace with your Spotify token logic
 
     // --- Supabase Client ---
-    const supabase = window.supabase ? window.supabase : window.createClient?.(SUPABASE_URL, SUPABASE_KEY);
+    const { createClient } = window.supabase;
+    const supabase = createClient(SUPABASE_URL, SUPABASE_KEY);
 
     // --- Helpers ---
     function getAlbumIdFromUrl() {
